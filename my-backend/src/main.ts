@@ -3,7 +3,8 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors(); // cho phép Next.js gọi API
+  app.enableCors();
+  app.setGlobalPrefix('api'); // cho phép Next.js gọi API
   await app.listen(3001);
 }
 bootstrap();

@@ -1,12 +1,22 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { ProductsService } from './products.service';
 
-@Controller('api/products')
+@Controller('products')
 export class ProductsController {
+  constructor(private readonly service: ProductsService) {}
+
   @Get()
-  getProducts() {
-    return [
-      { id: 1, name: "Laptop" },
-      { id: 2, name: "Phone" }
-    ];
+  getAll() {
+    return this.service.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(+id);
+  }
+
+  @Post()
+  create(@Body() body) {
+    return this.service.create(body);
   }
 }
