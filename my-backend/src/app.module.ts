@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CartModule } from './cart/cart.module';
+import { OrderModule } from './order/order.module';
 
 
 @Module({
@@ -18,6 +19,7 @@ import { CartModule } from './cart/cart.module';
       database: 'ecommerce',
       autoLoadEntities: true,
       synchronize: true,
+      logging: true,
     }),
 
     ProductsModule,
@@ -25,6 +27,8 @@ import { CartModule } from './cart/cart.module';
     CategoriesModule,
 
     CartModule,
+
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],

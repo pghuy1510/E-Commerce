@@ -1,66 +1,117 @@
-import { Injectable } from '@nestjs/common';
-
-type CartItem = {
-  productId: number;
-  quantity: number;
-};
-
-type Cart = {
-  userId: number;
-  items: CartItem[];
-};
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Cart } from './cart.entity';
+import { CartItem } from './cart-item.entity';
+import { Product } from '../products/products.entity';
 
 @Injectable()
 export class CartService {
-  private carts: Cart[] = [];
+  constructor(
+    @InjectRepository(Cart)
+    private cartRepo: Repository<Cart>,
 
-  getCart(userId: number) {
-    return this.carts.find((c) => c.userId === userId) || { userId, items: [] };
-  }
+    @InjectRepository(CartItem)
+    private itemRepo: Repository<CartItem>,
 
-  addToCart(userId: number, productId: number, quantity: number) {
-    let cart = this.carts.find((c) => c.userId === userId);
+    @InjectRepository(Product)
+    private productRepo: Repository<Product>,
+  ) {}
+
+  async getCart(userId: number) {
+    let cart = await this.cartRepo.findOne({
+      where: { userId },
+      relations: ['items', 'items.product'],
+    });
 
     if (!cart) {
-      cart = { userId, items: [] };
-      this.carts.push(cart);
+      cart = this.cartRepo.create({ userId, items: [] });
+      await this.cartRepo.save(cart);
     }
 
-    const item = cart.items.find((i) => i.productId === productId);
+    return cart;
+  }
+
+  async addToCart(userId: number, productId: number, quantity: number) {
+    if (quantity <= 0) {
+      throw new BadRequestException('Quantity must be greater than 0');
+    }
+
+    const cart = await this.getCart(userId);
+    const product = await this.productRepo.findOneBy({ id: productId });
+
+    if (!product) throw new NotFoundException('Product not found');
+
+    if (product.stock < quantity) {
+      throw new BadRequestException('Not enough stock');
+    }
+
+    let item = cart.items.find((i) => i.product.id === productId);
 
     if (item) {
       item.quantity += quantity;
+
+      if (item.quantity > product.stock) {
+        throw new BadRequestException('Exceeds stock');
+      }
+
+      await this.itemRepo.save(item);
     } else {
-      cart.items.push({ productId, quantity });
+      item = this.itemRepo.create({
+        product,
+        quantity,
+        cart,
+        price: product.price,
+      });
+
+      await this.itemRepo.save(item);
     }
 
-    return cart;
+    return this.getCart(userId);
   }
 
-  updateQuantity(userId: number, productId: number, quantity: number) {
-    const cart = this.carts.find((c) => c.userId === userId);
-    if (!cart) return null;
+  async updateQuantity(userId: number, productId: number, quantity: number) {
+    if (quantity <= 0) {
+      throw new BadRequestException('Quantity must be greater than 0');
+    }
 
-    const item = cart.items.find((i) => i.productId === productId);
-    if (!item) return null;
+    const cart = await this.getCart(userId);
+
+    const item = cart.items.find((i) => i.product.id === productId);
+    if (!item) throw new NotFoundException('Item not found');
+
+    const product = await this.productRepo.findOneBy({ id: productId });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.stock < quantity) {
+      throw new BadRequestException('Not enough stock');
+    }
 
     item.quantity = quantity;
-    return cart;
+    await this.itemRepo.save(item);
+
+    return this.getCart(userId);
   }
 
-  removeItem(userId: number, productId: number) {
-    const cart = this.carts.find((c) => c.userId === userId);
-    if (!cart) return null;
+  async removeItem(userId: number, productId: number) {
+    const cart = await this.getCart(userId);
 
-    // Xóa item
-    cart.items = cart.items.filter((i) => i.productId !== productId);
+    const item = cart.items.find((i) => i.product.id === productId);
+    if (!item) throw new NotFoundException('Item not found');
 
-    // Nếu giỏ rỗng → xóa luôn cart
-    if (cart.items.length === 0) {
-      this.carts = this.carts.filter((c) => c.userId !== userId);
-      return { message: 'Cart deleted' }; // optional
-    }
+    await this.itemRepo.remove(item);
 
-    return cart;
+    return this.getCart(userId);
+  }
+
+  async clearCart(userId: number) {
+    const cart = await this.getCart(userId);
+
+    await this.itemRepo.delete({ cart: { id: cart.id } });
+
+    return this.getCart(userId);
   }
 }

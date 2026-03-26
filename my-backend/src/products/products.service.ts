@@ -1,30 +1,64 @@
-import { Injectable } from '@nestjs/common';
-
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-};
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Product } from './products.entity';
+import { CreateProductDto } from './dto/create-product.dto/create-product.dto';
 
 @Injectable()
 export class ProductsService {
-  private products: Product[] = [];
-  private idCounter = 1;
+  constructor(
+    @InjectRepository(Product)
+    private productRepo: Repository<Product>,
+  ) {}
 
   findAll() {
-    return this.products;
+    return this.productRepo.find({
+      relations: ['category'],
+    });
   }
 
   findOne(id: number) {
-    return this.products.find((p) => p.id === id);
+    return this.productRepo.findOne({
+      where: { id },
+      relations: ['category'],
+    });
   }
 
-  create(product: Omit<Product, 'id'>) {
-    const newProduct = {
-      id: this.idCounter++,
-      ...product,
-    };
-    this.products.push(newProduct);
-    return newProduct;
+  async create(dto: CreateProductDto) {
+    const product = this.productRepo.create({
+      ...dto,
+      category: { id: dto.categoryId },
+    });
+
+    return await this.productRepo.save(product);
+  }
+  async update(id: number, dto: any) {
+    if (!dto) {
+      throw new BadRequestException('No data provided');
+    }
+
+    const product = await this.productRepo.findOneBy({ id });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    Object.assign(product, dto);
+
+    if (dto.categoryId !== undefined) {
+      product.category = { id: dto.categoryId } as any;
+    }
+
+    return this.productRepo.save(product);
+  }
+
+  async remove(id: number) {
+    const product = await this.productRepo.findOneBy({ id });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return this.productRepo.remove(product);
   }
 }
