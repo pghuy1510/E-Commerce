@@ -2,7 +2,6 @@ import { Transform, Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
 
 export class CreateProductDto {
-    @Transform(({ value }) => value.trim())
     @IsString()
   @IsNotEmpty()
   name: string;
