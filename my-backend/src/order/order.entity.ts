@@ -7,7 +7,7 @@ export class Order {
   id: number;
 
   @Column()
-  userId: number;
+  userId: string; // 🔥 FIX
 
   @Column('decimal', {
     precision: 10,

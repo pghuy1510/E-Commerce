@@ -10,6 +10,9 @@ export class OrderItem {
   productId: number;
 
   @Column()
+  productName: string;
+
+  @Column()
   quantity: number;
 
   @Column('decimal', {

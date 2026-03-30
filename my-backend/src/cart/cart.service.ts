@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Cart } from './cart.entity';
 import { CartItem } from './cart-item.entity';
 import { Product } from '../products/products.entity';
@@ -18,10 +19,11 @@ export class CartService {
     private productRepo: Repository<Product>,
   ) {}
 
-  async getCart(userId: number) {
+  // 🛒 Lấy cart
+  async getCart(userId: string) {
     let cart = await this.cartRepo.findOne({
       where: { userId },
-      relations: ['items', 'items.product'],
+      relations: ['items', 'items.product'], // 🔥 FIX
     });
 
     if (!cart) {
@@ -32,27 +34,26 @@ export class CartService {
     return cart;
   }
 
-  async addToCart(userId: number, productId: number, quantity: number) {
-    if (quantity <= 0) {
-      throw new BadRequestException('Quantity must be greater than 0');
-    }
+  // ➕ Thêm vào cart
+  async addToCart(userId: string, productId: number, quantity: number) {
+    const product = await this.productRepo.findOne({
+      where: { id: Number(productId) },
+    });
+
+    if (!product) throw new BadRequestException('Product not found');
+
+    if (product.stock < quantity)
+      throw new BadRequestException('Not enough stock');
 
     const cart = await this.getCart(userId);
-    const product = await this.productRepo.findOneBy({ id: productId });
 
-    if (!product) throw new NotFoundException('Product not found');
-
-    if (product.stock < quantity) {
-      throw new BadRequestException('Not enough stock');
-    }
-
-    let item = cart.items.find((i) => i.product.id === productId);
+    let item = cart.items.find((i) => i.product.id === Number(productId));
 
     if (item) {
       item.quantity += quantity;
 
-      if (item.quantity > product.stock) {
-        throw new BadRequestException('Exceeds stock');
+      if (product.stock < item.quantity) {
+        throw new BadRequestException('Not enough stock');
       }
 
       await this.itemRepo.save(item);
@@ -60,57 +61,50 @@ export class CartService {
       item = this.itemRepo.create({
         product,
         quantity,
+        price: product.price, // 🔥 QUAN TRỌNG
         cart,
-        price: product.price,
       });
 
       await this.itemRepo.save(item);
     }
+    
+    return this.getCart(userId);
+  }
+
+  // ❌ Xóa item
+  async removeItem(userId: string, productId: number) {
+    const cart = await this.getCart(userId);
+
+    const item = cart.items.find((i) => i.product.id === productId);
+    if (!item) return null;
+
+    await this.itemRepo.delete(item.id); // 🔥 FIX
 
     return this.getCart(userId);
   }
 
-  async updateQuantity(userId: number, productId: number, quantity: number) {
-    if (quantity <= 0) {
-      throw new BadRequestException('Quantity must be greater than 0');
+  // 🔄 Update quantity
+  async updateQuantity(userId: string, productId: number, quantity: number) {
+    if (quantity < 1) {
+      throw new BadRequestException('Quantity must be >= 1');
     }
 
     const cart = await this.getCart(userId);
 
     const item = cart.items.find((i) => i.product.id === productId);
-    if (!item) throw new NotFoundException('Item not found');
+    if (!item) throw new BadRequestException('Item not found');
 
-    const product = await this.productRepo.findOneBy({ id: productId });
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+    });
 
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    if (product.stock < quantity) {
+    if (!product || product.stock < quantity) {
       throw new BadRequestException('Not enough stock');
     }
 
     item.quantity = quantity;
+
     await this.itemRepo.save(item);
-
-    return this.getCart(userId);
-  }
-
-  async removeItem(userId: number, productId: number) {
-    const cart = await this.getCart(userId);
-
-    const item = cart.items.find((i) => i.product.id === productId);
-    if (!item) throw new NotFoundException('Item not found');
-
-    await this.itemRepo.remove(item);
-
-    return this.getCart(userId);
-  }
-
-  async clearCart(userId: number) {
-    const cart = await this.getCart(userId);
-
-    await this.itemRepo.delete({ cart: { id: cart.id } });
 
     return this.getCart(userId);
   }

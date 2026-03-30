@@ -20,12 +20,12 @@ export class CartService {
 
   async getCart(userId: number) {
     let cart = await this.cartRepo.findOne({
-      where: { userId },
-      relations: ['items'],
+      where: { userId: userId.toString() },
+      relations: ['items', 'items.product'],
     });
 
     if (!cart) {
-      cart = this.cartRepo.create({ userId, items: [] });
+      cart = this.cartRepo.create({ userId: userId.toString(), items: [] });
       await this.cartRepo.save(cart);
     }
 

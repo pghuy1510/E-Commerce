@@ -1,12 +1,24 @@
-import { Controller, Post, Param } from '@nestjs/common';
+import { Controller, Post, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('order')
+@Controller('orders')
+@UseGuards(JwtAuthGuard)
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly service: OrderService) {}
 
-  @Post('checkout/:userId')
-  checkout(@Param('userId') userId: number) {
-    return this.orderService.checkout(+userId);
+  @Post('checkout')
+  checkout(@Req() req) {
+    return this.service.checkout(req.user.id);
+  }
+
+  @Get('my')
+  getMyOrders(@Req() req) {
+    return this.service.getMyOrders(req.user.id);
+  }
+
+  @Get(':id')
+  getOrder(@Req() req, @Param('id') id: string) {
+    return this.service.getOrderById(req.user.id, Number(id));
   }
 }

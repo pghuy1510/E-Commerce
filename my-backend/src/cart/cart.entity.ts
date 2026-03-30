@@ -7,7 +7,7 @@ export class Cart {
   id: number;
 
   @Column()
-  userId: number;
+  userId: string;
 
   @OneToMany(() => CartItem, (item) => item.cart, { cascade: true })
   items: CartItem[];
