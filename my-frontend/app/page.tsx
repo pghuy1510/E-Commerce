@@ -1,5 +1,6 @@
 import Image from "next/image";
 import ProductList from "../components/ProductList";
+import Navbar from "@/components/Navbar";
 
 export default function Home() {
   return (
@@ -48,6 +49,7 @@ export default function Home() {
               alt="Vercel logomark"
               width={16}
               height={16}
+              style={{ height: "auto" }}
             />
             Deploy Now
           </a>
