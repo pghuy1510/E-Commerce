@@ -18,7 +18,11 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto) {
-    return this.createUser(createUserDto.username, createUserDto.password);
+    return this.createUser(
+      createUserDto.username,
+      createUserDto.password,
+      createUserDto.email,
+    );
   }
 
   async findAll() {
@@ -57,11 +61,12 @@ export class UsersService {
     return this.userRepo.remove(user);
   }
 
-  async createUser(username: string, password: string) {
+  async createUser(username: string, password: string, email?: string) {
     const hashed = await bcrypt.hash(password, 10);
 
     const user = this.userRepo.create({
       username,
+      email,
       password: hashed,
     });
 

@@ -10,6 +10,8 @@ import { CartModule } from './cart/cart.module';
 import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { PaymentModule } from './payment/payment.module';
+import { TrackingModule } from './tracking/tracking.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { UsersModule } from './users/users.module';
     OrderModule,
     AuthModule,
     UsersModule,
+    PaymentModule,
+    TrackingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,10 +4,10 @@ import { OrderItem } from './order-item.entity';
 @Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  userId: string; // 🔥 FIX
+  userId!: string; 
 
   @Column('decimal', {
     precision: 10,
@@ -17,11 +17,11 @@ export class Order {
       from: (value: string) => parseFloat(value),
     },
   })
-  totalAmount: number;
+  totalAmount!: number;
 
   @Column({ default: 'PENDING' })
-  status: string;
+  status!: string;
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
-  items: OrderItem[];
+  items!: OrderItem[];
 }

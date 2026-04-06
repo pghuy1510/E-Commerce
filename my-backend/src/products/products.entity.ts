@@ -5,13 +5,13 @@ import { ManyToOne, JoinColumn } from 'typeorm';
 @Entity('products')
 export class Product {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column('text')
-  description: string;
+  description!: string;
 
   @Column('decimal', {
     precision: 10,
@@ -21,12 +21,12 @@ export class Product {
       from: (value: string) => parseFloat(value),
     },
   })
-  price: number;
+  price!: number;
 
   @Column()
-  stock: number;
+  stock!: number;
 
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category!: Category;
 }

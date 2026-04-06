@@ -11,18 +11,18 @@ import { Product } from '../products/products.entity';
 @Entity('cart_items')
 export class CartItem {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Cart, (cart) => cart.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cart_id' })
-  cart: Cart;
+  cart!: Cart;
 
   @ManyToOne(() => Product, { eager: true })
   @JoinColumn({ name: 'product_id' })
-  product: Product;
+  product!: Product;
 
   @Column({ default: 1 })
-  quantity: number;
+  quantity!: number;
 
   @Column('decimal', {
     precision: 10,
@@ -32,5 +32,5 @@ export class CartItem {
       from: (value: string) => parseFloat(value),
     },
   })
-  price: number;
+  price!: number;
 }

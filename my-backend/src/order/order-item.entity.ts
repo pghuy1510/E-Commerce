@@ -10,16 +10,16 @@ import { Order } from './order.entity';
 @Entity('order_items')
 export class OrderItem {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  productId: number;
+  productId!: number;
 
   @Column()
-  productName: string;
+  productName!: string;
 
   @Column()
-  quantity: number;
+  quantity!: number;
 
   @Column('decimal', {
     precision: 10,
@@ -29,9 +29,9 @@ export class OrderItem {
       from: (value: string) => parseFloat(value),
     },
   })
-  price: number;
+  price!: number;
 
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
-  order: Order;
+  order!: Order;
 }
