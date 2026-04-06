@@ -1,21 +1,22 @@
 import { Controller, Post, Body } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
+import { AuthService } from './auth.service';
+
+interface AuthCredentialsDto {
+  username: string;
+  password: string;
+}
 
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('register')
+  register(@Body() body: AuthCredentialsDto) {
+    return this.authService.register(body.username, body.password);
+  }
+
   @Post('login')
-  login(@Body() body) {
-    const payload = {
-      sub: 1, // giả lập user
-      username: body.username,
-    };
-
-    const token = jwt.sign(payload, 'secretKey', {
-      expiresIn: '1h',
-    });
-
-    return {
-      access_token: token,
-    };
+  login(@Body() body: AuthCredentialsDto) {
+    return this.authService.login(body.username, body.password);
   }
 }

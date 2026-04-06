@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+interface Product {
+  id: number;
+  name: string;
+}
+
 export default function ProductList() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     axios
-      .get("http://localhost:3001/api/products")
+      .get<Product[]>("http://localhost:3001/api/products")
       .then((res) => {
         console.log(res.data); // dữ liệu từ NestJS
         setProducts(res.data);

@@ -8,8 +8,24 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { CartService } from './cart.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+type AuthenticatedRequest = Request & {
+  user: {
+    id: string;
+  };
+};
+
+interface AddToCartBody {
+  productId: number;
+  quantity: number;
+}
+
+interface RemoveFromCartBody {
+  productId: number;
+}
 
 @Controller('cart')
 export class CartController {
@@ -17,28 +33,28 @@ export class CartController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  getCart(@Req() req) {
-    return this.service.getCart(req.user.userId);
+  getCart(@Req() req: AuthenticatedRequest) {
+    return this.service.getCart(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('add')
-  addToCart(@Req() req, @Body() body) {
+  addToCart(@Req() req: AuthenticatedRequest, @Body() body: AddToCartBody) {
     const { productId, quantity } = body;
-    return this.service.addToCart(req.user.userId, productId, quantity);
+    return this.service.addToCart(req.user.id, productId, quantity);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch('update')
-  update(@Req() req, @Body() body) {
+  update(@Req() req: AuthenticatedRequest, @Body() body: AddToCartBody) {
     const { productId, quantity } = body;
-    return this.service.updateQuantity(req.user.userId, productId, quantity);
+    return this.service.updateQuantity(req.user.id, productId, quantity);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('remove')
-  remove(@Req() req, @Body() body) {
+  remove(@Req() req: AuthenticatedRequest, @Body() body: RemoveFromCartBody) {
     const { productId } = body;
-    return this.service.removeItem(req.user.userId, productId);
+    return this.service.removeItem(req.user.id, productId);
   }
 }

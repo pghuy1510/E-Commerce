@@ -3,6 +3,8 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
+    "ignoreDeprecations": "5.0",
+    "types": ["node", "jest"],
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,

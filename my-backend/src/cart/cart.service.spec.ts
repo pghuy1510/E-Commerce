@@ -1,68 +1,36 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { CartService } from './cart.service';
 import { Cart } from './cart.entity';
 import { CartItem } from './cart-item.entity';
 import { Product } from '../products/products.entity';
 
-@Injectable()
-export class CartService {
-  constructor(
-    @InjectRepository(Cart)
-    private cartRepo: Repository<Cart>,
+describe('CartService', () => {
+  let service: CartService;
 
-    @InjectRepository(CartItem)
-    private itemRepo: Repository<CartItem>,
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CartService,
+        {
+          provide: getRepositoryToken(Cart),
+          useValue: {},
+        },
+        {
+          provide: getRepositoryToken(CartItem),
+          useValue: {},
+        },
+        {
+          provide: getRepositoryToken(Product),
+          useValue: {},
+        },
+      ],
+    }).compile();
 
-    @InjectRepository(Product)
-    private productRepo: Repository<Product>,
-  ) {}
+    service = module.get<CartService>(CartService);
+  });
 
-  async getCart(userId: number) {
-    let cart = await this.cartRepo.findOne({
-      where: { userId: userId.toString() },
-      relations: ['items', 'items.product'],
-    });
-
-    if (!cart) {
-      cart = this.cartRepo.create({ userId: userId.toString(), items: [] });
-      await this.cartRepo.save(cart);
-    }
-
-    return cart;
-  }
-
-  async addToCart(userId: number, productId: number, quantity: number) {
-    let cart = await this.getCart(userId);
-
-    const product = await this.productRepo.findOneBy({ id: productId });
-    if (!product) throw new Error('Product not found');
-
-    let item = cart.items.find((i) => i.product.id === productId);
-
-    if (item) {
-      item.quantity += quantity;
-      await this.itemRepo.save(item);
-    } else {
-      item = this.itemRepo.create({
-        product,
-        quantity,
-        cart,
-      });
-      await this.itemRepo.save(item);
-    }
-
-    return this.getCart(userId);
-  }
-
-  async removeItem(userId: number, productId: number) {
-    const cart = await this.getCart(userId);
-
-    const item = cart.items.find((i) => i.product.id === productId);
-    if (!item) return null;
-
-    await this.itemRepo.remove(item);
-
-    return this.getCart(userId);
-  }
-}
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});

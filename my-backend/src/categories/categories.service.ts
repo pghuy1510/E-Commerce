@@ -1,25 +1,34 @@
 import { Injectable } from '@nestjs/common';
-
-type Category = {
-  id: number;
-  name: string;
-};
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Category } from './categories.entity';
 
 @Injectable()
 export class CategoriesService {
-  private categories: Category[] = [];
-  private idCounter = 1;
+  constructor(
+    @InjectRepository(Category)
+    private readonly categoryRepo: Repository<Category>,
+  ) {}
 
   findAll() {
-    return this.categories;
+    return this.categoryRepo.find({
+      relations: ['products'],
+    });
   }
 
-  create(category: Omit<Category, 'id'>) {
-    const newCategory = {
-      id: this.idCounter++,
-      ...category,
-    };
-    this.categories.push(newCategory);
-    return newCategory;
+  async create(data: { name: string }) {
+    const category = this.categoryRepo.create(data);
+    return await this.categoryRepo.save(category);
+  }
+
+  async findOne(id: number) {
+    return await this.categoryRepo.findOne({
+      where: { id },
+      relations: ['products'],
+    });
+  }
+
+  async remove(id: number) {
+    return await this.categoryRepo.delete(id);
   }
 }

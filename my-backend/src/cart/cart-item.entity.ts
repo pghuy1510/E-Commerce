@@ -23,7 +23,7 @@ export class CartItem {
 
   @Column({ default: 1 })
   quantity: number;
-  
+
   @Column('decimal', {
     precision: 10,
     scale: 2,

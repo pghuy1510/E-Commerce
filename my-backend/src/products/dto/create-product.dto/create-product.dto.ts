@@ -1,8 +1,8 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
 
 export class CreateProductDto {
-    @IsString()
+  @IsString()
   @IsNotEmpty()
   name: string;
 
