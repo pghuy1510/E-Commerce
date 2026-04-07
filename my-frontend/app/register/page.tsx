@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { AxiosError } from "axios";
+import { Store } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 interface ApiErrorResponse {
   message?: string | string[];
@@ -14,14 +16,33 @@ interface ApiErrorResponse {
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const [isUsernameValid, setIsUsernameValid] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
+
+  const [touchedUsername, setTouchedUsername] = useState(false);
+  const [touchedPassword, setTouchedPassword] = useState(false);
+
   const [error, setError] = useState("");
+
   const router = useRouter();
 
+  // validate
+  const validateUsername = (value: string) => {
+    return value.length >= 3 && !value.includes(" ");
+  };
+
+  const validatePassword = (value: string) => {
+    return value.length >= 6;
+  };
+
   const handleRegister = async () => {
+    if (!isUsernameValid || !isPasswordValid) return;
+
     try {
       setError("");
       await register({ username, password });
-      alert("Đăng ký thành công");
+      alert("Registered successfully");
       router.push("/login");
     } catch (err) {
       const apiError = err as AxiosError<ApiErrorResponse>;
@@ -31,11 +52,11 @@ export default function RegisterPage() {
         : message;
 
       if (normalizedMessage?.toLowerCase().includes("already exists")) {
-        setError("Tài khoản đã tồn tại.");
+        setError("Account already exists.");
         return;
       }
 
-      setError(normalizedMessage ?? "Đăng ký thất bại. Vui lòng thử lại.");
+      setError(normalizedMessage ?? "Registration failed. Please try again.");
     }
   };
 
@@ -44,50 +65,138 @@ export default function RegisterPage() {
       <div className="relative w-[1000px] h-[500px]">
         {/* KHỐI TRẮNG */}
         <div className="absolute inset-0 bg-white shadow-xl flex items-center justify-end pr-20">
-          {/* FORM REGISTER */}
+          {/* FORM */}
           <div className="w-[350px] border border-gray-200 p-8 bg-white">
             <h2 className="text-2xl font-bold mb-2">Register</h2>
             <p className="text-sm text-gray-400 mb-6">
               Create your account to get started
             </p>
 
-            <input
-              type="text"
-              placeholder="Username"
-              className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-yellow-500 transition"
-              onChange={(e) => setUsername(e.target.value)}
-            />
+            {/* USERNAME */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setUsername(value);
+                  setIsUsernameValid(validateUsername(value));
+                }}
+                onBlur={() => setTouchedUsername(true)}
+                className={`w-full mb-4 p-2 pr-10 border-b outline-none transition
+                  ${
+                    touchedUsername
+                      ? isUsernameValid
+                        ? "border-green-500"
+                        : "border-red-500"
+                      : "border-gray-200"
+                  }
+                  focus:border-yellow-500
+                `}
+              />
 
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-yellow-500 transition"
-              onChange={(e) => setPassword(e.target.value)}
-            />
+              {isUsernameValid && (
+                <span className="absolute right-2 top-2 text-green-500 text-sm">
+                  ✔
+                </span>
+              )}
 
+              {touchedUsername && !isUsernameValid && username && (
+                <p className="text-red-500 text-xs mt-[-10px] mb-2">
+                  Username ≥ 3 characters, does not contain spaces
+                </p>
+              )}
+            </div>
+
+            {/* PASSWORD */}
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPassword(value);
+                  setIsPasswordValid(validatePassword(value));
+                }}
+                onBlur={() => setTouchedPassword(true)}
+                className={`w-full mb-4 p-2 pr-10 border-b outline-none transition
+                  ${
+                    touchedPassword
+                      ? isPasswordValid
+                        ? "border-green-500"
+                        : "border-red-500"
+                      : "border-gray-200"
+                  }
+                  focus:border-yellow-500
+                `}
+              />
+
+              {isPasswordValid && (
+                <span className="absolute right-2 top-2 text-green-500 text-sm">
+                  ✔
+                </span>
+              )}
+
+              {touchedPassword && !isPasswordValid && password && (
+                <p className="text-red-500 text-xs mt-[-10px] mb-2">
+                  Password must be at least 6 characters long
+                </p>
+              )}
+            </div>
+
+            {/* BUTTON */}
             <button
               onClick={handleRegister}
-              className="w-full bg-yellow-500 text-white py-2 font-semibold hover:bg-yellow-600 transition">
+              disabled={!isUsernameValid || !isPasswordValid}
+              className={`w-full py-2 font-semibold transition text-white
+                ${
+                  isUsernameValid && isPasswordValid
+                    ? "bg-yellow-500 hover:bg-yellow-600"
+                    : "bg-gray-300 cursor-not-allowed"
+                }
+              `}>
               REGISTER
+            </button>
+
+            <div className="flex items-center my-4">
+              <div className="flex-1 h-px bg-gray-300"></div>
+              <span className="px-2 text-gray-400 text-sm">OR</span>
+              <div className="flex-1 h-px bg-gray-300"></div>
+            </div>
+
+            <button
+              onClick={() =>
+                signIn("google", {
+                  callbackUrl: "/",
+                })
+              }
+              className="w-full mt-3 py-2 border border-gray-300 flex items-center justify-center gap-2 hover:bg-gray-100 transition">
+              <img
+                src="https://developers.google.com/identity/images/g-logo.png"
+                className="w-5 h-5"
+              />
+              Continue with Google
             </button>
 
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
             <p className="text-sm mt-4 text-center text-gray-500">
-              Đã có tài khoản?{" "}
+              Do you already have an account?{" "}
               <Link href="/login" className="text-yellow-500 hover:underline">
-                Đăng nhập
+                Login
               </Link>
             </p>
           </div>
         </div>
 
-        {/* KHỐI VÀNG (ĐÈ LÊN) */}
+        {/* KHỐI VÀNG */}
         <div className="absolute left-[80px] top-[-50px] w-[400px] h-[600px] bg-yellow-500 text-white shadow-2xl flex flex-col justify-between p-10 z-10">
-          {/* LOGO */}
-          <div className="text-4xl">✨</div>
+          <div>
+            <Store size={40} />
+          </div>
 
-          {/* TEXT */}
           <div>
             <h1 className="text-3xl font-bold mb-4">Create account</h1>
             <p className="text-sm opacity-90">
@@ -95,7 +204,6 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* IMAGE */}
           <Image
             src="/Ecommerce-web-page-cuate.png"
             alt="banner"

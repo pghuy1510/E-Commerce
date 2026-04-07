@@ -6,6 +6,8 @@ import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { ShoppingBag } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -58,19 +60,42 @@ export default function LoginPage() {
               </a>
             </div>
 
+            {/* LOGIN THƯỜNG */}
             <button
               onClick={handleLogin}
               className="w-full bg-yellow-500 text-white py-2 font-semibold hover:bg-yellow-600 transition">
               LOGIN
             </button>
 
+            {/* --- HOẶC --- */}
+            <div className="flex items-center my-4">
+              <div className="flex-1 h-px bg-gray-300"></div>
+              <span className="px-2 text-gray-400 text-sm">OR</span>
+              <div className="flex-1 h-px bg-gray-300"></div>
+            </div>
+
+            {/* LOGIN GOOGLE */}
+            <button
+              onClick={() =>
+                signIn("google", {
+                  callbackUrl: "/", // 👈 login xong về trang chủ
+                })
+              }
+              className="w-full py-2 border border-gray-300 flex items-center justify-center gap-2 hover:bg-gray-100 transition">
+              <img
+                src="https://developers.google.com/identity/images/g-logo.png"
+                className="w-5 h-5"
+              />
+              Continue with Google
+            </button>
+
             {/* LINK SANG REGISTER */}
             <p className="text-sm mt-4 text-center text-gray-500">
-              Chưa có tài khoản?{" "}
+              Don't have an account yet?{" "}
               <Link
                 href="/register"
                 className="text-yellow-500 hover:underline">
-                Đăng ký
+                Sign up
               </Link>
             </p>
           </div>
@@ -78,10 +103,10 @@ export default function LoginPage() {
 
         {/* KHỐI VÀNG */}
         <div className="absolute left-[80px] top-[-50px] w-[400px] h-[600px] bg-yellow-500 text-white shadow-2xl flex flex-col justify-between p-10 z-10">
-          {/* LOGO */}
-          <div className="text-4xl">✨</div>
+          <div className="text-white">
+            <ShoppingBag size={40} />
+          </div>
 
-          {/* TEXT */}
           <div>
             <h1 className="text-3xl font-bold mb-4">Welcome back</h1>
             <p className="text-sm opacity-90">
@@ -89,7 +114,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* IMAGE */}
           <Image
             src="/Online-Groceries-cuate.png"
             alt="banner"
