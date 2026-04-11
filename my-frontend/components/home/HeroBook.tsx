@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function HeroBook() {
   return (
-    <section className="relative w-full h-[650px] overflow-hidden">
+    <section className="relative w-full h-full overflow-hidden">
       {/* BACKGROUND */}
       <div className="absolute inset-0">
         <Image
@@ -22,7 +22,7 @@ export default function HeroBook() {
       <div className="absolute right-0 top-0 w-[45%] h-full bg-white/20 backdrop-blur-md clip-slant z-10" />
 
       {/* CONTENT */}
-      <div className="relative z-20 max-w-7xl mx-auto h-full flex items-center px-6">
+      <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center px-6">
         <div className="grid md:grid-cols-2 gap-10 items-center w-full">
           {/* LEFT */}
           <div className="text-white pl-24">
@@ -45,34 +45,15 @@ export default function HeroBook() {
             </h1>
 
             <p className="text-gray-200 mb-6">
-              Sed ac arcu sed felis vulputate molestie.
+              Thousands of books. One perfect choice for you.
             </p>
 
-            {/* BUTTONS */}
             <div className="flex gap-4">
-              {/* SHOP NOW */}
-              <button
-                className="
-                px-6 py-3 rounded-full
-                bg-white text-black
-                transition-all duration-300 ease-in-out
-                hover:bg-orange-400 hover:text-white
-                hover:scale-105 hover:shadow-lg
-                active:scale-95
-              ">
+              <button className="px-6 py-3 rounded-full bg-white text-black hover:bg-orange-400 hover:text-white transition">
                 Shop Now →
               </button>
 
-              {/* VIEW ALL BOOKS */}
-              <button
-                className="
-                px-6 py-3 rounded-full
-                bg-orange-400 text-white
-                transition-all duration-300 ease-in-out
-                hover:bg-white hover:text-black
-                hover:scale-105 hover:shadow-lg
-                active:scale-95
-              ">
+              <button className="px-6 py-3 rounded-full bg-orange-400 text-white hover:bg-white hover:text-black transition">
                 View All Books →
               </button>
             </div>
@@ -85,8 +66,7 @@ export default function HeroBook() {
               alt=""
               width={430}
               height={480}
-              className="relative z-20 object-contain animate-float translate-x-20"
-              style={{ animationDuration: "4s" }}
+              className="relative z-10 object-contain animate-float-x"
             />
 
             <Image
@@ -94,7 +74,7 @@ export default function HeroBook() {
               alt=""
               width={300}
               height={300}
-              className="absolute right-[-300px] top-20 animate-float"
+              className="absolute right-[-220px] top-20 animate-float"
               style={{ animationDelay: "1s" }}
             />
           </div>
@@ -107,8 +87,7 @@ export default function HeroBook() {
         alt=""
         width={350}
         height={400}
-        className="absolute left-10 bottom-[-60px] z-20 animate-float"
-        style={{ animationDuration: "4s" }}
+        className="absolute left-10 bottom-[-60px] z-10 animate-float"
       />
     </section>
   );

@@ -23,7 +23,7 @@ export default function Header() {
       <div className="flex items-center justify-between px-6 py-4 border-b">
         {/* Logo */}
         <div className="text-2xl font-bold flex items-center gap-2">
-          📚 <span>Ecommerce</span>
+          📚 <span>E-Commerce</span>
         </div>
 
         {/* Menu */}

@@ -38,6 +38,17 @@ body {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+@keyframes floatX {
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(30px); }
+  100% { transform: translateX(0px); }
+}
+
+.animate-float-x {
+  animation: floatX 4s ease-in-out infinite;
+}
+
 .underline-custom {
   position: relative;
   display: inline-block;
