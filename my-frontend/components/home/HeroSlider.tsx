@@ -12,9 +12,10 @@ import HeroBook from "./HeroBook";
 import HeroVideo from "./HeroShoe";
 import HeroClothes from "./HeroClothes";
 import HeroPhone from "./HeroPhone";
+import HeroMouse from "./HeroMouse";
+import HeroComputer from "./HeroComputer";
 
 export default function HeroSlider() {
-  const banners = ["/img/book1.jpg", "/img/book2.jpg", "/img/book3.png"];
 
   return (
     <div className="w-full h-[650px] overflow-hidden bg-black">
@@ -49,26 +50,15 @@ export default function HeroSlider() {
           <HeroPhone />
         </SwiperSlide>
 
-        {/* Slide 3+ */}
-        {banners.map((img, index) => (
-          <SwiperSlide
-            key={index}
-            className="!relative !h-full overflow-hidden">
-            <div className="relative w-full h-full">
-              <Image src={img} alt="" fill className="object-cover" />
+        {/* Slide 5: Mouse */}
+        <SwiperSlide className="!relative !h-full overflow-hidden">
+          <HeroMouse />
+        </SwiperSlide>
 
-              <div className="absolute inset-0 bg-black/40" />
-
-              <div className="absolute inset-0 flex flex-col justify-center items-start px-10 text-white z-10">
-                <h1 className="text-5xl font-bold mb-4">Big Sale</h1>
-                <p className="mb-4">Up to 70% Off</p>
-                <button className="bg-orange-400 px-6 py-3 rounded-full">
-                  Shop Now
-                </button>
-              </div>
-            </div>
-          </SwiperSlide>
-        ))}
+        {/* Slide 6: Computer */}
+        <SwiperSlide className="!relative !h-full overflow-hidden">
+          <HeroComputer />
+        </SwiperSlide>
       </Swiper>
     </div>
   );

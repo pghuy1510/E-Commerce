@@ -49,12 +49,51 @@ export default function HeroBook() {
             </p>
 
             <div className="flex gap-4">
-              <button className="px-6 py-3 rounded-full bg-white text-black hover:bg-orange-400 hover:text-white transition">
-                Shop Now →
+              <button
+                className="
+                  relative overflow-hidden
+                  px-6 py-3 rounded-full
+                  bg-white text-black
+                  transition-all duration-300
+                  group
+                ">
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
+                  Shop Now →
+                </span>
+
+                {/* nền chạy từ phải sang trái */}
+                <span
+                  className="
+                    absolute left-0 top-0 h-full w-0
+                    bg-orange-400
+                    transition-all duration-300
+                    group-hover:w-full
+                    z-0
+                  "
+                />
               </button>
 
-              <button className="px-6 py-3 rounded-full bg-orange-400 text-white hover:bg-white hover:text-black transition">
-                View All Books →
+              <button
+                className="
+                  relative overflow-hidden
+                  px-6 py-3 rounded-full
+                  bg-orange-400 text-white
+                  transition-all duration-300
+                  group
+                ">
+                <span className="relative z-10 group-hover:text-black transition-colors duration-300">
+                  View All Books →
+                </span>
+
+                <span
+                  className="
+                    absolute left-0 top-0 h-full w-0
+                    bg-white
+                    transition-all duration-300
+                    group-hover:w-full
+                    z-0
+                  "
+                />
               </button>
             </div>
           </div>

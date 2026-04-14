@@ -1,5 +1,7 @@
 import Header from "@/components/layout/Header";
 import HeroSlider from "@/components/home/HeroSlider";
+import ServiceHighlight from "@/components/home/ServiceHighlight";
+import FeaturedBook from "@/components/home/FeaturedBook";
 
 export default function Home() {
   return (
@@ -9,6 +11,13 @@ export default function Home() {
 
       {/* HERO SLIDER */}
       <HeroSlider />
+
+      {/* SERVICE HIGHLIGHTS */}
+      <ServiceHighlight />
+
+      {/* FEATURED BOOKS */}
+      <FeaturedBook />
+
     </main>
   );
 }
