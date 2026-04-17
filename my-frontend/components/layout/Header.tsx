@@ -39,7 +39,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="w-full">
+    <header className="w-full sticky top-0 z-50 bg-white shadow-md">
       {/* TOP BAR */}
       <div className="bg-gray-100 text-sm py-2 px-10 flex justify-between items-center">
         <div className="flex gap-6 text-gray-600">

@@ -7,7 +7,7 @@ import { Autoplay } from "swiper/modules";
 
 import "swiper/css";
 
-export default function FeaturedBooks() {
+export default function TopSellingProducts() {
   const products = [
     {
       id: 1,
@@ -54,7 +54,7 @@ export default function FeaturedBooks() {
       price: 30,
       author: "Alexander",
       image: "/books/book6.jpg",
-    }
+    },
   ];
 
   return (
@@ -62,7 +62,7 @@ export default function FeaturedBooks() {
       <div className="w-full max-w-7xl px-4 md:px-6">
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Featured Books</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Top Selling Products</h2>
 
           <button className="relative overflow-hidden bg-[#eba07a] text-yellow-150 px-5 py-2 rounded-full text-sm group">
             <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
