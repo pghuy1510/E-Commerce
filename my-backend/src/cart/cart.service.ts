@@ -21,13 +21,18 @@ export class CartService {
 
   // 🛒 Lấy cart
   async getCart(userId: string) {
+    const userIdNum = Number(userId);
+    if (!Number.isFinite(userIdNum)) {
+      throw new BadRequestException('Invalid userId');
+    }
+
     let cart = await this.cartRepo.findOne({
-      where: { userId },
-      relations: ['items', 'items.product'], // 🔥 FIX
+      where: { user: { id: userIdNum } },
+      relations: ['items', 'items.product'],
     });
 
     if (!cart) {
-      cart = this.cartRepo.create({ userId, items: [] });
+      cart = this.cartRepo.create({ user: { id: userIdNum }, items: [] });
       await this.cartRepo.save(cart);
     }
 

@@ -58,6 +58,18 @@ export default function Header() {
     setLocalUsername(null);
   }, []);
 
+  useEffect(() => {
+    if (!session?.backendAccessToken) {
+      return;
+    }
+
+    Cookies.set("token", session.backendAccessToken);
+
+    const name = session.user?.name || session.user?.email || "google-user";
+    localStorage.setItem("username", name);
+    setLocalUsername(name);
+  }, [session]);
+
   const displayName = session?.user?.name || localUsername;
 
   const handleLogout = async () => {
