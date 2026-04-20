@@ -6,21 +6,29 @@ import {
   ShoppingCart,
   ShoppingBag,
   ChevronDown,
-  Phone
+  Phone,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { FaFacebook } from "react-icons/fa";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { User } from "lucide-react";
 
 export default function Header() {
   const [lang, setLang] = useState("ENGLISH");
   const [currency, setCurrency] = useState("USD");
+  const [localUsername, setLocalUsername] = useState<string | null>(null);
 
   const [openLang, setOpenLang] = useState(false);
   const [openCurrency, setOpenCurrency] = useState(false);
 
   const langRef = useRef<HTMLDivElement>(null);
   const currencyRef = useRef<HTMLDivElement>(null);
+
+  const { data: session } = useSession();
+  const router = useRouter();
 
   // click ngoài để đóng
   useEffect(() => {
@@ -37,6 +45,33 @@ export default function Header() {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    const storedUsername = localStorage.getItem("username");
+
+    if (token && storedUsername) {
+      setLocalUsername(storedUsername);
+      return;
+    }
+
+    setLocalUsername(null);
+  }, []);
+
+  const displayName = session?.user?.name || localUsername;
+
+  const handleLogout = async () => {
+    Cookies.remove("token");
+    localStorage.removeItem("username");
+    setLocalUsername(null);
+
+    if (session) {
+      await signOut({ callbackUrl: "/login" });
+      return;
+    }
+
+    router.push("/login");
+  };
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white shadow-md">
@@ -161,9 +196,42 @@ export default function Header() {
           </div>
 
           {/* LOGIN */}
-          <Link href="/login" className="hover:text-yellow-600 cursor-pointer">
-            LOG IN
-          </Link>
+          {displayName ? (
+            <div className="relative group cursor-pointer">
+              <div className="flex items-center gap-2 hover:text-yellow-600">
+                <User className="w-5 h-5" />
+                <span className="font-medium">{displayName}</span>
+                <ChevronDown size={16} />
+              </div>
+
+              {/* DROPDOWN */}
+              <div className="absolute right-0 mt-3 w-40 bg-white shadow-lg rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <Link
+                  href="/profile"
+                  className="block px-4 py-2 hover:text-yellow-600">
+                  Profile
+                </Link>
+
+                <Link
+                  href="/orders"
+                  className="block px-4 py-2 hover:text-yellow-600">
+                  Orders
+                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 hover:text-red-500">
+                  Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="hover:text-yellow-600 cursor-pointer">
+              LOG IN
+            </Link>
+          )}
         </div>
       </div>
 

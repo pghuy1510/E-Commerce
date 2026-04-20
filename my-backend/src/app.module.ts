@@ -29,7 +29,7 @@ import { TrackingModule } from './tracking/tracking.module';
         password: config.get('DB_PASSWORD') || '123456',
         database: config.get('DB_NAME') || 'test',
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: false,
         logging: true,
       }),
     }),

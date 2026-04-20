@@ -3,7 +3,9 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Cart } from '../../cart/cart.entity';
 
 @Entity('users')
 export class User {
@@ -24,4 +26,7 @@ export class User {
 
   @CreateDateColumn()
   created_at!: Date;
+
+  @OneToMany(() => Cart, (cart) => cart.user)
+  carts!: Cart[];
 }
