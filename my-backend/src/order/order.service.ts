@@ -60,7 +60,9 @@ export class OrderService {
     }
 
     const order = this.orderRepo.create({
-      userId,
+      user: {
+        id: Number(userId),
+      },
       totalAmount: total,
       items: orderItems,
     });
@@ -77,7 +79,7 @@ export class OrderService {
   // 📜 Lịch sử đơn
   async getMyOrders(userId: string) {
     return this.orderRepo.find({
-      where: { userId },
+      where: { user: { id: Number(userId) } },
       relations: ['items'],
       order: { id: 'DESC' },
     });
@@ -86,7 +88,7 @@ export class OrderService {
   // 🔍 Chi tiết đơn
   async getOrderById(userId: string, orderId: number) {
     const order = await this.orderRepo.findOne({
-      where: { id: orderId, userId },
+      where: { id: orderId, user: { id: Number(userId) } },
       relations: ['items'],
     });
 

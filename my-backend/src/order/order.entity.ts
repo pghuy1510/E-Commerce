@@ -1,13 +1,22 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { OrderItem } from './order-item.entity';
+import { User } from '../users/entities/user.entity';
 
 @Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
-  userId!: string; 
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user!: User;
 
   @Column('decimal', {
     precision: 10,

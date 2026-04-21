@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PaymentModule } from './payment/payment.module';
 import { TrackingModule } from './tracking/tracking.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { TrackingModule } from './tracking/tracking.module';
         port: Number(config.get('DB_PORT')) || 5432,
         username: config.get('DB_USERNAME') || 'postgres',
         password: config.get('DB_PASSWORD') || '123456',
-        database: config.get('DB_NAME') || 'test',
+        database: config.get('DB_NAME') || 'ecommerce',
         autoLoadEntities: true,
         synchronize: false,
         logging: true,
@@ -42,6 +43,7 @@ import { TrackingModule } from './tracking/tracking.module';
     UsersModule,
     PaymentModule,
     TrackingModule,
+    WishlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],
