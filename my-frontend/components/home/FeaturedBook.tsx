@@ -4,58 +4,63 @@ import Image from "next/image";
 import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
+import { useState, useEffect } from "react";
+import { productAPI, type Product } from "@/lib/api";
 
 import "swiper/css";
 
 export default function FeaturedBooks() {
-  const products = [
-    {
-      id: 1,
-      title: "How Deal With Very Bad BOOK",
-      price: 39,
-      author: "Esther",
-      image: "/books/book1.jpg",
-    },
-    {
-      id: 2,
-      title: "The Hidden Mystery Behind",
-      price: 29,
-      author: "Hawkins",
-      image: "/books/book2.jpg",
-    },
-    {
-      id: 3,
-      title: "Qple GPad With Retina Sisplay",
-      price: 19,
-      author: "Albert",
-      image: "/books/book3.jpg",
-      discount: "-12%",
-    },
-    {
-      id: 4,
-      title: "Flovely And Unicorn Erna",
-      price: 30,
-      author: "Alexander",
-      image: "/books/book4.jpg",
-    },
-    {
-      id: 5,
-      title: "Simple Things You To Save BOOK",
-      price: 30,
-      oldPrice: 39.99,
-      author: "Wilson",
-      image: "/books/book5.jpg",
-      hot: true,
-      discount: "-30%",
-    },
-    {
-      id: 6,
-      title: "Flovely ",
-      price: 30,
-      author: "Alexander",
-      image: "/books/book6.jpg",
-    }
-  ];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await productAPI.getAll();
+        // Limit to 6 featured products
+        setProducts(data.slice(0, 6));
+        setError(null);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load products",
+        );
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="w-full flex justify-center mt-16">
+        <div className="w-full max-w-7xl px-4 md:px-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600"></div>
+              <p className="mt-4 text-gray-500">Loading featured books...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="w-full flex justify-center mt-16">
+        <div className="w-full max-w-7xl px-4 md:px-6">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            Error loading featured books: {error}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="w-full flex justify-center mt-16">
@@ -94,35 +99,22 @@ export default function FeaturedBooks() {
               <div className="group">
                 {/* CARD */}
                 <div className="bg-[#eee0d9] rounded-xl p-4 relative group overflow-hidden">
-                  {/* DISCOUNT */}
-                  {item.discount && (
-                    <span className="absolute top-3 left-3 bg-orange-400 text-white text-xs px-2 py-1 rounded z-10">
-                      {item.discount}
-                    </span>
-                  )}
-
-                  {/* HOT */}
-                  {item.hot && (
-                    <span className="absolute top-3 left-3 bg-black text-white text-xs px-2 py-1 rounded z-10">
-                      Hot
-                    </span>
-                  )}
-
                   {/* IMAGE */}
                   <div className="flex justify-center relative">
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      width={120}
-                      height={160}
-                      className="object-contain group-hover:scale-105 transition duration-300"
-                    />
+                    <div className="w-[120px] h-[160px] bg-gray-200 rounded flex items-center justify-center overflow-hidden">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">No Image</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {item.name.substring(0, 15)}...
+                        </p>
+                      </div>
+                    </div>
 
                     {/* HOVER ACTIONS */}
                     <div className="absolute right-1 top-3 flex flex-col gap-2 opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                       {/* Wishlist */}
                       <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
-                        <Heart size={14} className="text-gray-600 " />
+                        <Heart size={14} className="text-gray-600" />
                       </button>
 
                       {/* Add to cart */}
@@ -139,10 +131,12 @@ export default function FeaturedBooks() {
                 </div>
                 {/* INFO */}
                 <div className="mt-4 space-y-1">
-                  <p className="text-xs text-gray-500">Design Low Book</p>
+                  <p className="text-xs text-gray-500">
+                    {item.category?.name || "Books"}
+                  </p>
 
-                  <h3 className="text-sm font-semibold text-gray-800 leading-snug">
-                    {item.title}
+                  <h3 className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2">
+                    {item.name}
                   </h3>
 
                   {/* PRICE */}
@@ -150,17 +144,13 @@ export default function FeaturedBooks() {
                     <span className="font-semibold text-gray-900">
                       ${item.price.toFixed(2)}
                     </span>
-
-                    {item.oldPrice && (
-                      <span className="text-sm text-gray-400 line-through">
-                        ${item.oldPrice}
-                      </span>
-                    )}
                   </div>
 
-                  {/* AUTHOR + RATING */}
+                  {/* RATING */}
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-500">{item.author}</span>
+                    <span className="text-xs text-gray-500">
+                      In Stock: {item.stock}
+                    </span>
 
                     <div className="flex gap-1 text-orange-400">
                       {[...Array(5)].map((_, i) => (
@@ -170,10 +160,12 @@ export default function FeaturedBooks() {
                   </div>
 
                   {/* BUTTON */}
-                  <button className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
+                  <button
+                    disabled={item.stock <= 0}
+                    className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group disabled:opacity-50 disabled:cursor-not-allowed">
                     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-                      Add To Cart
+                      {item.stock > 0 ? "Add To Cart" : "Out of Stock"}
                     </span>
                   </button>
                 </div>

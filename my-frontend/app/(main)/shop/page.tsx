@@ -1,58 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-
-/* TYPE */
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  rating: number;
-  category: string;
-  stock: boolean;
-  img: string;
-};
-
-/* DATA */
-const productsData: Product[] = [
-  {
-    id: 1,
-    name: "Simple Things You Save BOOK",
-    price: 30,
-    rating: 5,
-    category: "book",
-    stock: true,
-    img: "/img/book1.png",
-  },
-  {
-    id: 2,
-    name: "How Deal With Very Bad BOOK",
-    price: 39,
-    rating: 4,
-    category: "book",
-    stock: true,
-    img: "/img/book2.png",
-  },
-  {
-    id: 3,
-    name: "The Hidden Mystery Behind",
-    price: 50,
-    rating: 3,
-    category: "story",
-    stock: true,
-    img: "/img/book3.png",
-  },
-  {
-    id: 4,
-    name: "Flovely And Unicom Erna",
-    price: 19,
-    rating: 2,
-    category: "kids",
-    stock: false,
-    img: "/img/book4.png",
-  },
-];
+import { useState, useEffect } from "react";
+import { productAPI, type Product } from "@/lib/api";
 
 /* TITLE */
 const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
@@ -66,12 +16,35 @@ const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function ShopPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState<string>("");
   const [inStock, setInStock] = useState<boolean>(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [price, setPrice] = useState<[number, number]>([0, 100]);
+  const [price, setPrice] = useState<[number, number]>([0, 1000]);
   const [sort, setSort] = useState<string>("default");
   const [ratingFilter, setRatingFilter] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await productAPI.getAll();
+        setProducts(data);
+        setError(null);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load products",
+        );
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const toggleCategory = (cat: string) => {
     setCategories((prev) =>
@@ -79,28 +52,34 @@ export default function ShopPage() {
     );
   };
 
-  let filtered = productsData.filter((item) => {
+  // Get unique categories from products
+  const uniqueCategories = [
+    ...new Set(products.map((p) => p.category?.name).filter(Boolean)),
+  ];
+
+  let filtered = products.filter((item) => {
     return (
       item.name.toLowerCase().includes(search.toLowerCase()) &&
-      (inStock ? item.stock : true) &&
-      (categories.length ? categories.includes(item.category) : true) &&
+      (inStock ? item.stock > 0 : true) &&
+      (categories.length
+        ? categories.includes(item.category?.name || "")
+        : true) &&
       item.price >= price[0] &&
-      item.price <= price[1] &&
-      (ratingFilter ? item.rating >= ratingFilter : true)
+      item.price <= price[1]
     );
   });
 
   if (sort === "price-asc") filtered.sort((a, b) => a.price - b.price);
   if (sort === "price-desc") filtered.sort((a, b) => b.price - a.price);
 
-  const renderStars = (num: number) => "⭐".repeat(num);
+  const renderStars = (num: number) => "⭐".repeat(Math.min(num, 5));
 
   return (
     <div className="w-full">
       {/* BANNER */}
       <div className="bg-gradient-to-r from-yellow-600 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">Shop Default</h1>
-        <p className="text-gray-500 mt-2">Home &gt; Shop Default</p>
+        <h1 className="text-4xl font-bold text-gray-800">Shop</h1>
+        <p className="text-gray-500 mt-2">Home &gt; Shop</p>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-4 gap-10">
@@ -118,21 +97,23 @@ export default function ShopPage() {
           </div>
 
           {/* CATEGORY */}
-          <div className="pb-5 border-b border-gray-300">
-            <SidebarTitle>Categories</SidebarTitle>
-            <div className="space-y-2">
-              {["book", "story", "kids"].map((cat) => (
-                <label key={cat} className="flex gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    onChange={() => toggleCategory(cat)}
-                    className="accent-yellow-600"
-                  />
-                  {cat}
-                </label>
-              ))}
+          {uniqueCategories.length > 0 && (
+            <div className="pb-5 border-b border-gray-300">
+              <SidebarTitle>Categories</SidebarTitle>
+              <div className="space-y-2">
+                {uniqueCategories.map((cat) => (
+                  <label key={cat} className="flex gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      onChange={() => toggleCategory(cat)}
+                      className="accent-yellow-600"
+                    />
+                    {cat}
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* STOCK */}
           <div className="pb-5 border-b border-gray-300">
@@ -154,7 +135,7 @@ export default function ShopPage() {
             <input
               type="range"
               min={0}
-              max={100}
+              max={1000}
               value={price[1]}
               onChange={(e) => setPrice([0, Number(e.target.value)])}
               className="w-full accent-yellow-600"
@@ -163,76 +144,94 @@ export default function ShopPage() {
               ${price[0]} - ${price[1]}
             </p>
           </div>
-
-          {/* REVIEW */}
-          <div>
-            <SidebarTitle>By Review</SidebarTitle>
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((star) => (
-                <label key={star} className="flex gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="rating"
-                    onChange={() => setRatingFilter(star)}
-                    className="accent-yellow-600"
-                  />
-                  <span className="text-yellow-500">{renderStars(star)}</span>
-                  <span className="text-gray-500 text-sm">& up</span>
-                </label>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setRatingFilter(0)}
-              className="text-sm text-gray-400 mt-3 hover:text-yellow-600">
-              Clear filter
-            </button>
-          </div>
         </div>
 
         {/* PRODUCTS */}
         <div className="lg:col-span-3">
-          <div className="flex justify-between items-center mb-6 border border-gray-300 p-4 rounded-md">
-            <p className="text-gray-500">Showing {filtered.length} products</p>
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+              {error}
+            </div>
+          )}
 
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="border border-gray-300 px-3 py-2 rounded outline-none focus:border-yellow-500">
-              <option value="default">Default</option>
-              <option value="price-asc">Price ↑</option>
-              <option value="price-desc">Price ↓</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {filtered.map((item) => (
-              <div
-                key={item.id}
-                className="bg-[#f5eaea] border border-gray-300 p-4 rounded-lg text-center hover:-translate-y-1 hover:shadow-md transition duration-300">
-                <Image
-                  src={item.img}
-                  alt={item.name}
-                  width={150}
-                  height={200}
-                  className="mx-auto"
-                />
-
-                <h3 className="mt-3 font-medium">{item.name}</h3>
-
-                <p className="text-yellow-500 text-sm">
-                  {renderStars(item.rating)}
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600"></div>
+                <p className="mt-4 text-gray-500">Loading products...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-6 border border-gray-300 p-4 rounded-md">
+                <p className="text-gray-500">
+                  Showing {filtered.length} products
                 </p>
 
-                <p className="text-yellow-600 font-semibold">${item.price}</p>
-
-                <button className="mt-3 w-full relative overflow-hidden bg-[#eba07a] text-white py-2 rounded-full group">
-                  <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
-                  <span className="relative z-10">Add To Cart</span>
-                </button>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="border border-gray-300 px-3 py-2 rounded outline-none focus:border-yellow-500">
+                  <option value="default">Default</option>
+                  <option value="price-asc">Price ↑</option>
+                  <option value="price-desc">Price ↓</option>
+                </select>
               </div>
-            ))}
-          </div>
+
+              {filtered.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">
+                    No products found matching your filters
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  {filtered.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-[#f5eaea] border border-gray-300 p-4 rounded-lg text-center hover:-translate-y-1 hover:shadow-md transition duration-300">
+                      <div className="relative w-full h-48 bg-gray-200 rounded flex items-center justify-center mb-3">
+                        <p className="text-gray-400">No Image</p>
+                      </div>
+
+                      <h3 className="mt-3 font-medium line-clamp-2">
+                        {item.name}
+                      </h3>
+
+                      <p className="text-gray-600 text-xs mt-1 line-clamp-2">
+                        {item.description}
+                      </p>
+
+                      <p className="text-yellow-600 font-semibold mt-2">
+                        ${item.price.toFixed(2)}
+                      </p>
+
+                      <p className="text-sm text-gray-500 mt-1">
+                        {item.category?.name || "N/A"}
+                      </p>
+
+                      <p className="text-sm text-gray-500 mt-1">
+                        {item.stock > 0 ? (
+                          <span className="text-green-600">
+                            In Stock ({item.stock})
+                          </span>
+                        ) : (
+                          <span className="text-red-600">Out of Stock</span>
+                        )}
+                      </p>
+
+                      <button
+                        disabled={item.stock <= 0}
+                        className="mt-3 w-full relative overflow-hidden bg-[#eba07a] text-white py-2 rounded-full group disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
+                        <span className="relative z-10">Add To Cart</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
