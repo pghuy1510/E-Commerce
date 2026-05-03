@@ -27,8 +27,11 @@ export default function FeaturedBooks() {
     try {
       await cartAPI.add(productId);
       alert("Added to cart 🛒");
-    } catch (err) {
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Add to cart failed";
       console.error(err);
+      alert(message);
     }
   };
 

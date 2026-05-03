@@ -63,7 +63,7 @@ export default function Header() {
       return;
     }
 
-    Cookies.set("token", session.backendAccessToken);
+    Cookies.set("token", session.backendAccessToken, { path: "/" });
 
     const name = session.user?.name || session.user?.email || "google-user";
     localStorage.setItem("username", name);
@@ -73,7 +73,7 @@ export default function Header() {
   const displayName = session?.user?.name || localUsername;
 
   const handleLogout = async () => {
-    Cookies.remove("token");
+    Cookies.remove("token", { path: "/" });
     localStorage.removeItem("username");
     setLocalUsername(null);
 

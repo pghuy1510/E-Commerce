@@ -17,7 +17,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       const res = await login({ username, password });
-      Cookies.set("token", res.data.access_token);
+      Cookies.set("token", res.data.access_token, { path: "/" });
       localStorage.setItem("username", username);
       router.push("/");
     } catch (err) {
