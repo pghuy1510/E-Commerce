@@ -116,7 +116,7 @@ export default function LoginPage() {
           </div>
 
           <Image
-            src="/Online-Groceries-cuate.png"
+            src="/img/Online-Groceries-cuate.png"
             alt="banner"
             width={400}
             height={300}

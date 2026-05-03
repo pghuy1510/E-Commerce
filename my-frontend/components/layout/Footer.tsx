@@ -41,8 +41,8 @@ export default function Footer() {
           <div className="flex items-start gap-2 text-sm">
             <MapPin size={16} />
             <span>
-              79 Sleepy Hollow St. <br />
-              Jamaica, New York 1432
+              Yet Kieu Commune. <br />
+              Hai Phong city
             </span>
           </div>
         </div>

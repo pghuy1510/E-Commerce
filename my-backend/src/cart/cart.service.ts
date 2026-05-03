@@ -32,9 +32,14 @@ export class CartService {
     });
 
     if (!cart) {
-      cart = this.cartRepo.create({ user: { id: userIdNum }, items: [] });
+      cart = this.cartRepo.create({
+        user: { id: userIdNum },
+        items: [], 
+      });
       await this.cartRepo.save(cart);
     }
+
+    if (!cart.items) cart.items = [];
 
     return cart;
   }

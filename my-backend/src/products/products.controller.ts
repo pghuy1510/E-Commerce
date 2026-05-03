@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto/create-product.dto';
@@ -25,16 +26,31 @@ export class ProductsController {
     return this.productService.findAll();
   }
 
+  @Get('category/:name')
+  findByCategory(@Param('name') name: string) {
+    return this.productService.findByCategory(name);
+  }
+
+  @Get('top-selling')
+  async getTopSelling() {
+    return this.productService.getTopSelling(10);
+  }
+  
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.productService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.productService.findOne(id);
   }
+
   @Patch(':id')
-  update(@Param('id') id: number, @Body() body: UpdateProductDto) {
-    return this.productService.update(+id, body);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateProductDto,
+  ) {
+    return this.productService.update(id, body);
   }
+
   @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.productService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.productService.remove(id);
   }
 }

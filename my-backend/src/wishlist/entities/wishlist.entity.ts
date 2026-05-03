@@ -9,7 +9,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/products.entity';
 
-@Entity('wishlist_items')
+@Entity('wishlist')
 @Unique(['user', 'product']) // 
 export class WishlistItem {
   @PrimaryGeneratedColumn()

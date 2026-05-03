@@ -5,69 +5,50 @@ import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import { useState, useEffect } from "react";
-import { productAPI, type Product } from "@/lib/api";
+import { productAPI, type Product, wishlistAPI, cartAPI } from "@/lib/api";
 
 import "swiper/css";
 
 export default function FeaturedBooks() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const userId = 1;
+
+  const handleWishlist = async (productId: number) => {
+    try {
+      await wishlistAPI.toggle(userId, productId);
+      alert("Đã thêm vào wishlist ");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddToCart = async (productId: number) => {
+    try {
+      await cartAPI.add(productId);
+      alert("Added to cart 🛒");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const data = await productAPI.getAll();
-        // Limit to 6 featured products
-        setProducts(data.slice(0, 6));
-        setError(null);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load products",
-        );
-        console.error("Error fetching products:", err);
-      } finally {
-        setLoading(false);
-      }
+    const fetchData = async () => {
+      const data = await productAPI.getAll();
+      setProducts(data.slice(0, 6));
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
-
-  if (loading) {
-    return (
-      <section className="w-full flex justify-center mt-16">
-        <div className="w-full max-w-7xl px-4 md:px-6">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600"></div>
-              <p className="mt-4 text-gray-500">Loading featured books...</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="w-full flex justify-center mt-16">
-        <div className="w-full max-w-7xl px-4 md:px-6">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            Error loading featured books: {error}
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="w-full flex justify-center mt-16">
-      <div className="w-full max-w-7xl px-4 md:px-6">
+      <div className="w-full max-w-[1370px] px-6 md:px-10">
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Featured Books</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Featured Products
+          </h2>
 
           <button className="relative overflow-hidden bg-[#eba07a] text-yellow-150 px-5 py-2 rounded-full text-sm group">
             <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
@@ -101,41 +82,40 @@ export default function FeaturedBooks() {
                 <div className="bg-[#eee0d9] rounded-xl p-4 relative group overflow-hidden">
                   {/* IMAGE */}
                   <div className="flex justify-center relative">
-                    <div className="w-[120px] h-[160px] bg-gray-200 rounded flex items-center justify-center overflow-hidden">
-                      <div className="text-center">
-                        <p className="text-xs text-gray-400">No Image</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {item.name.substring(0, 15)}...
-                        </p>
-                      </div>
-                    </div>
+                    <Image
+                      src={item.image || "/placeholder.png"}
+                      alt={item.name}
+                      width={120}
+                      height={160}
+                      className="object-contain group-hover:scale-105 transition duration-300"
+                    />
 
                     {/* HOVER ACTIONS */}
                     <div className="absolute right-1 top-3 flex flex-col gap-2 opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                      {/* Wishlist */}
-                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
-                        <Heart size={14} className="text-gray-600" />
+                      <button
+                        onClick={() => handleWishlist(item.id)}
+                        className="w-8 h-8 flex items-center justify-center bg-[#f3e4d8] rounded-full shadow hover:bg-yellow-600 transition">
+                        <Heart size={14} className="text-gray-700" />
                       </button>
 
-                      {/* Add to cart */}
-                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
-                        <ShoppingCart size={14} className="text-gray-600" />
+                      <button
+                        onClick={() => handleAddToCart(item.id)}
+                        className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-yellow-600 hover:text-white transition">
+                        <ShoppingCart size={14} />
                       </button>
 
-                      {/* View detail */}
-                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
+                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition">
                         <Eye size={14} className="text-gray-600" />
                       </button>
                     </div>
                   </div>
                 </div>
+
                 {/* INFO */}
                 <div className="mt-4 space-y-1">
-                  <p className="text-xs text-gray-500">
-                    {item.category?.name || "Books"}
-                  </p>
+                  <p className="text-xs text-gray-500">{item.category?.name}</p>
 
-                  <h3 className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2">
+                  <h3 className="text-sm font-semibold text-gray-800 leading-snug">
                     {item.name}
                   </h3>
 
@@ -146,10 +126,10 @@ export default function FeaturedBooks() {
                     </span>
                   </div>
 
-                  {/* RATING */}
+                  {/* STOCK + RATING */}
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-gray-500">
-                      In Stock: {item.stock}
+                      Stock: {item.stock}
                     </span>
 
                     <div className="flex gap-1 text-orange-400">
@@ -160,12 +140,10 @@ export default function FeaturedBooks() {
                   </div>
 
                   {/* BUTTON */}
-                  <button
-                    disabled={item.stock <= 0}
-                    className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
                     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-                      {item.stock > 0 ? "Add To Cart" : "Out of Stock"}
+                      Add To Cart
                     </span>
                   </button>
                 </div>

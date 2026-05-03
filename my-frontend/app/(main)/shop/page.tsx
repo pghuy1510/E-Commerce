@@ -189,28 +189,39 @@ export default function ShopPage() {
                   {filtered.map((item) => (
                     <div
                       key={item.id}
-                      className="bg-[#f5eaea] border border-gray-300 p-4 rounded-lg text-center hover:-translate-y-1 hover:shadow-md transition duration-300">
-                      <div className="relative w-full h-48 bg-gray-200 rounded flex items-center justify-center mb-3">
-                        <p className="text-gray-400">No Image</p>
+                      className="bg-[#f5e6c8] p-4 rounded-lg text-center hover:-translate-y-1 hover:shadow-md transition duration-300">
+                      {/* IMAGE */}
+                      <div className="relative w-full h-48 rounded overflow-hidden mb-3 bg-[#fff3d6]">
+                        <Image
+                          src={item.image || "/placeholder.png"}
+                          alt={item.name}
+                          fill
+                          className="object-contain p-3 transition duration-300 hover:scale-105"
+                        />
                       </div>
 
-                      <h3 className="mt-3 font-medium line-clamp-2">
+                      {/* NAME */}
+                      <h3 className="mt-3 font-medium line-clamp-2 text-gray-800">
                         {item.name}
                       </h3>
 
+                      {/* DESC */}
                       <p className="text-gray-600 text-xs mt-1 line-clamp-2">
                         {item.description}
                       </p>
 
+                      {/* PRICE */}
                       <p className="text-yellow-600 font-semibold mt-2">
                         ${item.price.toFixed(2)}
                       </p>
 
+                      {/* CATEGORY */}
                       <p className="text-sm text-gray-500 mt-1">
                         {item.category?.name || "N/A"}
                       </p>
 
-                      <p className="text-sm text-gray-500 mt-1">
+                      {/* STOCK */}
+                      <p className="text-sm mt-1">
                         {item.stock > 0 ? (
                           <span className="text-green-600">
                             In Stock ({item.stock})
@@ -220,11 +231,14 @@ export default function ShopPage() {
                         )}
                       </p>
 
+                      {/* BUTTON (STYLE MỚI) */}
                       <button
                         disabled={item.stock <= 0}
-                        className="mt-3 w-full relative overflow-hidden bg-[#eba07a] text-white py-2 rounded-full group disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
-                        <span className="relative z-10">Add To Cart</span>
+                        className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
+                        <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
+                          Add To Cart
+                        </span>
                       </button>
                     </div>
                   ))}

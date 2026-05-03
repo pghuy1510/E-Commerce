@@ -205,7 +205,7 @@ export default function RegisterPage() {
           </div>
 
           <Image
-            src="/Ecommerce-web-page-cuate.png"
+            src="/img/Ecommerce-web-page-cuate.png"
             alt="banner"
             width={500}
             height={500}

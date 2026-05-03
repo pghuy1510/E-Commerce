@@ -66,4 +66,35 @@ export class ProductsService {
 
     return this.productRepo.remove(product);
   }
+
+  async findByCategory(categoryName: string) {
+    return this.productRepo
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .where('LOWER(category.name) = LOWER(:name)', {
+        name: categoryName,
+      })
+      .orderBy('product.id', 'DESC') // mới nhất lên đầu
+      .take(10) // limit 10 sp
+      .getMany();
+  }
+  async getTopSelling(limit = 10) {
+    return this.productRepo
+      .createQueryBuilder('product')
+      .leftJoin('order_items', 'oi', 'oi.product_id = product.id')
+      .leftJoinAndSelect('product.category', 'category')
+      .select([
+        'product.id',
+        'product.name',
+        'product.price',
+        'product.image',
+        'category.name',
+      ])
+      .addSelect('COALESCE(SUM(oi.quantity), 0)', 'sold')
+      .groupBy('product.id')
+      .addGroupBy('category.id')
+      .orderBy('sold', 'DESC')
+      .limit(limit)
+      .getRawAndEntities();
+  }
 }

@@ -4,65 +4,48 @@ import Image from "next/image";
 import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
+import { useEffect, useState } from "react";
+import { productAPI } from "@/lib/api";
 
 import "swiper/css";
 
 export default function TopSellingProducts() {
-  const products = [
-    {
-      id: 1,
-      title: "How Deal With Very Bad BOOK",
-      price: 39,
-      author: "Esther",
-      image: "/books/book1.jpg",
-    },
-    {
-      id: 2,
-      title: "The Hidden Mystery Behind",
-      price: 29,
-      author: "Hawkins",
-      image: "/books/book2.jpg",
-    },
-    {
-      id: 3,
-      title: "Qple GPad With Retina Sisplay",
-      price: 19,
-      author: "Albert",
-      image: "/books/book3.jpg",
-      discount: "-12%",
-    },
-    {
-      id: 4,
-      title: "Flovely And Unicorn Erna",
-      price: 30,
-      author: "Alexander",
-      image: "/books/book4.jpg",
-    },
-    {
-      id: 5,
-      title: "Simple Things You To Save BOOK",
-      price: 30,
-      oldPrice: 39.99,
-      author: "Wilson",
-      image: "/books/book5.jpg",
-      hot: true,
-      discount: "-30%",
-    },
-    {
-      id: 6,
-      title: "Flovely ",
-      price: 30,
-      author: "Alexander",
-      image: "/books/book6.jpg",
-    },
-  ];
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await productAPI.getTopSelling();
+
+        // 🔥 MAP DATA từ DB → format UI của bạn
+        const mapped = data.map((p: any) => ({
+          id: p.id,
+          title: p.name, // ✅ map name -> title
+          price: Number(p.price),
+          image: p.image,
+          author: p.category?.name || "Unknown", // fake author
+          oldPrice: null,
+          discount: null,
+          hot: false,
+        }));
+
+        setProducts(mapped);
+      } catch (err) {
+        console.error("Top selling error:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <section className="w-full flex justify-center mt-16">
-      <div className="w-full max-w-7xl px-4 md:px-6">
+      <div className="w-full max-w-[1370px] px-6 md:px-10">
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Top Selling Products</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Top Selling Products
+          </h2>
 
           <button className="relative overflow-hidden bg-[#eba07a] text-yellow-150 px-5 py-2 rounded-full text-sm group">
             <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
@@ -111,7 +94,7 @@ export default function TopSellingProducts() {
                   {/* IMAGE */}
                   <div className="flex justify-center relative">
                     <Image
-                      src={item.image}
+                      src={item.image || "/placeholder.png"}
                       alt={item.title}
                       width={120}
                       height={160}
@@ -120,26 +103,24 @@ export default function TopSellingProducts() {
 
                     {/* HOVER ACTIONS */}
                     <div className="absolute right-1 top-3 flex flex-col gap-2 opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                      {/* Wishlist */}
                       <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
                         <Heart size={14} className="text-gray-600 " />
                       </button>
 
-                      {/* Add to cart */}
                       <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
                         <ShoppingCart size={14} className="text-gray-600" />
                       </button>
 
-                      {/* View detail */}
                       <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
                         <Eye size={14} className="text-gray-600" />
                       </button>
                     </div>
                   </div>
                 </div>
+
                 {/* INFO */}
                 <div className="mt-4 space-y-1">
-                  <p className="text-xs text-gray-500">Design Low Book</p>
+                  <p className="text-xs text-gray-500">{item.author}</p>
 
                   <h3 className="text-sm font-semibold text-gray-800 leading-snug">
                     {item.title}

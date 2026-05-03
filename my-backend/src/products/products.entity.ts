@@ -26,6 +26,9 @@ export class Product {
   @Column()
   stock!: number;
 
+  @Column({ nullable: true })
+  image!: string;
+
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'category_id' })
   category!: Category;
