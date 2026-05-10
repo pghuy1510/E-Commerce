@@ -4,7 +4,7 @@ export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api",
 });
 
-function getBrowserToken(): string | undefined {
+export function getBrowserToken(): string | undefined {
   if (typeof window === "undefined") {
     return undefined;
   }
@@ -27,6 +27,48 @@ function getBrowserToken(): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function requireAuthToken(): string {
+  const token = getBrowserToken();
+  if (token) {
+    return token;
+  }
+
+  const err = new Error("Vui lòng đăng nhập để tiếp tục.");
+  (err as any).code = "AUTH_REQUIRED";
+  throw err;
+}
+
+const CART_UPDATED_EVENT = "cart-updated";
+const WISHLIST_UPDATED_EVENT = "wishlist-updated";
+
+export function emitCartUpdated(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CART_UPDATED_EVENT));
+  }
+}
+
+export function emitWishlistUpdated(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(WISHLIST_UPDATED_EVENT));
+  }
+}
+
+function createDuplicateError(message: string, code: string): Error {
+  const err = new Error(message);
+  (err as any).code = code;
+  return err;
+}
+
+function hasProductIdMatch(item: any, productId: number): boolean {
+  if (item?.product?.id != null) {
+    return item.product.id === productId;
+  }
+  if (item?.productId != null) {
+    return item.productId === productId;
+  }
+  return item?.id === productId;
 }
 
 api.interceptors.request.use((config) => {
@@ -58,6 +100,22 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (typeof window !== "undefined" && error?.response?.status === 401) {
+      try {
+        document.cookie = "token=; Max-Age=0; path=/";
+      } catch {}
+      try {
+        localStorage.removeItem("username");
+      } catch {}
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export interface Product {
   id: number;
@@ -97,7 +155,19 @@ export const productAPI = {
 
 export const wishlistAPI = {
   toggle: async (userId: number, productId: number) => {
-    return api.post(`/wishlist/${userId}/${productId}`);
+    const list = await wishlistAPI.get(userId);
+    const items = Array.isArray(list) ? list : list?.items ?? [];
+    const exists = items.some((item: any) => hasProductIdMatch(item, productId));
+    if (exists) {
+      throw createDuplicateError(
+        "Sản phẩm đã có trong wishlist.",
+        "WISHLIST_DUPLICATE",
+      );
+    }
+
+    const res = await api.post(`/wishlist/${userId}/${productId}`);
+    emitWishlistUpdated();
+    return res;
   },
 
   get: async (userId: number) => {
@@ -106,32 +176,54 @@ export const wishlistAPI = {
   },
 
   remove: async (userId: number, productId: number) => {
-    return api.delete(`/wishlist/${userId}/${productId}`);
+    const res = await api.delete(`/wishlist/${userId}/${productId}`);
+    emitWishlistUpdated();
+    return res;
   },
 };
 
 export const cartAPI = {
   add: async (productId: number, quantity = 1) => {
-    return api.post("/cart/add", {
+    requireAuthToken();
+    const current = await api.get("/cart");
+    const items = current.data?.items ?? [];
+    const exists = items.some((item: any) => hasProductIdMatch(item, productId));
+    if (exists) {
+      throw createDuplicateError(
+        "Sản phẩm đã có trong giỏ hàng.",
+        "CART_DUPLICATE",
+      );
+    }
+
+    const res = await api.post("/cart/add", {
       productId,
       quantity,
     });
+    emitCartUpdated();
+    return res;
   },
 
   get: async () => {
+    requireAuthToken();
     return api.get("/cart");
   },
 
   remove: async (productId: number) => {
-    return api.delete("/cart/remove", {
+    requireAuthToken();
+    const res = await api.delete("/cart/remove", {
       data: { productId },
     });
+    emitCartUpdated();
+    return res;
   },
 
   update: async (productId: number, quantity: number) => {
-    return api.patch("/cart/update", {
+    requireAuthToken();
+    const res = await api.patch("/cart/update", {
       productId,
       quantity,
     });
+    emitCartUpdated();
+    return res;
   },
 };

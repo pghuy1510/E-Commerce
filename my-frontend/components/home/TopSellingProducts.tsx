@@ -5,12 +5,54 @@ import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import { useEffect, useState } from "react";
-import { productAPI } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { productAPI, cartAPI, wishlistAPI } from "@/lib/api";
 
 import "swiper/css";
 
 export default function TopSellingProducts() {
   const [products, setProducts] = useState<any[]>([]);
+  const router = useRouter();
+  const userId = 1;
+
+  const handleWishlist = async (productId: number) => {
+    try {
+      await wishlistAPI.toggle(userId, productId);
+      alert("Đã thêm vào wishlist ");
+    } catch (err: any) {
+      const code = err?.code as string | undefined;
+      if (code === "WISHLIST_DUPLICATE") {
+        alert("Sản phẩm đã có trong wishlist.");
+        return;
+      }
+      console.error(err);
+    }
+  };
+
+  const handleAddToCart = async (productId: number) => {
+    try {
+      await cartAPI.add(productId);
+      alert("Added to cart 🛒");
+    } catch (err: any) {
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+
+      if (status === 401 || code === "AUTH_REQUIRED") {
+        alert("Vui lòng đăng nhập để thêm vào giỏ hàng.");
+        router.push("/login");
+        return;
+      }
+      if (code === "CART_DUPLICATE") {
+        alert("Sản phẩm đã có trong giỏ hàng.");
+        return;
+      }
+
+      const message =
+        err?.response?.data?.message || err?.message || "Add to cart failed";
+      console.error(err);
+      alert(message);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,15 +145,21 @@ export default function TopSellingProducts() {
 
                     {/* HOVER ACTIONS */}
                     <div className="absolute right-1 top-3 flex flex-col gap-2 opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
+                      <button
+                        onClick={() => handleWishlist(item.id)}
+                        className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
                         <Heart size={14} className="text-gray-600 " />
                       </button>
 
-                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
+                      <button
+                        onClick={() => handleAddToCart(item.id)}
+                        className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
                         <ShoppingCart size={14} className="text-gray-600" />
                       </button>
 
-                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
+                      <button 
+                        onClick={() => router.push(`/product/${item.id}`)}
+                        className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
                         <Eye size={14} className="text-gray-600" />
                       </button>
                     </div>
@@ -151,7 +199,9 @@ export default function TopSellingProducts() {
                   </div>
 
                   {/* BUTTON */}
-                  <button className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
+                  <button
+                    onClick={() => handleAddToCart(item.id)}
+                    className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
                     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
                       Add To Cart

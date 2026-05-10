@@ -4,13 +4,15 @@ import Image from "next/image";
 import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { productAPI, type Product } from "@/lib/api";
 
 import "swiper/css";
 
 export default function CategoryProducts({ category }: { category: string }) {
   const [products, setProducts] = useState<Product[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,7 +90,9 @@ export default function CategoryProducts({ category }: { category: string }) {
                       <button className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
                         <ShoppingCart size={14} />
                       </button>
-                      <button className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
+                      <button 
+                        onClick={() => router.push(`/product/${item.id}`)}
+                        className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
                         <Eye size={14} />
                       </button>
                     </div>

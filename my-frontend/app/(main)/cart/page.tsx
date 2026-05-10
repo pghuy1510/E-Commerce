@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { X, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { cartAPI } from "@/lib/api";
 
 interface CartItem {
@@ -20,13 +21,22 @@ interface CartItem {
 export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   // 🔥 load cart từ backend
   const fetchCart = async () => {
     try {
       const res = await cartAPI.get();
       setCart(res.data.items || []);
-    } catch (err) {
+    } catch (err: any) {
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+
+      if (status === 401 || code === "AUTH_REQUIRED") {
+        router.push("/login");
+        return;
+      }
+
       console.error("Fetch cart error:", err);
     } finally {
       setLoading(false);
@@ -50,7 +60,15 @@ export default function CartPage() {
     try {
       await cartAPI.update(productId, newQty);
       fetchCart();
-    } catch (err) {
+    } catch (err: any) {
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+
+      if (status === 401 || code === "AUTH_REQUIRED") {
+        router.push("/login");
+        return;
+      }
+
       console.error("Update cart error:", err);
     }
   };
@@ -60,7 +78,15 @@ export default function CartPage() {
     try {
       await cartAPI.remove(productId);
       fetchCart();
-    } catch (err) {
+    } catch (err: any) {
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+
+      if (status === 401 || code === "AUTH_REQUIRED") {
+        router.push("/login");
+        return;
+      }
+
       console.error("Remove error:", err);
     }
   };

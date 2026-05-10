@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { productAPI, type Product } from "@/lib/api";
 
 /*  Extend type để tránh lỗi TS */
@@ -12,6 +13,7 @@ type ProductWithRating = Product & {
 
 export default function TopRatingBooks() {
   const [products, setProducts] = useState<ProductWithRating[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,7 +116,9 @@ export default function TopRatingBooks() {
                       <ShoppingCart size={14} />
                     </button>
 
-                    <button className="w-8 h-8 flex items-center justify-center border rounded-full shadow hover:bg-[#c86a3cd0] hover:text-white transition">
+                    <button 
+                      onClick={() => router.push(`/product/${item.id}`)}
+                      className="w-8 h-8 flex items-center justify-center border rounded-full shadow hover:bg-[#c86a3cd0] hover:text-white transition">
                       <Eye size={14} />
                     </button>
                   </div>

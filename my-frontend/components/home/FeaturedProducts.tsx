@@ -5,12 +5,14 @@ import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { productAPI, type Product, wishlistAPI, cartAPI } from "@/lib/api";
 
 import "swiper/css";
 
 export default function FeaturedBooks() {
   const [products, setProducts] = useState<Product[]>([]);
+  const router = useRouter();
 
   const userId = 1;
 
@@ -18,7 +20,12 @@ export default function FeaturedBooks() {
     try {
       await wishlistAPI.toggle(userId, productId);
       alert("Đã thêm vào wishlist ");
-    } catch (err) {
+    } catch (err: any) {
+      const code = err?.code as string | undefined;
+      if (code === "WISHLIST_DUPLICATE") {
+        alert("Sản phẩm đã có trong wishlist.");
+        return;
+      }
       console.error(err);
     }
   };
@@ -28,6 +35,19 @@ export default function FeaturedBooks() {
       await cartAPI.add(productId);
       alert("Added to cart 🛒");
     } catch (err: any) {
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+
+      if (status === 401 || code === "AUTH_REQUIRED") {
+        alert("Vui lòng đăng nhập để thêm vào giỏ hàng.");
+        router.push("/login");
+        return;
+      }
+      if (code === "CART_DUPLICATE") {
+        alert("Sản phẩm đã có trong giỏ hàng.");
+        return;
+      }
+
       const message =
         err?.response?.data?.message || err?.message || "Add to cart failed";
       console.error(err);
@@ -107,7 +127,9 @@ export default function FeaturedBooks() {
                         <ShoppingCart size={14} />
                       </button>
 
-                      <button className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition">
+                      <button
+                        onClick={() => router.push(`/product/${item.id}`)}
+                        className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition">
                         <Eye size={14} className="text-gray-600" />
                       </button>
                     </div>
@@ -143,7 +165,9 @@ export default function FeaturedBooks() {
                   </div>
 
                   {/* BUTTON */}
-                  <button className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
+                  <button
+                    onClick={() => handleAddToCart(item.id)}
+                    className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
                     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
                       Add To Cart
