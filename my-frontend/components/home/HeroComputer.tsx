@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { usePreferences } from "@/lib/i18n";
 
 export default function HeroComputer() {
+  const { t } = usePreferences();
   return (
     <section className="relative w-full h-[650px] overflow-hidden">
       {/* BACKGROUND IMAGE */}
@@ -19,18 +21,16 @@ export default function HeroComputer() {
         {/* TEXT LEFT */}
         <div className="text-black max-w-xl">
           {/* TAG */}
-          <p className="text-sm mb-3 text-black">New Generation Laptop</p>
+          <p className="text-sm mb-3 text-black">{t("heroComputer.tag")}</p>
 
           {/* TITLE */}
           <h1 className="text-5xl font-bold leading-tight mb-4">
-            Power Meets <br />
-            Performance
+            {t("heroComputer.titleLine1")} <br />
+            {t("heroComputer.titleLine2")}
           </h1>
 
           {/* DESC */}
-          <p className="text-black mb-6">
-            Experience ultra-fast performance with the latest technology.
-          </p>
+          <p className="text-black mb-6">{t("heroComputer.subtitle")}</p>
           <button
             className="
                 relative overflow-hidden
@@ -40,7 +40,7 @@ export default function HeroComputer() {
                 group
             ">
             <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-              Shop Now →
+              {t("action.shopNow")}
             </span>
 
             <span

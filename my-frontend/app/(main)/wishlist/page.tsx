@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { wishlistAPI } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 interface WishlistItem {
   id: number;
@@ -25,7 +27,9 @@ const FancyButton = ({ children }: { children: React.ReactNode }) => (
 
 export default function WishlistPage() {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
-  const userId = 1; // ⚠️ sau này lấy từ auth
+  const userId = 1;
+
+  const { t, formatPrice } = usePreferences();
 
   useEffect(() => {
     fetchWishlist();
@@ -42,22 +46,28 @@ export default function WishlistPage() {
 
   const handleRemove = async (productId: number) => {
     await wishlistAPI.remove(userId, productId);
-    fetchWishlist(); // reload lại
+    fetchWishlist();
   };
 
   return (
     <div className="w-full">
       {/* BANNER */}
       <div className="bg-gradient-to-r from-yellow-600 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">Wishlist</h1>
+        <h1 className="text-4xl font-bold text-gray-800">
+          {t("label.wishlist")}
+        </h1>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-16">
         <div className="grid grid-cols-5 text-gray-700 font-semibold border-b pb-4">
-          <span>Product</span>
-          <span className="text-center">Price</span>
-          <span className="text-center">Stock</span>
-          <span className="text-right">Subtotal</span>
+          <span>{t("label.product")}</span>
+
+          <span className="text-center">{t("label.price")}</span>
+
+          <span className="text-center">{t("label.stockShort")}</span>
+
+          <span className="text-right">{t("label.subtotal")}</span>
+
           <span></span>
         </div>
 
@@ -73,19 +83,26 @@ export default function WishlistPage() {
                 <X size={18} />
               </button>
 
-              <Image
-                src={item.product.image || "/placeholder.png"}
-                alt=""
-                width={60}
-                height={80}
-              />
+              {/* CLICK PRODUCT */}
+              <Link
+                href={`/product/${item.product.id}`}
+                className="flex items-center gap-4 group">
+                <Image
+                  src={item.product.image || "/placeholder.png"}
+                  alt={item.product.name}
+                  width={60}
+                  height={80}
+                />
 
-              <span className="font-medium">{item.product.name}</span>
+                <span className="font-medium group-hover:text-yellow-600 transition">
+                  {item.product.name}
+                </span>
+              </Link>
             </div>
 
             {/* PRICE */}
             <span className="text-center text-yellow-600 font-medium">
-              ${item.product.price.toFixed(2)}
+              {formatPrice(item.product.price)}
             </span>
 
             {/* STOCK */}
@@ -93,17 +110,19 @@ export default function WishlistPage() {
               className={`text-center font-medium ${
                 item.product.stock > 0 ? "text-green-600" : "text-yellow-500"
               }`}>
-              {item.product.stock > 0 ? "In Stock" : "Out Of Stock"}
+              {item.product.stock > 0
+                ? t("label.inStock")
+                : t("label.outOfStock")}
             </span>
 
             {/* SUBTOTAL */}
             <span className="text-right text-yellow-600 font-medium">
-              ${item.product.price.toFixed(2)}
+              {formatPrice(item.product.price)}
             </span>
 
             {/* ACTION */}
             <div className="flex justify-end">
-              <FancyButton>Add To Cart</FancyButton>
+              <FancyButton>{t("action.addToCart")}</FancyButton>
             </div>
           </div>
         ))}

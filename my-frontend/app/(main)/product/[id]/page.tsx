@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Star, Heart, Minus, Plus, ShoppingCart, Eye } from "lucide-react";
 
 import { productAPI, type Product, wishlistAPI, cartAPI } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -18,6 +19,7 @@ export default function ProductDetailPage() {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const { t, formatPrice, translateCategory } = usePreferences();
 
   const userId = 1;
 
@@ -58,18 +60,18 @@ export default function ProductDetailPage() {
   const handleAddToCartById = async (productId: number, qty = 1) => {
     try {
       await cartAPI.add(productId, qty);
-      alert("Added to cart");
+      alert(t("alert.addedToCartShort"));
     } catch (err: any) {
       const status = err?.response?.status as number | undefined;
       const code = err?.code as string | undefined;
 
       if (status === 401 || code === "AUTH_REQUIRED") {
-        alert("Vui lòng đăng nhập để thêm vào giỏ hàng.");
+        alert(t("alert.loginToAddCart"));
         router.push("/login");
         return;
       }
       if (code === "CART_DUPLICATE") {
-        alert("Sản phẩm đã có trong giỏ hàng.");
+        alert(t("alert.cartDuplicate"));
         return;
       }
 
@@ -80,11 +82,11 @@ export default function ProductDetailPage() {
   const handleWishlistById = async (productId: number) => {
     try {
       await wishlistAPI.toggle(userId, productId);
-      alert("Added to wishlist");
+      alert(t("alert.addedToWishlist"));
     } catch (err: any) {
       const code = err?.code as string | undefined;
       if (code === "WISHLIST_DUPLICATE") {
-        alert("Sản phẩm đã có trong wishlist.");
+        alert(t("alert.wishlistDuplicate"));
         return;
       }
       console.error("Wishlist error:", err);
@@ -93,13 +95,17 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="py-40 text-center text-gray-500">Loading product...</div>
+      <div className="py-40 text-center text-gray-500">
+        {t("label.loadingProduct")}
+      </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="py-40 text-center text-red-500">Product not found</div>
+      <div className="py-40 text-center text-red-500">
+        {t("label.productNotFound")}
+      </div>
     );
   }
 
@@ -107,8 +113,12 @@ export default function ProductDetailPage() {
     <div className="w-full">
       {/* BANNER */}
       <div className="bg-gradient-to-r from-yellow-100 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">Shop Details</h1>
-        <p className="text-gray-500 mt-2">Home &gt; Shop Details</p>
+        <h1 className="text-4xl font-bold text-gray-800">
+          {t("label.shopDetails")}
+        </h1>
+        <p className="text-gray-500 mt-2">
+          {t("label.home")} &gt; {t("label.shopDetails")}
+        </p>
       </div>
 
       {/* CONTENT */}
@@ -130,7 +140,9 @@ export default function ProductDetailPage() {
         <div>
           {/* CATEGORY */}
           <p className="text-sm text-yellow-600 font-semibold uppercase mb-2">
-            {product.category?.name}
+            {product.category?.name
+              ? translateCategory(product.category.name)
+              : t("topRating.categoryFallback")}
           </p>
 
           {/* NAME */}
@@ -145,13 +157,13 @@ export default function ProductDetailPage() {
             ))}
 
             <span className="text-gray-500 text-sm ml-2">
-              (5 Customer Reviews)
+              {t("label.customerReviews", { count: 5 })}
             </span>
           </div>
 
           {/* PRICE */}
           <p className="text-4xl font-bold text-yellow-600 mt-6">
-            ${product.price.toFixed(2)}
+            {formatPrice(product.price)}
           </p>
 
           {/* DESCRIPTION */}
@@ -159,20 +171,24 @@ export default function ProductDetailPage() {
 
           {/* STOCK */}
           <div className="mt-6 flex items-center gap-2">
-            <span className="font-semibold text-gray-800">Availability:</span>
+            <span className="font-semibold text-gray-800">
+              {t("label.availability")}
+            </span>
 
             {product.stock > 0 ? (
               <span className="text-green-600 font-medium">
-                In Stock ({product.stock})
+                {t("label.inStockWithCount", { count: product.stock })}
               </span>
             ) : (
-              <span className="text-red-500 font-medium">Out Of Stock</span>
+              <span className="text-red-500 font-medium">
+                {t("label.outOfStock")}
+              </span>
             )}
           </div>
 
           {/* QUANTITY */}
           <div className="mt-8">
-            <p className="font-semibold mb-3">Quantity</p>
+            <p className="font-semibold mb-3">{t("label.quantity")}</p>
 
             <div className="flex items-center border border-gray-300 rounded-full w-fit px-4 py-2 gap-5">
               <button
@@ -192,11 +208,13 @@ export default function ProductDetailPage() {
           <div className="flex flex-wrap gap-4 mt-10">
             {/* ADD CART */}
             <button
-              onClick={() => product && handleAddToCartById(product.id, quantity)}
+              onClick={() =>
+                product && handleAddToCartById(product.id, quantity)
+              }
               disabled={product.stock <= 0}
               className="flex items-center gap-2 bg-[#eba07a] hover:bg-yellow-600 transition text-white px-8 py-4 rounded-full disabled:opacity-50">
               <ShoppingCart size={18} />
-              Add To Cart
+              {t("action.addToCart")}
             </button>
 
             {/* WISHLIST */}
@@ -214,16 +232,16 @@ export default function ProductDetailPage() {
         <div className="flex items-center justify-between mb-10">
           <div>
             <p className="text-yellow-600 font-semibold uppercase tracking-wider">
-              Recommendation
+              {t("label.recommendation")}
             </p>
             <h2 className="text-4xl font-bold text-gray-900 mt-2">
-              Related Products
+              {t("label.relatedProducts")}
             </h2>
           </div>
         </div>
 
         {relatedProducts.length === 0 ? (
-          <p className="text-gray-500">No related products found.</p>
+          <p className="text-gray-500">{t("productDetails.noRelated")}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {relatedProducts.map((item) => (
@@ -259,7 +277,9 @@ export default function ProductDetailPage() {
                 {/* INFO */}
                 <div className="p-6">
                   <p className="text-sm text-yellow-600 font-medium uppercase">
-                    {item.category?.name}
+                    {item.category?.name
+                      ? translateCategory(item.category.name)
+                      : t("topRating.categoryFallback")}
                   </p>
 
                   <Link href={`/product/${item.id}`}>
@@ -278,7 +298,7 @@ export default function ProductDetailPage() {
                   {/* PRICE */}
                   <div className="flex items-center justify-between mt-5">
                     <p className="text-2xl font-bold text-yellow-600">
-                      ${item.price.toFixed(2)}
+                      {formatPrice(item.price)}
                     </p>
 
                     <button

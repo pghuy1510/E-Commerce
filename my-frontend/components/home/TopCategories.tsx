@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Book } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePreferences } from "@/lib/i18n";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
@@ -37,6 +38,7 @@ const categories: { name: Category; image: string }[] = [
 export default function TopCategories({ onHoverCategory }: Props) {
   const [active, setActive] = useState<Category | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const { t, translateCategory } = usePreferences();
 
   /* ✅ detect mobile để fix parallax */
   useEffect(() => {
@@ -85,7 +87,9 @@ export default function TopCategories({ onHoverCategory }: Props) {
         </div>
 
         {/* TITLE */}
-        <h2 className="text-3xl font-bold text-white mb-12">Top Categories</h2>
+        <h2 className="text-3xl font-bold text-white mb-12">
+          {t("topCategories.title")}
+        </h2>
 
         {/* SWIPER */}
         <Swiper
@@ -140,7 +144,7 @@ export default function TopCategories({ onHoverCategory }: Props) {
                           ? "bg-white text-black"
                           : "bg-yellow-600 text-white"
                       }`}>
-                      Category
+                      {t("topCategories.badge")}
                     </span>
                   </div>
 
@@ -152,7 +156,7 @@ export default function TopCategories({ onHoverCategory }: Props) {
                         ? "text-yellow-600"
                         : "text-white group-hover:text-yellow-300"
                     }`}>
-                    {item.name}
+                    {translateCategory(item.name)}
                   </p>
                 </div>
               </SwiperSlide>

@@ -8,11 +8,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { usePreferences } from "@/lib/i18n";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const { t } = usePreferences();
 
   const handleLogin = async () => {
     try {
@@ -21,7 +23,7 @@ export default function LoginPage() {
       localStorage.setItem("username", username);
       router.push("/");
     } catch (err) {
-      alert("Sai tài khoản hoặc mật khẩu");
+      alert(t("alert.loginFailed"));
     }
   };
 
@@ -32,21 +34,21 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-white shadow-xl flex items-center justify-end pr-20">
           {/* FORM LOGIN */}
           <div className="w-[350px] border border-gray-200 p-8 bg-white">
-            <h2 className="text-2xl font-bold mb-2">Log in</h2>
+            <h2 className="text-2xl font-bold mb-2">{t("auth.loginTitle")}</h2>
             <p className="text-sm text-gray-400 mb-6">
-              Please fill your information below
+              {t("auth.loginSubtitle")}
             </p>
 
             <input
               type="text"
-              placeholder="Username"
+              placeholder={t("auth.username")}
               className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-yellow-500 transition"
               onChange={(e) => setUsername(e.target.value)}
             />
 
             <input
               type="password"
-              placeholder="Password"
+              placeholder={t("auth.password")}
               className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-yellow-500 transition"
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -54,10 +56,10 @@ export default function LoginPage() {
             <div className="flex justify-between text-sm mb-4 text-gray-500">
               <label>
                 <input type="checkbox" className="mr-2" />
-                Remember me
+                {t("auth.rememberMe")}
               </label>
               <a href="#" className="hover:text-yellow-500">
-                Forgot Password?
+                {t("auth.forgotPassword")}
               </a>
             </div>
 
@@ -65,13 +67,15 @@ export default function LoginPage() {
             <button
               onClick={handleLogin}
               className="w-full bg-yellow-500 text-white py-2 font-semibold hover:bg-yellow-600 transition">
-              LOGIN
+              {t("action.loginUpper")}
             </button>
 
             {/* --- HOẶC --- */}
             <div className="flex items-center my-4">
               <div className="flex-1 h-px bg-gray-300"></div>
-              <span className="px-2 text-gray-400 text-sm">OR</span>
+              <span className="px-2 text-gray-400 text-sm">
+                {t("action.or")}
+              </span>
               <div className="flex-1 h-px bg-gray-300"></div>
             </div>
 
@@ -87,16 +91,16 @@ export default function LoginPage() {
                 src="https://developers.google.com/identity/images/g-logo.png"
                 className="w-5 h-5"
               />
-              Continue with Google
+              {t("action.continueWithGoogle")}
             </button>
 
             {/* LINK SANG REGISTER */}
             <p className="text-sm mt-4 text-center text-gray-500">
-              Don't have an account yet?{" "}
+              {t("auth.noAccount")}{" "}
               <Link
                 href="/register"
                 className="text-yellow-500 hover:underline">
-                Sign up
+                {t("action.signUp")}
               </Link>
             </p>
           </div>
@@ -109,9 +113,11 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <h1 className="text-3xl font-bold mb-4">Welcome back</h1>
+            <h1 className="text-3xl font-bold mb-4">
+              {t("auth.welcomeBackTitle")}
+            </h1>
             <p className="text-sm opacity-90">
-              Manage your shop efficiently with our system
+              {t("auth.welcomeBackSubtitle")}
             </p>
           </div>
 

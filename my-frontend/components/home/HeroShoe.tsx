@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { usePreferences } from "@/lib/i18n";
 
 export default function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const { t } = usePreferences();
 
   const handleToggle = () => {
     if (!videoRef.current) return;
@@ -37,17 +39,15 @@ export default function HeroVideo() {
       {/* CONTENT */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center z-10 px-6">
         <p className="uppercase text-sm tracking-widest mb-2 opacity-80">
-          Sneaker Trend
+          {t("heroShoe.trend")}
         </p>
 
-        <h1 className="text-6xl font-extrabold mb-4">STEP INTO STYLE</h1>
+        <h1 className="text-6xl font-extrabold mb-4">{t("heroShoe.title")}</h1>
 
-        <p className="max-w-xl text-gray-200 mb-6">
-          Discover the shoes that are making waves this year.
-        </p>
+        <p className="max-w-xl text-gray-200 mb-6">{t("heroShoe.subtitle")}</p>
 
         <button className="bg-white text-black px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
-          Shop
+          {t("action.shop")}
         </button>
       </div>
 

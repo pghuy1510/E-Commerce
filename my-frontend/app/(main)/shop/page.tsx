@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { productAPI, type Product } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 /* TITLE */
 const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
@@ -25,6 +27,8 @@ export default function ShopPage() {
   const [price, setPrice] = useState<[number, number]>([0, 1000]);
   const [sort, setSort] = useState<string>("default");
   const [ratingFilter, setRatingFilter] = useState<number>(0);
+  const searchParams = useSearchParams();
+  const { t, formatPrice, translateCategory } = usePreferences();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -35,7 +39,7 @@ export default function ShopPage() {
         setError(null);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load products",
+          err instanceof Error ? err.message : t("shop.loadError"),
         );
         console.error("Error fetching products:", err);
       } finally {
@@ -45,6 +49,11 @@ export default function ShopPage() {
 
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    const query = searchParams.get("search") ?? "";
+    setSearch(query);
+  }, [searchParams]);
 
   const toggleCategory = (cat: string) => {
     setCategories((prev) =>
@@ -58,8 +67,13 @@ export default function ShopPage() {
   ];
 
   let filtered = products.filter((item) => {
+    const normalizedSearch = search.toLowerCase();
+    const matchesSearch =
+      item.name.toLowerCase().includes(normalizedSearch) ||
+      item.description?.toLowerCase().includes(normalizedSearch);
+
     return (
-      item.name.toLowerCase().includes(search.toLowerCase()) &&
+      matchesSearch &&
       (inStock ? item.stock > 0 : true) &&
       (categories.length
         ? categories.includes(item.category?.name || "")
@@ -79,7 +93,9 @@ export default function ShopPage() {
       {/* BANNER */}
       <div className="bg-gradient-to-r from-yellow-600 to-white py-20 text-center">
         <h1 className="text-4xl font-bold text-gray-800">Shop</h1>
-        <p className="text-gray-500 mt-2">Home &gt; Shop</p>
+        <p className="text-gray-500 mt-2">
+          {t("label.home")} &gt; {t("label.shop")}
+        </p>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-4 gap-10">
@@ -87,9 +103,9 @@ export default function ShopPage() {
         <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-300 h-fit sticky top-10">
           {/* SEARCH */}
           <div className="pb-5 border-b border-gray-300">
-            <SidebarTitle>Search</SidebarTitle>
+            <SidebarTitle>{t("label.search")}</SidebarTitle>
             <input
-              placeholder="Search here"
+              placeholder={t("label.searchHere")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-300 px-4 py-2 rounded-md outline-none focus:border-yellow-500"
@@ -99,7 +115,7 @@ export default function ShopPage() {
           {/* CATEGORY */}
           {uniqueCategories.length > 0 && (
             <div className="pb-5 border-b border-gray-300">
-              <SidebarTitle>Categories</SidebarTitle>
+              <SidebarTitle>{t("label.categories")}</SidebarTitle>
               <div className="space-y-2">
                 {uniqueCategories.map((cat) => (
                   <label key={cat} className="flex gap-2 cursor-pointer">
@@ -108,7 +124,7 @@ export default function ShopPage() {
                       onChange={() => toggleCategory(cat)}
                       className="accent-yellow-600"
                     />
-                    {cat}
+                    {translateCategory(cat)}
                   </label>
                 ))}
               </div>
@@ -117,7 +133,7 @@ export default function ShopPage() {
 
           {/* STOCK */}
           <div className="pb-5 border-b border-gray-300">
-            <SidebarTitle>Product Status</SidebarTitle>
+            <SidebarTitle>{t("label.productStatus")}</SidebarTitle>
             <label className="flex gap-2">
               <input
                 type="checkbox"
@@ -125,13 +141,13 @@ export default function ShopPage() {
                 onChange={() => setInStock(!inStock)}
                 className="accent-yellow-600"
               />
-              In Stock Only
+              {t("label.inStockOnly")}
             </label>
           </div>
 
           {/* PRICE */}
           <div className="pb-5 border-b border-gray-300">
-            <SidebarTitle>Filter By Price</SidebarTitle>
+            <SidebarTitle>{t("label.filterByPrice")}</SidebarTitle>
             <input
               type="range"
               min={0}
@@ -141,7 +157,7 @@ export default function ShopPage() {
               className="w-full accent-yellow-600"
             />
             <p className="text-sm mt-2 text-gray-500">
-              ${price[0]} - ${price[1]}
+              {formatPrice(price[0])} - {formatPrice(price[1])}
             </p>
           </div>
         </div>
@@ -158,30 +174,32 @@ export default function ShopPage() {
             <div className="flex justify-center items-center h-64">
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600"></div>
-                <p className="mt-4 text-gray-500">Loading products...</p>
+                <p className="mt-4 text-gray-500">
+                  {t("label.loadingProducts")}
+                </p>
               </div>
             </div>
           ) : (
             <>
               <div className="flex justify-between items-center mb-6 border border-gray-300 p-4 rounded-md">
                 <p className="text-gray-500">
-                  Showing {filtered.length} products
+                  {t("label.showingCount", { count: filtered.length })}
                 </p>
 
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
                   className="border border-gray-300 px-3 py-2 rounded outline-none focus:border-yellow-500">
-                  <option value="default">Default</option>
-                  <option value="price-asc">Price ↑</option>
-                  <option value="price-desc">Price ↓</option>
+                  <option value="default">{t("label.sortDefault")}</option>
+                  <option value="price-asc">{t("label.sortPriceAsc")}</option>
+                  <option value="price-desc">{t("label.sortPriceDesc")}</option>
                 </select>
               </div>
 
               {filtered.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 text-lg">
-                    No products found matching your filters
+                    {t("label.noProductsFound")}
                   </p>
                 </div>
               ) : (
@@ -212,22 +230,26 @@ export default function ShopPage() {
 
                       {/* PRICE */}
                       <p className="text-yellow-600 font-semibold mt-2">
-                        ${item.price.toFixed(2)}
+                        {formatPrice(item.price)}
                       </p>
 
                       {/* CATEGORY */}
                       <p className="text-sm text-gray-500 mt-1">
-                        {item.category?.name || "N/A"}
+                        {item.category?.name
+                          ? translateCategory(item.category.name)
+                          : t("label.categoryFallback")}
                       </p>
 
                       {/* STOCK */}
                       <p className="text-sm mt-1">
                         {item.stock > 0 ? (
                           <span className="text-green-600">
-                            In Stock ({item.stock})
+                            {t("label.inStockWithCount", { count: item.stock })}
                           </span>
                         ) : (
-                          <span className="text-red-600">Out of Stock</span>
+                          <span className="text-red-600">
+                            {t("label.outOfStockShort")}
+                          </span>
                         )}
                       </p>
 
@@ -237,7 +259,7 @@ export default function ShopPage() {
                         className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group disabled:opacity-50 disabled:cursor-not-allowed">
                         <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                         <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-                          Add To Cart
+                          {t("action.addToCart")}
                         </span>
                       </button>
                     </div>

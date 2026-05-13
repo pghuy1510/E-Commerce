@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { User, LogOut } from "lucide-react";
+import { usePreferences } from "@/lib/i18n";
 
 export default function Navbar() {
   const [username, setUsername] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { t } = usePreferences();
 
   useEffect(() => {
     // Check if user is logged in
@@ -42,9 +44,9 @@ export default function Navbar() {
       <h1 className="font-bold text-lg">MyShop</h1>
 
       <div className="flex gap-6 items-center">
-        <Link href="/">Home</Link>
-        <Link href="/shop">Shop</Link>
-        <Link href="/cart">Cart</Link>
+        <Link href="/">{t("nav.home")}</Link>
+        <Link href="/shop">{t("nav.shop")}</Link>
+        <Link href="/cart">{t("nav.cart")}</Link>
 
         {username ? (
           <div className="flex items-center gap-4 border-l pl-6">
@@ -56,7 +58,7 @@ export default function Navbar() {
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded transition">
               <LogOut size={18} />
-              Logout
+              {t("header.logout")}
             </button>
           </div>
         ) : (
@@ -64,12 +66,12 @@ export default function Navbar() {
             <Link
               href="/login"
               className="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium">
-              Đăng nhập
+              {t("action.login")}
             </Link>
             <Link
               href="/register"
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-              Đăng ký
+              {t("action.signUp")}
             </Link>
           </div>
         )}

@@ -7,12 +7,14 @@ import { Autoplay } from "swiper/modules";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { productAPI, type Product } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 import "swiper/css";
 
 export default function CategoryProducts({ category }: { category: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const router = useRouter();
+  const { t, formatPrice, translateCategory } = usePreferences();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,7 +46,9 @@ export default function CategoryProducts({ category }: { category: string }) {
         {/* HEADER */}
         <div className="flex justify-between items-center mb-10">
           <h2 className="text-3xl font-bold text-white">
-            🔥 {category} Products
+            {t("categoryProducts.title", {
+              category: translateCategory(category),
+            })}
           </h2>
         </div>
 
@@ -90,7 +94,7 @@ export default function CategoryProducts({ category }: { category: string }) {
                       <button className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
                         <ShoppingCart size={14} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => router.push(`/product/${item.id}`)}
                         className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
                         <Eye size={14} />
@@ -101,19 +105,23 @@ export default function CategoryProducts({ category }: { category: string }) {
 
                 {/* INFO */}
                 <div className="mt-4 space-y-1 text-white">
-                  <p className="text-xs text-gray-300">{item.category?.name}</p>
+                  <p className="text-xs text-gray-300">
+                    {item.category?.name
+                      ? translateCategory(item.category.name)
+                      : t("topRating.categoryFallback")}
+                  </p>
 
                   <h3 className="text-sm font-semibold line-clamp-2">
                     {item.name}
                   </h3>
 
                   <div className="font-semibold text-yellow-400">
-                    ${item.price.toFixed(2)}
+                    {formatPrice(item.price)}
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-300">
-                      Stock: {item.stock}
+                      {t("label.stock", { count: item.stock })}
                     </span>
 
                     <div className="flex text-orange-400">
@@ -124,7 +132,7 @@ export default function CategoryProducts({ category }: { category: string }) {
                   </div>
 
                   <button className="w-full mt-2 bg-white/90 text-yellow-600 py-2 rounded-full hover:bg-yellow-600 hover:text-white transition">
-                    Add To Cart
+                    {t("action.addToCart")}
                   </button>
                 </div>
               </div>

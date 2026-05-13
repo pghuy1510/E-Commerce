@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios, { AxiosError } from "axios";
+import { usePreferences } from "@/lib/i18n";
 
 interface Product {
   id: number;
@@ -12,6 +13,7 @@ export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = usePreferences();
 
   useEffect(() => {
     const apiBase =
@@ -25,24 +27,22 @@ export default function ProductList() {
       })
       .catch((err: AxiosError) => {
         if (!err.response) {
-          setError(
-            "Khong ket noi duoc backend. Hay chay my-backend o cong 3001.",
-          );
+          setError(t("productList.backendOffline"));
           return;
         }
 
-        setError(`Khong the tai san pham (HTTP ${err.response.status}).`);
+        setError(t("productList.fetchError", { status: err.response.status }));
       })
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <div>
-      <h2>Danh sách sản phẩm</h2>
-      {loading && <p>Dang tai...</p>}
+      <h2>{t("productList.title")}</h2>
+      {loading && <p>{t("productList.loading")}</p>}
       {error && <p className="text-red-600">{error}</p>}
       {!loading && !error && products.length === 0 && (
-        <p>Chua co san pham nao.</p>
+        <p>{t("productList.empty")}</p>
       )}
       {products.map((p) => (
         <div key={p.id}>{p.name}</div>

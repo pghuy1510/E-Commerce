@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { usePreferences } from "@/lib/i18n";
 
 export default function HeroMouse() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const { t } = usePreferences();
 
   const handleToggle = () => {
     if (!videoRef.current) return;
@@ -45,12 +47,10 @@ export default function HeroMouse() {
       {/* CONTENT */}
       <div className="relative z-20 flex flex-col items-center justify-center h-full text-center text-white px-6">
         <h1 className="text-5xl md:text-6xl font-bold mb-4">
-          Ultimate Gaming Mouse
+          {t("heroMouse.title")}
         </h1>
 
-        <p className="text-gray-300 mb-6 text-lg">
-          Precision. Speed. RGB Power.
-        </p>
+        <p className="text-gray-300 mb-6 text-lg">{t("heroMouse.subtitle")}</p>
 
         {/* BUTTON SHOP */}
         <button
@@ -62,7 +62,7 @@ export default function HeroMouse() {
             group
           ">
           <span className="relative z-10 group-hover:text-white transition-colors duration-300">
-            Shop Now →
+            {t("action.shopNow")}
           </span>
 
           <span

@@ -1,28 +1,30 @@
 "use client";
 
 import { Truck, ShieldCheck, Headphones, Tag } from "lucide-react";
+import { usePreferences } from "@/lib/i18n";
 
 export default function ServiceHighlight() {
+  const { t } = usePreferences();
   const items = [
     {
-      icon: <Truck className="w-7 h-7 text-white" />, 
-      title: "Return & Refund",
-      desc: "Money back guarantee",
+      icon: <Truck className="w-7 h-7 text-white" />,
+      title: t("service.returnRefundTitle"),
+      desc: t("service.returnRefundDesc"),
     },
     {
       icon: <ShieldCheck className="w-7 h-7 text-white" />,
-      title: "Secure Payment",
-      desc: "30% off by subscribing",
+      title: t("service.securePaymentTitle"),
+      desc: t("service.securePaymentDesc"),
     },
     {
       icon: <Headphones className="w-7 h-7 text-white" />,
-      title: "Quality Support",
-      desc: "Always online 24/7",
+      title: t("service.qualitySupportTitle"),
+      desc: t("service.qualitySupportDesc"),
     },
     {
       icon: <Tag className="w-7 h-7 text-white" />,
-      title: "Daily Offers",
-      desc: "20% off by subscribing",
+      title: t("service.dailyOffersTitle"),
+      desc: t("service.dailyOffersDesc"),
     },
   ];
 

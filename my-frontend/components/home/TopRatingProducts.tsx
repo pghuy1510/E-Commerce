@@ -5,6 +5,7 @@ import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { productAPI, type Product } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 /*  Extend type để tránh lỗi TS */
 type ProductWithRating = Product & {
@@ -14,6 +15,7 @@ type ProductWithRating = Product & {
 export default function TopRatingBooks() {
   const [products, setProducts] = useState<ProductWithRating[]>([]);
   const router = useRouter();
+  const { t, formatPrice, translateCategory } = usePreferences();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,13 +42,13 @@ export default function TopRatingBooks() {
           {/* HEADER */}
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xl font-bold text-[#0b132a]">
-              Product Suggestions
+              {t("topRating.title")}
             </h2>
 
             <button className="relative overflow-hidden bg-[#eba07a] px-5 py-2 rounded-full text-sm group">
               <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition duration-300"></span>
               <span className="relative z-10 group-hover:text-white">
-                View More Books →
+                {t("action.viewMoreBooks")}
               </span>
             </button>
           </div>
@@ -69,7 +71,9 @@ export default function TopRatingBooks() {
 
                   <div>
                     <p className="text-xs text-gray-400">
-                      {item.category?.name || "Category"}
+                      {item.category?.name
+                        ? translateCategory(item.category.name)
+                        : t("topRating.categoryFallback")}
                     </p>
 
                     {/* TITLE */}
@@ -79,12 +83,12 @@ export default function TopRatingBooks() {
 
                     {/* PRICE */}
                     <p className="text-base text-gray-500 mt-1">
-                      ${item.price.toFixed(2)}
+                      {formatPrice(item.price)}
                     </p>
 
                     {/* STOCK */}
                     <div className="text-xs text-gray-400 mt-1">
-                      Stock: {item.stock}
+                      {t("label.stock", { count: item.stock })}
                     </div>
 
                     {/* ⭐ RATING */}
@@ -116,7 +120,7 @@ export default function TopRatingBooks() {
                       <ShoppingCart size={14} />
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => router.push(`/product/${item.id}`)}
                       className="w-8 h-8 flex items-center justify-center border rounded-full shadow hover:bg-[#c86a3cd0] hover:text-white transition">
                       <Eye size={14} />
@@ -127,7 +131,7 @@ export default function TopRatingBooks() {
                   <button className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
                     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-                      Add To Cart
+                      {t("action.addToCart")}
                     </span>
                   </button>
                 </div>

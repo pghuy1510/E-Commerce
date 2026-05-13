@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { usePreferences } from "@/lib/i18n";
 
 export default function HeroBook() {
+  const { t } = usePreferences();
   return (
     <section className="relative w-full h-full overflow-hidden">
       {/* BACKGROUND */}
@@ -28,25 +30,25 @@ export default function HeroBook() {
           <div className="text-white pl-24">
             <div className="mb-4 flex items-center gap-2">
               <span className="text-sm text-orange-300">
-                Editor Choice Best Books
+                {t("heroBook.editorChoice")}
               </span>
               <span className="bg-black text-xs px-2 py-1 rounded">
-                Up to 50% Off
+                {t("heroBook.upTo50Off")}
               </span>
             </div>
 
             <h1 className="text-5xl font-bold leading-tight mb-4">
-              <span className="whitespace-nowrap">Your Next Favorite Book</span>
+              <span className="whitespace-nowrap">
+                {t("heroBook.titleLine1")}
+              </span>
               <br />
-              Is Just A{" "}
+              {t("heroBook.titleLine2Prefix")}{" "}
               <span className="text-orange-400 relative underline-custom">
-                Click Away
+                {t("heroBook.titleLine2Highlight")}
               </span>
             </h1>
 
-            <p className="text-gray-200 mb-6">
-              Thousands of books. One perfect choice for you.
-            </p>
+            <p className="text-gray-200 mb-6">{t("heroBook.subtitle")}</p>
 
             <div className="flex gap-4">
               <button
@@ -58,7 +60,7 @@ export default function HeroBook() {
                   group
                 ">
                 <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-                  Shop Now →
+                  {t("action.shopNow")}
                 </span>
 
                 {/* nền chạy từ phải sang trái */}
@@ -82,7 +84,7 @@ export default function HeroBook() {
                   group
                 ">
                 <span className="relative z-10 group-hover:text-black transition-colors duration-300">
-                  View All Books →
+                  {t("action.viewAllBooks")}
                 </span>
 
                 <span

@@ -7,6 +7,7 @@ import { Autoplay } from "swiper/modules";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { productAPI, cartAPI, wishlistAPI } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 import "swiper/css";
 
@@ -14,15 +15,16 @@ export default function TopSellingProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const router = useRouter();
   const userId = 1;
+  const { t, formatPrice, translateCategory } = usePreferences();
 
   const handleWishlist = async (productId: number) => {
     try {
       await wishlistAPI.toggle(userId, productId);
-      alert("Đã thêm vào wishlist ");
+      alert(t("alert.addedToWishlist"));
     } catch (err: any) {
       const code = err?.code as string | undefined;
       if (code === "WISHLIST_DUPLICATE") {
-        alert("Sản phẩm đã có trong wishlist.");
+        alert(t("alert.wishlistDuplicate"));
         return;
       }
       console.error(err);
@@ -32,23 +34,25 @@ export default function TopSellingProducts() {
   const handleAddToCart = async (productId: number) => {
     try {
       await cartAPI.add(productId);
-      alert("Added to cart 🛒");
+      alert(t("alert.addedToCart"));
     } catch (err: any) {
       const status = err?.response?.status as number | undefined;
       const code = err?.code as string | undefined;
 
       if (status === 401 || code === "AUTH_REQUIRED") {
-        alert("Vui lòng đăng nhập để thêm vào giỏ hàng.");
+        alert(t("alert.loginToAddCart"));
         router.push("/login");
         return;
       }
       if (code === "CART_DUPLICATE") {
-        alert("Sản phẩm đã có trong giỏ hàng.");
+        alert(t("alert.cartDuplicate"));
         return;
       }
 
       const message =
-        err?.response?.data?.message || err?.message || "Add to cart failed";
+        err?.response?.data?.message ||
+        err?.message ||
+        t("alert.addToCartFailed");
       console.error(err);
       alert(message);
     }
@@ -86,13 +90,13 @@ export default function TopSellingProducts() {
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900">
-            Top Selling Products
+            {t("topSelling.title")}
           </h2>
 
           <button className="relative overflow-hidden bg-[#eba07a] text-yellow-150 px-5 py-2 rounded-full text-sm group">
             <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
             <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-              Explore More →
+              {t("action.exploreMore")}
             </span>
           </button>
         </div>
@@ -129,7 +133,7 @@ export default function TopSellingProducts() {
                   {/* HOT */}
                   {item.hot && (
                     <span className="absolute top-3 left-3 bg-black text-white text-xs px-2 py-1 rounded z-10">
-                      Hot
+                      {t("label.hot")}
                     </span>
                   )}
 
@@ -157,7 +161,7 @@ export default function TopSellingProducts() {
                         <ShoppingCart size={14} className="text-gray-600" />
                       </button>
 
-                      <button 
+                      <button
                         onClick={() => router.push(`/product/${item.id}`)}
                         className="w-8 h-8 flex items-center justify-center bg-[#eee0d9] rounded-full shadow hover:bg-[#c86a3cd0] transition group">
                         <Eye size={14} className="text-gray-600" />
@@ -168,7 +172,11 @@ export default function TopSellingProducts() {
 
                 {/* INFO */}
                 <div className="mt-4 space-y-1">
-                  <p className="text-xs text-gray-500">{item.author}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.author === "Unknown"
+                      ? t("label.unknown")
+                      : translateCategory(item.author)}
+                  </p>
 
                   <h3 className="text-sm font-semibold text-gray-800 leading-snug">
                     {item.title}
@@ -177,19 +185,23 @@ export default function TopSellingProducts() {
                   {/* PRICE */}
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-900">
-                      ${item.price.toFixed(2)}
+                      {formatPrice(item.price)}
                     </span>
 
                     {item.oldPrice && (
                       <span className="text-sm text-gray-400 line-through">
-                        ${item.oldPrice}
+                        {formatPrice(Number(item.oldPrice))}
                       </span>
                     )}
                   </div>
 
                   {/* AUTHOR + RATING */}
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-500">{item.author}</span>
+                    <span className="text-xs text-gray-500">
+                      {item.author === "Unknown"
+                        ? t("label.unknown")
+                        : translateCategory(item.author)}
+                    </span>
 
                     <div className="flex gap-1 text-orange-400">
                       {[...Array(5)].map((_, i) => (
@@ -204,7 +216,7 @@ export default function TopSellingProducts() {
                     className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
                     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-                      Add To Cart
+                      {t("action.addToCart")}
                     </span>
                   </button>
                 </div>

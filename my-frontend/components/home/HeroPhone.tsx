@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { usePreferences } from "@/lib/i18n";
 
 export default function HeroPhone() {
   const router = useRouter();
+  const { t } = usePreferences();
 
   return (
     <section
@@ -26,16 +28,14 @@ export default function HeroPhone() {
       {/* TEXT */}
       <div className="text-center text-[#2c2c2c] px-6">
         <p className="uppercase text-sm tracking-widest opacity-60 mb-2">
-          New collection
+          {t("heroPhone.newCollection")}
         </p>
 
         <h1 className="text-4xl md:text-5xl font-bold mb-2">
-          High-end smartphones
+          {t("heroPhone.title")}
         </h1>
 
-        <p className="text-[#6b6b6b]">
-          Luxurious design • Powerful performance • Good prices every day
-        </p>
+        <p className="text-[#6b6b6b]">{t("heroPhone.subtitle")}</p>
       </div>
 
       {/* GLOW */}

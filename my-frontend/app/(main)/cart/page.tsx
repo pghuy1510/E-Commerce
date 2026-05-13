@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { X, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cartAPI } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 interface CartItem {
   id: number;
@@ -22,6 +24,7 @@ export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { t, formatPrice } = usePreferences();
 
   // 🔥 load cart từ backend
   const fetchCart = async () => {
@@ -91,40 +94,35 @@ export default function CartPage() {
     }
   };
 
-  // 💰 subtotal
+  // subtotal
   const subtotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
 
-  const FancyButton = ({ children }: { children: React.ReactNode }) => (
-    <button className="relative overflow-hidden bg-[#eba07a] text-white px-5 py-2 rounded-full text-sm group">
-      <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
-      <span className="relative z-10">{children}</span>
-    </button>
-  );
-
-  if (loading) return <p className="text-center py-10">Loading cart...</p>;
+  if (loading) {
+    return <p className="text-center py-10">{t("label.loadingCart")}</p>;
+  }
 
   return (
     <div className="w-full">
       {/* BANNER */}
       <div className="bg-gradient-to-r from-yellow-600 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">Cart</h1>
+        <h1 className="text-4xl font-bold text-gray-800">{t("nav.cart")}</h1>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* LEFT */}
         <div className="lg:col-span-2">
           <div className="grid grid-cols-4 text-gray-700 font-semibold border-b pb-4">
-            <span>Product</span>
-            <span className="text-center">Price</span>
-            <span className="text-center">Quantity</span>
-            <span className="text-right">Subtotal</span>
+            <span>{t("label.product")}</span>
+            <span className="text-center">{t("label.price")}</span>
+            <span className="text-center">{t("label.quantity")}</span>
+            <span className="text-right">{t("label.subtotal")}</span>
           </div>
 
           {cart.length === 0 && (
-            <p className="py-10 text-gray-500">Cart is empty</p>
+            <p className="py-10 text-gray-500">{t("label.cartEmpty")}</p>
           )}
 
           {cart.map((item) => (
@@ -139,19 +137,26 @@ export default function CartPage() {
                   <X size={18} />
                 </button>
 
-                <Image
-                  src={item.product.image || "/placeholder.png"}
-                  alt=""
-                  width={60}
-                  height={80}
-                />
+                {/* CLICK PRODUCT */}
+                <Link
+                  href={`/product/${item.product.id}`}
+                  className="flex items-center gap-4 group">
+                  <Image
+                    src={item.product.image || "/placeholder.png"}
+                    alt={item.product.name}
+                    width={60}
+                    height={80}
+                  />
 
-                <span className="font-medium">{item.product.name}</span>
+                  <span className="font-medium group-hover:text-yellow-600 transition">
+                    {item.product.name}
+                  </span>
+                </Link>
               </div>
 
               {/* PRICE */}
               <span className="text-center text-yellow-600 font-medium">
-                ${item.price.toFixed(2)}
+                {formatPrice(item.price)}
               </span>
 
               {/* QUANTITY */}
@@ -177,7 +182,7 @@ export default function CartPage() {
 
               {/* SUBTOTAL */}
               <span className="text-right text-yellow-600 font-medium">
-                ${(item.price * item.quantity).toFixed(2)}
+                {formatPrice(item.price * item.quantity)}
               </span>
             </div>
           ))}
@@ -185,26 +190,28 @@ export default function CartPage() {
 
         {/* RIGHT */}
         <div className="border rounded-lg p-6 h-fit shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Cart Total</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            {t("cart.cartTotalTitle")}
+          </h2>
 
           <div className="flex justify-between py-3 border-b">
-            <span>Subtotal:</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>{t("label.subtotal")}:</span>
+            <span>{formatPrice(subtotal)}</span>
           </div>
 
           <div className="flex justify-between py-3 border-b">
-            <span>Shipping:</span>
-            <span>Free</span>
+            <span>{t("label.shipping")}:</span>
+            <span>{t("label.free")}</span>
           </div>
 
           <div className="flex justify-between py-3 font-semibold">
-            <span>Total:</span>
-            <span className="text-yellow-600">${subtotal.toFixed(2)}</span>
+            <span>{t("label.total")}:</span>
+            <span className="text-yellow-600">{formatPrice(subtotal)}</span>
           </div>
 
           <div className="mt-6">
             <button className="w-full bg-[#eba07a] text-white py-3 rounded-full hover:bg-yellow-600 transition">
-              Proceed To Checkout
+              {t("action.proceedToCheckout")}
             </button>
           </div>
         </div>

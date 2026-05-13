@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import { useState, useEffect } from "react";
 import { productAPI, type Product } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 import "swiper/css";
 
@@ -18,6 +19,7 @@ export default function ProductSection({
 }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, formatPrice, translateCategory } = usePreferences();
 
   useEffect(() => {
     if (!category) return;
@@ -37,7 +39,7 @@ export default function ProductSection({
   if (loading) {
     return (
       <section className="w-full flex justify-center mt-16">
-        <p>Loading...</p>
+        <p>{t("label.loading")}</p>
       </section>
     );
   }
@@ -79,11 +81,15 @@ export default function ProductSection({
                 </div>
 
                 <div className="mt-4 space-y-1">
-                  <p className="text-xs text-gray-500">{item.category?.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.category?.name
+                      ? translateCategory(item.category.name)
+                      : t("topRating.categoryFallback")}
+                  </p>
 
                   <h3 className="text-sm font-semibold">{item.name}</h3>
 
-                  <div className="font-semibold">${item.price.toFixed(2)}</div>
+                  <div className="font-semibold">{formatPrice(item.price)}</div>
                 </div>
               </div>
             </SwiperSlide>

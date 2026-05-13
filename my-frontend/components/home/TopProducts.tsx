@@ -1,6 +1,9 @@
 "use client";
 
+import { usePreferences } from "@/lib/i18n";
+
 export default function BannerGrid() {
+  const { t } = usePreferences();
   return (
     <section className="w-full max-w-[1330px] mx-auto px-4 mt-20">
       <div className="grid md:grid-cols-2 gap-6">
@@ -22,15 +25,15 @@ export default function BannerGrid() {
 
           {/* content */}
           <div className="relative z-10 h-full flex flex-col justify-center px-8 text-white">
-            <p className="text-sm mb-2">Limited Offer</p>
+            <p className="text-sm mb-2">{t("banner.limitedOffer")}</p>
 
             <h3 className="text-2xl md:text-3xl font-bold leading-snug">
-              Up To 50% Off <br />
-              All Books
+              {t("banner.upTo50Off")} <br />
+              {t("banner.allBooks")}
             </h3>
 
             <button className="mt-5 w-fit bg-white text-black px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition">
-              Shop Now →
+              {t("action.shopNow")}
             </button>
           </div>
         </div>
@@ -53,15 +56,14 @@ export default function BannerGrid() {
 
           {/* content */}
           <div className="relative z-10 h-full flex flex-col justify-center px-8 text-white">
-            <p className="text-sm mb-2">New Collection</p>
+            <p className="text-sm mb-2">{t("banner.newCollection")}</p>
 
             <h3 className="text-2xl md:text-3xl font-bold leading-snug">
-              Discover Your <br />
-              Next Favorite Book
+              {t("banner.discoverNextFavoriteBook")}
             </h3>
 
             <button className="mt-5 w-fit bg-yellow-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition">
-              Explore →
+              {t("action.explore")}
             </button>
           </div>
         </div>

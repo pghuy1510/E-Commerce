@@ -8,6 +8,7 @@ import Image from "next/image";
 import { AxiosError } from "axios";
 import { Store } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { usePreferences } from "@/lib/i18n";
 
 interface ApiErrorResponse {
   message?: string | string[];
@@ -26,6 +27,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
 
   const router = useRouter();
+  const { t } = usePreferences();
 
   // validate
   const validateUsername = (value: string) => {
@@ -42,7 +44,7 @@ export default function RegisterPage() {
     try {
       setError("");
       await register({ username, password });
-      alert("Registered successfully");
+      alert(t("alert.registerSuccess"));
       router.push("/login");
     } catch (err) {
       const apiError = err as AxiosError<ApiErrorResponse>;
@@ -52,11 +54,11 @@ export default function RegisterPage() {
         : message;
 
       if (normalizedMessage?.toLowerCase().includes("already exists")) {
-        setError("Account already exists.");
+        setError(t("alert.accountExists"));
         return;
       }
 
-      setError(normalizedMessage ?? "Registration failed. Please try again.");
+      setError(normalizedMessage ?? t("alert.registrationFailed"));
     }
   };
 
@@ -67,16 +69,18 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-white shadow-xl flex items-center justify-end pr-20">
           {/* FORM */}
           <div className="w-[350px] border border-gray-200 p-8 bg-white">
-            <h2 className="text-2xl font-bold mb-2">Register</h2>
+            <h2 className="text-2xl font-bold mb-2">
+              {t("auth.registerTitle")}
+            </h2>
             <p className="text-sm text-gray-400 mb-6">
-              Create your account to get started
+              {t("auth.registerSubtitle")}
             </p>
 
             {/* USERNAME */}
             <div className="relative">
               <input
                 type="text"
-                placeholder="Username"
+                placeholder={t("auth.username")}
                 value={username}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -104,7 +108,7 @@ export default function RegisterPage() {
 
               {touchedUsername && !isUsernameValid && username && (
                 <p className="text-red-500 text-xs mt-[-10px] mb-2">
-                  Username ≥ 3 characters, does not contain spaces
+                  {t("auth.usernameValidation")}
                 </p>
               )}
             </div>
@@ -113,7 +117,7 @@ export default function RegisterPage() {
             <div className="relative">
               <input
                 type="password"
-                placeholder="Password"
+                placeholder={t("auth.password")}
                 value={password}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -141,7 +145,7 @@ export default function RegisterPage() {
 
               {touchedPassword && !isPasswordValid && password && (
                 <p className="text-red-500 text-xs mt-[-10px] mb-2">
-                  Password must be at least 6 characters long
+                  {t("auth.passwordValidation")}
                 </p>
               )}
             </div>
@@ -157,12 +161,14 @@ export default function RegisterPage() {
                     : "bg-gray-300 cursor-not-allowed"
                 }
               `}>
-              REGISTER
+              {t("action.registerUpper")}
             </button>
 
             <div className="flex items-center my-4">
               <div className="flex-1 h-px bg-gray-300"></div>
-              <span className="px-2 text-gray-400 text-sm">OR</span>
+              <span className="px-2 text-gray-400 text-sm">
+                {t("action.or")}
+              </span>
               <div className="flex-1 h-px bg-gray-300"></div>
             </div>
 
@@ -177,15 +183,15 @@ export default function RegisterPage() {
                 src="https://developers.google.com/identity/images/g-logo.png"
                 className="w-5 h-5"
               />
-              Continue with Google
+              {t("action.continueWithGoogle")}
             </button>
 
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
             <p className="text-sm mt-4 text-center text-gray-500">
-              Do you already have an account?{" "}
+              {t("auth.haveAccount")}{" "}
               <Link href="/login" className="text-yellow-500 hover:underline">
-                Login
+                {t("action.login")}
               </Link>
             </p>
           </div>
@@ -198,9 +204,11 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <h1 className="text-3xl font-bold mb-4">Create account</h1>
+            <h1 className="text-3xl font-bold mb-4">
+              {t("auth.createAccountTitle")}
+            </h1>
             <p className="text-sm opacity-90">
-              Start managing your store with our system today
+              {t("auth.createAccountSubtitle")}
             </p>
           </div>
 
