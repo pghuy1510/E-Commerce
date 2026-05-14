@@ -80,6 +80,7 @@ export default function Header() {
     Cookies.set("token", session.backendAccessToken, {
       path: "/",
     });
+    localStorage.setItem("token", session.backendAccessToken);
 
     const name = session.user?.name || session.user?.email || "google-user";
 

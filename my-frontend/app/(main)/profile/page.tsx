@@ -66,6 +66,7 @@ export default function ProfilePage() {
     const sessionToken = session?.backendAccessToken;
     if (sessionToken && !getBrowserToken()) {
       document.cookie = `token=${encodeURIComponent(sessionToken)}; path=/`;
+      localStorage.setItem("token", sessionToken);
     }
 
     const token = getBrowserToken();
@@ -80,10 +81,12 @@ export default function ProfilePage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const authToken =
+          session?.backendAccessToken || getBrowserToken() || undefined;
         const [profileData, addressData, bankData] = await Promise.all([
-          userProfileAPI.get(),
-          userAddressAPI.get(),
-          userBankAPI.list(),
+          userProfileAPI.get(authToken),
+          userAddressAPI.get(authToken),
+          userBankAPI.list(authToken),
         ]);
 
         let day = "";
@@ -161,7 +164,9 @@ export default function ProfilePage() {
         payload.dateOfBirth = dateOfBirth;
       }
 
-      const updated = await userProfileAPI.update(payload);
+      const authToken =
+        session?.backendAccessToken || getBrowserToken() || undefined;
+      const updated = await userProfileAPI.update(payload, authToken);
 
       if (updated.username) {
         localStorage.setItem("username", updated.username);
@@ -181,11 +186,16 @@ export default function ProfilePage() {
     }
 
     try {
-      const created = await userBankAPI.create({
-        bankName: bank.bankName.trim(),
-        accountName: bank.accountName.trim(),
-        accountNumber: bank.accountNumber.trim(),
-      });
+      const authToken =
+        session?.backendAccessToken || getBrowserToken() || undefined;
+      const created = await userBankAPI.create(
+        {
+          bankName: bank.bankName.trim(),
+          accountName: bank.accountName.trim(),
+          accountNumber: bank.accountNumber.trim(),
+        },
+        authToken,
+      );
 
       setBanks((prev) => [created, ...prev]);
       setBank({
@@ -203,12 +213,17 @@ export default function ProfilePage() {
 
   const handleSaveAddress = async () => {
     try {
-      await userAddressAPI.update({
-        province: address.province.trim(),
-        district: address.district.trim(),
-        ward: address.ward.trim(),
-        detail: address.detail.trim(),
-      });
+      const authToken =
+        session?.backendAccessToken || getBrowserToken() || undefined;
+      await userAddressAPI.update(
+        {
+          province: address.province.trim(),
+          district: address.district.trim(),
+          ward: address.ward.trim(),
+          detail: address.detail.trim(),
+        },
+        authToken,
+      );
       alert("Address saved successfully!");
     } catch (err) {
       console.error("Address save error:", err);
@@ -223,10 +238,15 @@ export default function ProfilePage() {
     }
 
     try {
-      await userPasswordAPI.change({
-        currentPassword: password.current,
-        newPassword: password.newPass,
-      });
+      const authToken =
+        session?.backendAccessToken || getBrowserToken() || undefined;
+      await userPasswordAPI.change(
+        {
+          currentPassword: password.current,
+          newPassword: password.newPass,
+        },
+        authToken,
+      );
 
       setPassword({
         current: "",
@@ -298,9 +318,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-800">
-                {displayName}
-              </h3>
+              <h3 className="font-semibold text-gray-800">{displayName}</h3>
 
               <p className="text-sm text-gray-500">Edit Profile</p>
             </div>

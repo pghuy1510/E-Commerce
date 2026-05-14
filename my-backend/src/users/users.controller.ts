@@ -67,6 +67,22 @@ export class UsersController {
       throw new BadRequestException('Invalid userId');
     }
 
+    // Log authorization header for debugging 401 issues
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const authHeader = (req as any).headers?.authorization;
+      // Use console.debug so it's easy to filter in dev logs
+      console.debug(
+        '[users.controller] updateProfile called - userId:',
+        userId,
+        'authHeader:',
+        authHeader,
+      );
+    } catch (e) {
+      // ignore logging errors
+    }
+
     return this.usersService.updateProfile(userId, body);
   }
 
