@@ -13,6 +13,7 @@ import { UsersModule } from './users/users.module';
 import { PaymentModule } from './payment/payment.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     PaymentModule,
     TrackingModule,
     WishlistModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

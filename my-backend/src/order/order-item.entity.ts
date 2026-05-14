@@ -12,10 +12,10 @@ export class OrderItem {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ name: 'product_id' })
   productId!: number;
 
-  @Column()
+  @Column({ name: 'product_name' })
   productName!: string;
 
   @Column()

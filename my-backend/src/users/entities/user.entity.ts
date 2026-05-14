@@ -4,8 +4,12 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { Cart } from '../../cart/cart.entity';
+import { UserAddress } from './user-address.entity';
+import { UserBank } from './user-bank.entity';
+import { UserProfile } from './user-profile.entity';
 
 @Entity('users')
 export class User {
@@ -29,4 +33,13 @@ export class User {
 
   @OneToMany(() => Cart, (cart) => cart.user)
   carts!: Cart[];
+
+  @OneToOne(() => UserProfile, (profile) => profile.user)
+  profile?: UserProfile;
+
+  @OneToOne(() => UserAddress, (address) => address.user)
+  address?: UserAddress;
+
+  @OneToMany(() => UserBank, (bank) => bank.user)
+  banks?: UserBank[];
 }

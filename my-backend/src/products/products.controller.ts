@@ -7,6 +7,7 @@ import {
   Patch,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto/create-product.dto';
@@ -31,11 +32,19 @@ export class ProductsController {
     return this.productService.findByCategory(name);
   }
 
+  @Get('new-arrivals')
+  getNewArrivals(@Query('limit') limit?: string) {
+    const parsed = limit ? Number(limit) : undefined;
+    const safeLimit = Number.isFinite(parsed) ? parsed : undefined;
+
+    return this.productService.getNewArrivals(safeLimit ?? 12);
+  }
+
   @Get('top-selling')
   async getTopSelling() {
     return this.productService.getTopSelling(10);
   }
-  
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.productService.findOne(id);

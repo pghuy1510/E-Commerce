@@ -130,6 +130,40 @@ export interface Product {
   };
 }
 
+export interface BestSellerProduct extends Product {
+  sold: number;
+}
+
+export interface UserProfile {
+  username: string;
+  email?: string | null;
+  fullName?: string;
+  phone?: string;
+  gender?: string;
+  dateOfBirth?: string | null;
+}
+
+export interface UserAddress {
+  province?: string;
+  district?: string;
+  ward?: string;
+  detail?: string;
+}
+
+export interface UserBank {
+  id: number;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+}
+
+export interface ContactPayload {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}
+
 export const productAPI = {
   getAll: async (): Promise<Product[]> => {
     const response = await api.get("/products");
@@ -145,19 +179,25 @@ export const productAPI = {
     const response = await api.get(`/products/category/${category}`);
     return response.data;
   },
-  getTopSelling: async (): Promise<Product[]> => {
+  getNewArrivals: async (limit = 12): Promise<Product[]> => {
+    const response = await api.get("/products/new-arrivals", {
+      params: { limit },
+    });
+    return response.data;
+  },
+  getTopSelling: async (): Promise<BestSellerProduct[]> => {
     const res = await api.get("/products/top-selling");
-
-    // vì getRawAndEntities trả dạng đặc biệt
-    return res.data.entities;
+    return res.data;
   },
 };
 
 export const wishlistAPI = {
   toggle: async (userId: number, productId: number) => {
     const list = await wishlistAPI.get(userId);
-    const items = Array.isArray(list) ? list : list?.items ?? [];
-    const exists = items.some((item: any) => hasProductIdMatch(item, productId));
+    const items = Array.isArray(list) ? list : (list?.items ?? []);
+    const exists = items.some((item: any) =>
+      hasProductIdMatch(item, productId),
+    );
     if (exists) {
       throw createDuplicateError(
         "Sản phẩm đã có trong wishlist.",
@@ -187,7 +227,9 @@ export const cartAPI = {
     requireAuthToken();
     const current = await api.get("/cart");
     const items = current.data?.items ?? [];
-    const exists = items.some((item: any) => hasProductIdMatch(item, productId));
+    const exists = items.some((item: any) =>
+      hasProductIdMatch(item, productId),
+    );
     if (exists) {
       throw createDuplicateError(
         "Sản phẩm đã có trong giỏ hàng.",
@@ -225,5 +267,58 @@ export const cartAPI = {
     });
     emitCartUpdated();
     return res;
+  },
+};
+
+export const userProfileAPI = {
+  get: async (): Promise<UserProfile> => {
+    requireAuthToken();
+    const res = await api.get("/users/me/profile");
+    return res.data;
+  },
+  update: async (payload: Partial<UserProfile>): Promise<UserProfile> => {
+    requireAuthToken();
+    const res = await api.patch("/users/me/profile", payload);
+    return res.data;
+  },
+};
+
+export const userAddressAPI = {
+  get: async (): Promise<UserAddress> => {
+    requireAuthToken();
+    const res = await api.get("/users/me/address");
+    return res.data;
+  },
+  update: async (payload: UserAddress): Promise<UserAddress> => {
+    requireAuthToken();
+    const res = await api.patch("/users/me/address", payload);
+    return res.data;
+  },
+};
+
+export const userBankAPI = {
+  list: async (): Promise<UserBank[]> => {
+    requireAuthToken();
+    const res = await api.get("/users/me/banks");
+    return res.data;
+  },
+  create: async (payload: Omit<UserBank, "id">): Promise<UserBank> => {
+    requireAuthToken();
+    const res = await api.post("/users/me/banks", payload);
+    return res.data;
+  },
+};
+
+export const userPasswordAPI = {
+  change: async (payload: { currentPassword: string; newPassword: string }) => {
+    requireAuthToken();
+    return api.patch("/users/me/password", payload);
+  },
+};
+
+export const contactAPI = {
+  create: async (payload: ContactPayload) => {
+    const res = await api.post("/contact", payload);
+    return res.data;
   },
 };

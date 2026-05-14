@@ -19,6 +19,7 @@ export class ProductsService {
   findAll() {
     return this.productRepo.find({
       relations: ['category'],
+      order: { id: 'DESC' },
     });
   }
 
@@ -78,23 +79,30 @@ export class ProductsService {
       .take(10) // limit 10 sp
       .getMany();
   }
+
+  async getNewArrivals(limit = 12) {
+    return this.productRepo.find({
+      relations: ['category'],
+      order: { id: 'DESC' },
+      take: limit,
+    });
+  }
+
   async getTopSelling(limit = 10) {
-    return this.productRepo
+    const { raw, entities } = await this.productRepo
       .createQueryBuilder('product')
       .leftJoin('order_items', 'oi', 'oi.product_id = product.id')
       .leftJoinAndSelect('product.category', 'category')
-      .select([
-        'product.id',
-        'product.name',
-        'product.price',
-        'product.image',
-        'category.name',
-      ])
       .addSelect('COALESCE(SUM(oi.quantity), 0)', 'sold')
       .groupBy('product.id')
       .addGroupBy('category.id')
       .orderBy('sold', 'DESC')
       .limit(limit)
       .getRawAndEntities();
+
+    return entities.map((product, index) => ({
+      ...product,
+      sold: Number(raw[index]?.sold ?? 0),
+    }));
   }
 }

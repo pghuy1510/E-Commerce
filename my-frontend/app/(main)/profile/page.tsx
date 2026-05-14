@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   User,
@@ -10,6 +10,14 @@ import {
   Camera,
   ChevronDown,
 } from "lucide-react";
+import {
+  getBrowserToken,
+  userAddressAPI,
+  userBankAPI,
+  userPasswordAPI,
+  userProfileAPI,
+  type UserBank,
+} from "@/lib/api";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -19,11 +27,13 @@ export default function ProfilePage() {
   const years = Array.from({ length: 70 }, (_, i) => 2025 - i);
 
   const [activeTab, setActiveTab] = useState("profile");
+  const [loading, setLoading] = useState(true);
+  const [hasAuth, setHasAuth] = useState(false);
 
   const [profile, setProfile] = useState({
-    username: session?.user?.name || "",
+    username: "",
     fullName: "",
-    email: session?.user?.email || "",
+    email: "",
     phone: "",
     gender: "male",
     day: "",
@@ -50,32 +60,196 @@ export default function ProfilePage() {
     accountNumber: "",
   });
 
-  const handleSaveProfile = () => {
-    alert("Profile updated successfully!");
-    console.log(profile);
+  const [banks, setBanks] = useState<UserBank[]>([]);
+
+  useEffect(() => {
+    const sessionToken = session?.backendAccessToken;
+    if (sessionToken && !getBrowserToken()) {
+      document.cookie = `token=${encodeURIComponent(sessionToken)}; path=/`;
+    }
+
+    const token = getBrowserToken();
+    const authed = Boolean(token);
+    setHasAuth(authed);
+
+    if (!authed) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [profileData, addressData, bankData] = await Promise.all([
+          userProfileAPI.get(),
+          userAddressAPI.get(),
+          userBankAPI.list(),
+        ]);
+
+        let day = "";
+        let month = "";
+        let year = "";
+        if (profileData.dateOfBirth) {
+          const parts = profileData.dateOfBirth.split("-");
+          if (parts.length === 3) {
+            year = parts[0];
+            month = String(Number(parts[1]));
+            day = String(Number(parts[2]));
+          }
+        }
+
+        setProfile({
+          username: profileData.username || "",
+          fullName: profileData.fullName || "",
+          email: profileData.email || "",
+          phone: profileData.phone || "",
+          gender: profileData.gender || "male",
+          day,
+          month,
+          year,
+        });
+
+        setAddress({
+          province: addressData.province || "",
+          district: addressData.district || "",
+          ward: addressData.ward || "",
+          detail: addressData.detail || "",
+        });
+
+        setBanks(bankData);
+      } catch (err) {
+        console.error("Profile load error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [session]);
+
+  const handleSaveProfile = async () => {
+    if (!profile.username.trim()) {
+      alert("Username is required.");
+      return;
+    }
+
+    const dateOfBirth =
+      profile.day && profile.month && profile.year
+        ? `${profile.year}-${profile.month.padStart(2, "0")}-${profile.day.padStart(2, "0")}`
+        : undefined;
+
+    try {
+      const payload: {
+        username: string;
+        email?: string;
+        fullName?: string;
+        phone?: string;
+        gender?: string;
+        dateOfBirth?: string;
+      } = {
+        username: profile.username.trim(),
+        fullName: profile.fullName.trim(),
+        phone: profile.phone.trim(),
+        gender: profile.gender,
+      };
+
+      if (profile.email.trim()) {
+        payload.email = profile.email.trim();
+      }
+
+      if (dateOfBirth) {
+        payload.dateOfBirth = dateOfBirth;
+      }
+
+      const updated = await userProfileAPI.update(payload);
+
+      if (updated.username) {
+        localStorage.setItem("username", updated.username);
+      }
+
+      alert("Profile updated successfully!");
+    } catch (err) {
+      console.error("Profile update error:", err);
+      alert("Failed to update profile. Please try again.");
+    }
   };
 
-  const handleSaveBank = () => {
-    alert("Bank information saved successfully!");
-    console.log(bank);
+  const handleSaveBank = async () => {
+    if (!bank.bankName || !bank.accountName || !bank.accountNumber) {
+      alert("Please fill in all bank fields.");
+      return;
+    }
+
+    try {
+      const created = await userBankAPI.create({
+        bankName: bank.bankName.trim(),
+        accountName: bank.accountName.trim(),
+        accountNumber: bank.accountNumber.trim(),
+      });
+
+      setBanks((prev) => [created, ...prev]);
+      setBank({
+        bankName: "",
+        accountName: "",
+        accountNumber: "",
+      });
+
+      alert("Bank information saved successfully!");
+    } catch (err) {
+      console.error("Bank save error:", err);
+      alert("Failed to save bank information.");
+    }
   };
 
-  const handleSaveAddress = () => {
-    alert("Address saved successfully!");
-    console.log(address);
+  const handleSaveAddress = async () => {
+    try {
+      await userAddressAPI.update({
+        province: address.province.trim(),
+        district: address.district.trim(),
+        ward: address.ward.trim(),
+        detail: address.detail.trim(),
+      });
+      alert("Address saved successfully!");
+    } catch (err) {
+      console.error("Address save error:", err);
+      alert("Failed to save address.");
+    }
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (password.newPass !== password.confirm) {
       alert("Password confirmation does not match.");
       return;
     }
 
-    alert("Password updated successfully!");
-    console.log(password);
+    try {
+      await userPasswordAPI.change({
+        currentPassword: password.current,
+        newPassword: password.newPass,
+      });
+
+      setPassword({
+        current: "",
+        newPass: "",
+        confirm: "",
+      });
+
+      alert("Password updated successfully!");
+    } catch (err) {
+      console.error("Password update error:", err);
+      alert("Failed to update password.");
+    }
   };
 
-  if (!session) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600 text-lg">
+        Loading profile...
+      </div>
+    );
+  }
+
+  if (!hasAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-600 text-lg">
         Please login to view your profile.
@@ -106,6 +280,13 @@ export default function ProfilePage() {
     },
   ];
 
+  const displayName =
+    profile.fullName ||
+    profile.username ||
+    session?.user?.name ||
+    session?.user?.email ||
+    "User";
+
   return (
     <div className="bg-[#efefef] min-h-screen py-10 px-4 lg:px-10">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
@@ -118,7 +299,7 @@ export default function ProfilePage() {
 
             <div>
               <h3 className="font-semibold text-gray-800">
-                {session.user?.name}
+                {displayName}
               </h3>
 
               <p className="text-sm text-gray-500">Edit Profile</p>
@@ -345,6 +526,26 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-6 max-w-2xl">
+                {banks.length > 0 && (
+                  <div className="space-y-3">
+                    {banks.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                        <p className="font-semibold text-gray-800">
+                          {item.bankName}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Account: {item.accountName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          No: {item.accountNumber}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <FormGroup label="Bank Name">
                   <input
                     type="text"
@@ -392,7 +593,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleSaveBank}
                   className={buttonClass}>
-                  Save Information
+                  Add Bank
                 </button>
               </div>
             </div>
