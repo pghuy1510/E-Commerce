@@ -180,6 +180,7 @@ export default function Header() {
   const handleLogout = async () => {
     Cookies.remove("token", { path: "/" });
 
+    localStorage.removeItem("token");
     localStorage.removeItem("username");
 
     setLocalUsername(null);

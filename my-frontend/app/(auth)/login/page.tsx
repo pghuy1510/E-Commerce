@@ -20,6 +20,7 @@ export default function LoginPage() {
     try {
       const res = await login({ username, password });
       Cookies.set("token", res.data.access_token, { path: "/" });
+      localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("username", username);
       router.push("/");
     } catch (err) {

@@ -81,12 +81,10 @@ export default function ProfilePage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const authToken =
-          session?.backendAccessToken || getBrowserToken() || undefined;
         const [profileData, addressData, bankData] = await Promise.all([
-          userProfileAPI.get(authToken),
-          userAddressAPI.get(authToken),
-          userBankAPI.list(authToken),
+          userProfileAPI.get(),
+          userAddressAPI.get(),
+          userBankAPI.list(),
         ]);
 
         let day = "";
@@ -164,9 +162,7 @@ export default function ProfilePage() {
         payload.dateOfBirth = dateOfBirth;
       }
 
-      const authToken =
-        session?.backendAccessToken || getBrowserToken() || undefined;
-      const updated = await userProfileAPI.update(payload, authToken);
+      const updated = await userProfileAPI.update(payload);
 
       if (updated.username) {
         localStorage.setItem("username", updated.username);
@@ -186,16 +182,11 @@ export default function ProfilePage() {
     }
 
     try {
-      const authToken =
-        session?.backendAccessToken || getBrowserToken() || undefined;
-      const created = await userBankAPI.create(
-        {
-          bankName: bank.bankName.trim(),
-          accountName: bank.accountName.trim(),
-          accountNumber: bank.accountNumber.trim(),
-        },
-        authToken,
-      );
+      const created = await userBankAPI.create({
+        bankName: bank.bankName.trim(),
+        accountName: bank.accountName.trim(),
+        accountNumber: bank.accountNumber.trim(),
+      });
 
       setBanks((prev) => [created, ...prev]);
       setBank({
@@ -213,17 +204,12 @@ export default function ProfilePage() {
 
   const handleSaveAddress = async () => {
     try {
-      const authToken =
-        session?.backendAccessToken || getBrowserToken() || undefined;
-      await userAddressAPI.update(
-        {
-          province: address.province.trim(),
-          district: address.district.trim(),
-          ward: address.ward.trim(),
-          detail: address.detail.trim(),
-        },
-        authToken,
-      );
+      await userAddressAPI.update({
+        province: address.province.trim(),
+        district: address.district.trim(),
+        ward: address.ward.trim(),
+        detail: address.detail.trim(),
+      });
       alert("Address saved successfully!");
     } catch (err) {
       console.error("Address save error:", err);
@@ -238,15 +224,10 @@ export default function ProfilePage() {
     }
 
     try {
-      const authToken =
-        session?.backendAccessToken || getBrowserToken() || undefined;
-      await userPasswordAPI.change(
-        {
-          currentPassword: password.current,
-          newPassword: password.newPass,
-        },
-        authToken,
-      );
+      await userPasswordAPI.change({
+        currentPassword: password.current,
+        newPassword: password.newPass,
+      });
 
       setPassword({
         current: "",

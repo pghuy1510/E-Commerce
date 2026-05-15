@@ -20,6 +20,15 @@ export function getBrowserToken(): string | undefined {
   }
 
   try {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      return storedToken;
+    }
+  } catch {
+    return undefined;
+  }
+
+  try {
     // Lazy import to avoid breaking server-side imports
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Cookies = require("js-cookie") as typeof import("js-cookie");
@@ -107,6 +116,9 @@ api.interceptors.response.use(
     if (typeof window !== "undefined" && error?.response?.status === 401) {
       try {
         document.cookie = "token=; Max-Age=0; path=/";
+      } catch {}
+      try {
+        localStorage.removeItem("token");
       } catch {}
       try {
         localStorage.removeItem("username");

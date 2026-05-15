@@ -26,6 +26,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     Cookies.remove("token", { path: "/" });
+    localStorage.removeItem("token");
     localStorage.removeItem("username");
     setUsername(null);
     router.push("/login");
