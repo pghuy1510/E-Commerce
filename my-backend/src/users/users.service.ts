@@ -6,10 +6,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import { UserProfile } from './entities/user-profile.entity';
 import { UserAddress } from './entities/user-address.entity';
 import { UserBank } from './entities/user-bank.entity';
+
 import * as bcrypt from 'bcrypt';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -23,9 +24,6 @@ export class UsersService {
     @InjectRepository(User)
     private userRepo: Repository<User>,
 
-    @InjectRepository(UserProfile)
-    private profileRepo: Repository<UserProfile>,
-
     @InjectRepository(UserAddress)
     private addressRepo: Repository<UserAddress>,
 
@@ -34,11 +32,15 @@ export class UsersService {
   ) {}
 
   async findByUsername(username: string) {
-    return this.userRepo.findOne({ where: { username } });
+    return this.userRepo.findOne({
+      where: { username },
+    });
   }
 
   async findByEmail(email: string) {
-    return this.userRepo.findOne({ where: { email } });
+    return this.userRepo.findOne({
+      where: { email },
+    });
   }
 
   async create(createUserDto: CreateUserDto) {
@@ -54,11 +56,15 @@ export class UsersService {
   }
 
   async findOne(id: number) {
-    return this.userRepo.findOne({ where: { id } });
+    return this.userRepo.findOne({
+      where: { id },
+    });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    const user = await this.userRepo.findOne({ where: { id } });
+    const user = await this.userRepo.findOne({
+      where: { id },
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -76,7 +82,9 @@ export class UsersService {
   }
 
   async remove(id: number) {
-    const user = await this.userRepo.findOne({ where: { id } });
+    const user = await this.userRepo.findOne({
+      where: { id },
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -100,7 +108,6 @@ export class UsersService {
   async getProfile(userId: number) {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      relations: ['profile'],
     });
 
     if (!user) {
@@ -109,23 +116,24 @@ export class UsersService {
 
     return {
       username: user.username,
-      email: user.email ?? null,
-      fullName: user.profile?.fullName ?? '',
-      phone: user.profile?.phone ?? '',
-      gender: user.profile?.gender ?? 'male',
-      dateOfBirth: user.profile?.dateOfBirth ?? null,
+      email: user.email ?? '',
+      fullName: user.fullName ?? '',
+      phone: user.phone ?? '',
+      gender: user.gender ?? '',
+      dateOfBirth: user.dateOfBirth ?? null,
     };
   }
 
   async updateProfile(userId: number, dto: UpdateProfileDto) {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      relations: ['profile'],
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    console.log('BEFORE:', user);
 
     if (dto.username !== undefined) {
       user.username = dto.username;
@@ -135,31 +143,29 @@ export class UsersService {
       user.email = dto.email;
     }
 
-    let profile = user.profile;
-    if (!profile) {
-      profile = this.profileRepo.create({ user });
-    }
-
     if (dto.fullName !== undefined) {
-      profile.fullName = dto.fullName || null;
+      user.fullName = dto.fullName;
     }
 
     if (dto.phone !== undefined) {
-      profile.phone = dto.phone || null;
+      user.phone = dto.phone;
     }
 
     if (dto.gender !== undefined) {
-      profile.gender = dto.gender || null;
+      user.gender = dto.gender;
     }
 
     if (dto.dateOfBirth !== undefined) {
-      profile.dateOfBirth = dto.dateOfBirth || null;
+      user.dateOfBirth = dto.dateOfBirth ? new Date(dto.dateOfBirth) : null;
     }
 
-    await this.userRepo.save(user);
-    await this.profileRepo.save(profile);
+    console.log('AFTER ASSIGN:', user);
 
-    return this.getProfile(userId);
+    const saved = await this.userRepo.save(user);
+
+    console.log('AFTER SAVE:', saved);
+
+    return saved;
   }
 
   async getAddress(userId: number) {
@@ -191,24 +197,27 @@ export class UsersService {
     }
 
     let address = user.address;
+
     if (!address) {
-      address = this.addressRepo.create({ user });
+      address = this.addressRepo.create({
+        user,
+      });
     }
 
     if (dto.province !== undefined) {
-      address.province = dto.province || null;
+      address.province = dto.province;
     }
 
     if (dto.district !== undefined) {
-      address.district = dto.district || null;
+      address.district = dto.district;
     }
 
     if (dto.ward !== undefined) {
-      address.ward = dto.ward || null;
+      address.ward = dto.ward;
     }
 
     if (dto.detail !== undefined) {
-      address.detail = dto.detail || null;
+      address.detail = dto.detail;
     }
 
     await this.addressRepo.save(address);
@@ -218,14 +227,22 @@ export class UsersService {
 
   async listBanks(userId: number) {
     return this.bankRepo.find({
-      where: { user: { id: userId } },
-      order: { id: 'DESC' },
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+      order: {
+        id: 'DESC',
+      },
       select: ['id', 'bankName', 'accountName', 'accountNumber'],
     });
   }
 
   async addBank(userId: number, dto: CreateBankDto) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -249,7 +266,9 @@ export class UsersService {
   }
 
   async changePassword(userId: number, dto: ChangePasswordDto) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -265,6 +284,8 @@ export class UsersService {
 
     await this.userRepo.save(user);
 
-    return { success: true };
+    return {
+      success: true,
+    };
   }
 }

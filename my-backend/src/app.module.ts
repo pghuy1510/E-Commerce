@@ -31,7 +31,7 @@ import { ContactModule } from './contact/contact.module';
         password: config.get('DB_PASSWORD') || '123456',
         database: config.get('DB_NAME') || 'ecommerce',
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
         logging: true,
       }),
     }),

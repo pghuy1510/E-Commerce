@@ -15,9 +15,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { FaFacebook } from "react-icons/fa";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-
-import { cartAPI, getBrowserToken, wishlistAPI } from "@/lib/api";
+import { cartAPI, wishlistAPI } from "@/lib/api";
+import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
 import { usePreferences } from "@/lib/i18n";
 
 export default function Header() {
@@ -63,7 +62,7 @@ export default function Header() {
      LOAD USER
   ========================= */
   useEffect(() => {
-    const token = Cookies.get("token");
+    const token = getBrowserToken();
     const storedUsername = localStorage.getItem("username");
 
     if (token && storedUsername) {
@@ -77,10 +76,7 @@ export default function Header() {
   useEffect(() => {
     if (!session?.backendAccessToken) return;
 
-    Cookies.set("token", session.backendAccessToken, {
-      path: "/",
-    });
-    localStorage.setItem("token", session.backendAccessToken);
+    setAuthToken(session.backendAccessToken);
 
     const name = session.user?.name || session.user?.email || "google-user";
 
@@ -178,9 +174,7 @@ export default function Header() {
      LOGOUT
   ========================= */
   const handleLogout = async () => {
-    Cookies.remove("token", { path: "/" });
-
-    localStorage.removeItem("token");
+    setAuthToken(null);
     localStorage.removeItem("username");
 
     setLocalUsername(null);

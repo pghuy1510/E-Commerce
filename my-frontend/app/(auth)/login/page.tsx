@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { login } from "@/lib/auth";
-import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { usePreferences } from "@/lib/i18n";
+import { setAuthToken } from "@/lib/auth-token";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -19,11 +19,20 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       const res = await login({ username, password });
-      Cookies.set("token", res.data.access_token, { path: "/" });
-      localStorage.setItem("token", res.data.access_token);
+
+      console.log("LOGIN RESPONSE:", res.data);
+
+      // TEST localStorage
+      localStorage.setItem("token", "test123");
+      console.log("TOKEN:", res.data.access_token);
+
+      setAuthToken(res.data.access_token);
+
       localStorage.setItem("username", username);
+
       router.push("/");
     } catch (err) {
+      console.error(err);
       alert(t("alert.loginFailed"));
     }
   };

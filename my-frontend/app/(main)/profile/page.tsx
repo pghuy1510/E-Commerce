@@ -11,13 +11,13 @@ import {
   ChevronDown,
 } from "lucide-react";
 import {
-  getBrowserToken,
   userAddressAPI,
   userBankAPI,
   userPasswordAPI,
   userProfileAPI,
   type UserBank,
 } from "@/lib/api";
+import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -61,15 +61,18 @@ export default function ProfilePage() {
   });
 
   const [banks, setBanks] = useState<UserBank[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   useEffect(() => {
     const sessionToken = session?.backendAccessToken;
-    if (sessionToken && !getBrowserToken()) {
-      document.cookie = `token=${encodeURIComponent(sessionToken)}; path=/`;
-      localStorage.setItem("token", sessionToken);
+    const existingToken = getBrowserToken();
+
+    if (sessionToken && sessionToken !== existingToken) {
+      setAuthToken(sessionToken);
     }
 
-    const token = getBrowserToken();
+    const token = sessionToken || existingToken;
     const authed = Boolean(token);
     setHasAuth(authed);
 
@@ -163,6 +166,13 @@ export default function ProfilePage() {
       }
 
       const updated = await userProfileAPI.update(payload);
+      if (avatarFile) {
+        const formData = new FormData();
+
+        formData.append("avatar", avatarFile);
+
+        await userProfileAPI.uploadAvatar(formData);
+      }
 
       if (updated.username) {
         localStorage.setItem("username", updated.username);
@@ -173,6 +183,24 @@ export default function ProfilePage() {
       console.error("Profile update error:", err);
       alert("Failed to update profile. Please try again.");
     }
+  };
+  const handleChooseImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    // check size
+    if (file.size > 1024 * 1024) {
+      alert("Image must be smaller than 1MB");
+      return;
+    }
+
+    // save file
+    setAvatarFile(file);
+
+    // preview
+    const imageUrl = URL.createObjectURL(file);
+    setPreviewImage(imageUrl);
   };
 
   const handleSaveBank = async () => {
@@ -492,15 +520,32 @@ export default function ProfilePage() {
                 </div>
 
                 {/* AVATAR */}
+                {/* AVATAR */}
                 <div className="border-l pl-10 flex flex-col items-center">
-                  <div className="w-36 h-36 rounded-full bg-gray-100 border flex items-center justify-center">
-                    <User className="w-16 h-16 text-gray-400" />
+                  {/* PREVIEW */}
+                  <div className="w-36 h-36 rounded-full overflow-hidden bg-gray-100 border flex items-center justify-center">
+                    {previewImage ? (
+                      <img
+                        src={previewImage}
+                        alt="avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-16 h-16 text-gray-400" />
+                    )}
                   </div>
 
-                  <button className="mt-6 border border-gray-300 hover:border-gray-500 transition px-6 py-2 rounded-2xl flex items-center gap-2">
+                  {/* INPUT FILE */}
+                  <label className="mt-6 border border-gray-300 hover:border-gray-500 transition px-6 py-2 rounded-2xl flex items-center gap-2 cursor-pointer">
                     <Camera className="w-4 h-4" />
                     Choose Image
-                  </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={handleChooseImage}
+                    />
+                  </label>
 
                   <div className="text-center text-sm text-gray-400 mt-5 leading-6">
                     <p>Maximum file size 1 MB</p>

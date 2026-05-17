@@ -3,13 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  OneToMany,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
+
 import { Cart } from '../../cart/cart.entity';
 import { UserAddress } from './user-address.entity';
 import { UserBank } from './user-bank.entity';
-import { UserProfile } from './user-profile.entity';
 
 @Entity('users')
 export class User {
@@ -19,8 +19,8 @@ export class User {
   @Column({ unique: true })
   username!: string;
 
-  @Column({ unique: true, nullable: true, type: 'varchar', length: 255 })
-  email?: string | null;
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  email?: string;
 
   @Column()
   password!: string;
@@ -31,15 +31,28 @@ export class User {
   @CreateDateColumn()
   created_at!: Date;
 
+  // PROFILE
+  @Column({ name: 'full_name', type: 'varchar', nullable: true })
+  fullName?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  phone?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  gender?: string;
+
+  @Column({ type: 'date', nullable: true })
+  dateOfBirth!: Date | null;
+
+  // RELATIONS
   @OneToMany(() => Cart, (cart) => cart.user)
   carts!: Cart[];
 
-  @OneToOne(() => UserProfile, (profile) => profile.user)
-  profile?: UserProfile;
-
-  @OneToOne(() => UserAddress, (address) => address.user)
-  address?: UserAddress;
-
   @OneToMany(() => UserBank, (bank) => bank.user)
   banks?: UserBank[];
+
+  @OneToOne(() => UserAddress, (address) => address.user, {
+    cascade: true,
+  })
+  address?: UserAddress;
 }
