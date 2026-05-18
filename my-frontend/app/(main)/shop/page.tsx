@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { productAPI, type Product } from "@/lib/api";
+import { useSearchParams, useRouter } from "next/navigation";
+import { productAPI, type Product, cartAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 
 /* TITLE */
@@ -28,6 +28,7 @@ export default function ShopPage() {
   const [sort, setSort] = useState<string>("default");
   const [ratingFilter, setRatingFilter] = useState<number>(0);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { t, formatPrice, translateCategory } = usePreferences();
 
   useEffect(() => {
@@ -38,9 +39,7 @@ export default function ShopPage() {
         setProducts(data);
         setError(null);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : t("shop.loadError"),
-        );
+        setError(err instanceof Error ? err.message : t("shop.loadError"));
         console.error("Error fetching products:", err);
       } finally {
         setLoading(false);
@@ -87,6 +86,33 @@ export default function ShopPage() {
   if (sort === "price-desc") filtered.sort((a, b) => b.price - a.price);
 
   const renderStars = (num: number) => "⭐".repeat(Math.min(num, 5));
+
+  const handleAddToCart = async (productId: number) => {
+    try {
+      await cartAPI.add(productId);
+      alert(t("alert.addedToCart"));
+    } catch (err: any) {
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+
+      if (status === 401 || code === "AUTH_REQUIRED") {
+        alert(t("alert.loginToAddCart"));
+        router.push("/login");
+        return;
+      }
+      if (code === "CART_DUPLICATE") {
+        alert(t("alert.cartDuplicate"));
+        return;
+      }
+
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        t("alert.addToCartFailed");
+      console.error(err);
+      alert(message);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -255,6 +281,7 @@ export default function ShopPage() {
 
                       {/* BUTTON (STYLE MỚI) */}
                       <button
+                        onClick={() => handleAddToCart(item.id)}
                         disabled={item.stock <= 0}
                         className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group disabled:opacity-50 disabled:cursor-not-allowed">
                         <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>

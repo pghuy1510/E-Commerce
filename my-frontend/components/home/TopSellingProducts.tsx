@@ -120,9 +120,9 @@ export default function TopSellingProducts() {
           loop>
           {products.map((item) => (
             <SwiperSlide key={item.id}>
-              <div className="group">
+              <div className="group h-full flex flex-col">
                 {/* CARD */}
-                <div className="bg-[#eee0d9] rounded-xl p-4 relative group overflow-hidden">
+                <div className="bg-[#eee0d9] rounded-xl p-4 relative group overflow-hidden h-[200px] flex items-center justify-center">
                   {/* DISCOUNT */}
                   {item.discount && (
                     <span className="absolute top-3 left-3 bg-orange-400 text-white text-xs px-2 py-1 rounded z-10">
@@ -138,14 +138,15 @@ export default function TopSellingProducts() {
                   )}
 
                   {/* IMAGE */}
-                  <div className="flex justify-center relative">
-                    <Image
-                      src={item.image || "/placeholder.png"}
-                      alt={item.title}
-                      width={120}
-                      height={160}
-                      className="object-contain group-hover:scale-105 transition duration-300"
-                    />
+                  <div className="flex justify-center relative h-full w-full">
+                    <div className="relative w-[120px] h-[160px]">
+                      <Image
+                        src={item.image || "/placeholder.png"}
+                        alt={item.title}
+                        fill
+                        className="object-contain group-hover:scale-105 transition duration-300"
+                      />
+                    </div>
 
                     {/* HOVER ACTIONS */}
                     <div className="absolute right-1 top-3 flex flex-col gap-2 opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
@@ -171,14 +172,14 @@ export default function TopSellingProducts() {
                 </div>
 
                 {/* INFO */}
-                <div className="mt-4 space-y-1">
+                <div className="mt-4 flex flex-col gap-1 flex-1">
                   <p className="text-xs text-gray-500">
                     {item.author === "Unknown"
                       ? t("label.unknown")
                       : translateCategory(item.author)}
                   </p>
 
-                  <h3 className="text-sm font-semibold text-gray-800 leading-snug">
+                  <h3 className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2">
                     {item.title}
                   </h3>
 
@@ -213,7 +214,7 @@ export default function TopSellingProducts() {
                   {/* BUTTON */}
                   <button
                     onClick={() => handleAddToCart(item.id)}
-                    className="relative w-full mt-3 overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
+                    className="relative w-full mt-auto overflow-hidden bg-[#eee0d9] text-yellow-600 text-sm py-2 rounded-full group">
                     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
                       {t("action.addToCart")}
