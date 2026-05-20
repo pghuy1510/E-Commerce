@@ -65,6 +65,12 @@ const translations: Record<Language, Record<string, string>> = {
     "action.viewAllBooks": "View All Books →",
     "label.stock": "Stock: {count}",
     "label.category": "Category",
+    "label.filters": "Filters",
+    "label.sort": "Sort",
+    "label.clearFilters": "Clear filters",
+    "label.allCategories": "All categories",
+    "label.min": "Min",
+    "label.max": "Max",
     "label.price": "Price",
     "label.quantity": "Quantity",
     "label.subtotal": "Subtotal",
@@ -116,6 +122,9 @@ const translations: Record<Language, Record<string, string>> = {
     "label.inStockWithCount": "In Stock ({count})",
     "label.outOfStockShort": "Out of Stock",
     "label.stockShort": "Stock",
+    "label.sold": "Sold: {count}",
+    "badge.new": "New",
+    "badge.bestSeller": "Best Seller",
     "footer.questionsCall": "Got Questions? Call us",
     "footer.customersSupport": "Customers Support",
     "footer.storeList": "Store List",
@@ -531,6 +540,12 @@ const translations: Record<Language, Record<string, string>> = {
     "action.viewAllBooks": "Xem tất cả sách →",
     "label.stock": "Tồn kho: {count}",
     "label.category": "Danh mục",
+    "label.filters": "Bộ lọc",
+    "label.sort": "Sắp xếp",
+    "label.clearFilters": "Xóa bộ lọc",
+    "label.allCategories": "Tất cả danh mục",
+    "label.min": "Tối thiểu",
+    "label.max": "Tối đa",
     "label.price": "Giá",
     "label.quantity": "Số lượng",
     "label.subtotal": "Tạm tính",
@@ -582,6 +597,9 @@ const translations: Record<Language, Record<string, string>> = {
     "label.inStockWithCount": "Còn hàng ({count})",
     "label.outOfStockShort": "Hết hàng",
     "label.stockShort": "Tồn kho",
+    "label.sold": "Đã bán: {count}",
+    "badge.new": "Mới",
+    "badge.bestSeller": "Bán chạy",
     "footer.questionsCall": "Có câu hỏi? Gọi cho chúng tôi",
     "footer.customersSupport": "Hỗ trợ khách hàng",
     "footer.storeList": "Danh sách cửa hàng",
@@ -710,8 +728,7 @@ const translations: Record<Language, Record<string, string>> = {
     "returnPolicy.timeline.step3.desc":
       "Đóng gói sản phẩm và gửi kèm mã vận đơn.",
     "returnPolicy.timeline.step4.title": "Hoàn tiền",
-    "returnPolicy.timeline.step4.desc":
-      "Hoàn tiền sau khi kiểm tra sản phẩm.",
+    "returnPolicy.timeline.step4.desc": "Hoàn tiền sau khi kiểm tra sản phẩm.",
     "returnPolicy.highlights.title": "Điểm cần lưu ý",
     "returnPolicy.highlights.subtitle":
       "Đổi trả cần tuân thủ điều kiện và kèm hóa đơn gốc.",
@@ -803,8 +820,7 @@ const translations: Record<Language, Record<string, string>> = {
     "payment.methods.chip.momo": "MOMO",
     "payment.methods.chip.vnpay": "VNPAY",
     "payment.banks.title": "Tài khoản ngân hàng đã lưu",
-    "payment.banks.subtitle":
-      "Thêm, sửa, xoá hoặc đặt ngân hàng mặc định.",
+    "payment.banks.subtitle": "Thêm, sửa, xoá hoặc đặt ngân hàng mặc định.",
     "payment.banks.addButton": "Thêm ngân hàng",
     "payment.banks.default": "Mặc định",
     "payment.banks.setDefault": "Đặt mặc định",
@@ -837,8 +853,7 @@ const translations: Record<Language, Record<string, string>> = {
     "support.heroSubtitle":
       "Hỗ trợ đơn hàng, hoàn tiền, thanh toán và sự cố kỹ thuật.",
     "support.categories.order.title": "Vấn đề đơn hàng",
-    "support.categories.order.desc":
-      "Thiếu hàng, trễ hàng hoặc sai sản phẩm.",
+    "support.categories.order.desc": "Thiếu hàng, trễ hàng hoặc sai sản phẩm.",
     "support.categories.refund.title": "Hoàn tiền",
     "support.categories.refund.desc":
       "Tình trạng đổi trả, hoàn tiền hoặc khiếu nại.",
@@ -850,8 +865,7 @@ const translations: Record<Language, Record<string, string>> = {
     "support.categories.technical.title": "Kỹ thuật",
     "support.categories.technical.desc": "Lỗi đăng nhập hoặc sự cố hệ thống.",
     "support.contact.title": "Liên hệ hỗ trợ",
-    "support.contact.subtitle":
-      "Tạo ticket hỗ trợ với thông tin bên dưới.",
+    "support.contact.subtitle": "Tạo ticket hỗ trợ với thông tin bên dưới.",
     "support.contact.validation": "Vui lòng nhập tên, email và nội dung.",
     "support.contact.success": "Đã tạo ticket. Chúng tôi sẽ liên hệ sớm!",
     "support.contact.error": "Gửi thất bại. Vui lòng thử lại.",
@@ -877,13 +891,13 @@ const translations: Record<Language, Record<string, string>> = {
     "support.faq.refund.answer":
       "Hoàn tiền trong 3-7 ngày làm việc sau khi duyệt.",
     "support.faq.payment.category": "Thanh toán",
-    "support.faq.payment.question": "Tôi có thể đổi phương thức thanh toán không?",
+    "support.faq.payment.question":
+      "Tôi có thể đổi phương thức thanh toán không?",
     "support.faq.payment.answer":
       "Bạn có thể đổi trước khi đơn hàng được xác nhận.",
     "support.faq.account.category": "Tài khoản",
     "support.faq.account.question": "Làm sao để đặt lại mật khẩu?",
-    "support.faq.account.answer":
-      "Vào Hồ sơ > Bảo mật để đặt lại mật khẩu.",
+    "support.faq.account.answer": "Vào Hồ sơ > Bảo mật để đặt lại mật khẩu.",
     "support.ticket.title": "Trạng thái ticket",
     "support.ticket.subtitle": "Theo dõi yêu cầu hỗ trợ theo trạng thái.",
     "support.ticket.activeCount": "{count} ticket đang hoạt động",
@@ -916,8 +930,7 @@ const translations: Record<Language, Record<string, string>> = {
     "deals.categories.weekendSale": "Khuyến mãi cuối tuần",
     "deals.banner.limitedOfferTag": "Ưu đãi giới hạn",
     "deals.banner.weekendTitle": "Flash sale cuối tuần",
-    "deals.banner.weekendSubtitle":
-      "Giảm đến 40% cho giày và phụ kiện.",
+    "deals.banner.weekendSubtitle": "Giảm đến 40% cho giày và phụ kiện.",
     "deals.banner.shopNow": "Mua ngay",
     "deals.banner.memberTag": "Ưu đãi thành viên",
     "deals.banner.memberTitle": "Giảm thêm 15%",
@@ -937,8 +950,7 @@ const translations: Record<Language, Record<string, string>> = {
     "deals.personalized.viewDeal": "Xem deal",
     "deals.coupon.title": "Coupon hôm nay",
     "deals.coupon.headline": "Nhận coupon mỗi ngày",
-    "deals.coupon.subtitle":
-      "Áp dụng coupon khi thanh toán để giảm giá ngay.",
+    "deals.coupon.subtitle": "Áp dụng coupon khi thanh toán để giảm giá ngay.",
     "deals.coupon.offExpires": "{discount} giảm · Hết hạn {date}",
     "deals.coupon.copy": "Sao chép",
     "deals.coupon.apply": "Áp dụng coupon",

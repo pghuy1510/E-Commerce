@@ -23,7 +23,7 @@ export class CartService {
   async getCart(userId: number) {
     let cart = await this.cartRepo.findOne({
       where: { user: { id: userId } },
-      relations: ['items', 'items.product'],
+      relations: ['items', 'items.product', 'items.product.category'],
     });
 
     if (!cart) {
@@ -74,6 +74,8 @@ export class CartService {
       await this.itemRepo.save(item);
     }
 
+    await this.cartRepo.save(cart);
+
     return this.getCart(userId);
   }
 
@@ -85,6 +87,8 @@ export class CartService {
     if (!item) return null;
 
     await this.itemRepo.delete(item.id);
+
+    await this.cartRepo.save(cart);
 
     return this.getCart(userId);
   }
@@ -111,6 +115,8 @@ export class CartService {
     item.quantity = quantity;
 
     await this.itemRepo.save(item);
+
+    await this.cartRepo.save(cart);
 
     return this.getCart(userId);
   }

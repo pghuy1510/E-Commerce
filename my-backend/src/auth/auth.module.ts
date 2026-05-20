@@ -7,10 +7,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import type { StringValue } from 'ms';
+import { CouponModule } from '../coupons/coupon.module';
 
 @Module({
   imports: [
     UsersModule,
+    CouponModule,
     ConfigModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

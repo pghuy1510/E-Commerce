@@ -4,6 +4,8 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Cart } from './cart.entity';
 import { Product } from '../products/products.entity';
@@ -33,4 +35,10 @@ export class CartItem {
     },
   })
   price!: number;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updated_at!: Date;
 }

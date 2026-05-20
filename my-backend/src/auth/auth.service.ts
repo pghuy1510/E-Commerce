@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import type { StringValue } from 'ms';
 import { randomBytes } from 'crypto';
+import { CouponService } from '../coupons/coupon.service';
 
 interface AuthTokenUser {
   id: number;
@@ -27,6 +28,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private couponService: CouponService,
   ) {}
 
   async register(username: string, password: string) {
@@ -40,6 +42,7 @@ export class AuthService {
     }
 
     const user = await this.usersService.createUser(username, password);
+    await this.couponService.issueWelcomeCoupon(user.id, user.created_at);
 
     return this.generateToken(user);
   }
@@ -59,6 +62,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    await this.usersService.touchLastLogin(user.id);
+
     return this.generateToken(user);
   }
 
@@ -76,6 +81,7 @@ export class AuthService {
 
     const existing = await this.usersService.findByEmail(email);
     if (existing) {
+      await this.usersService.touchLastLogin(existing.id);
       return this.generateToken(existing);
     }
 
@@ -88,6 +94,7 @@ export class AuthService {
       randomPassword,
       email,
     );
+    await this.couponService.issueWelcomeCoupon(user.id, user.created_at);
     return this.generateToken(user);
   }
 

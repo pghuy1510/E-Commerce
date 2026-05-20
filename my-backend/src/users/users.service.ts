@@ -100,9 +100,16 @@ export class UsersService {
       username,
       email,
       password: hashed,
+      last_login: new Date(),
     });
 
     return this.userRepo.save(user);
+  }
+
+  async touchLastLogin(userId: number) {
+    await this.userRepo.update(userId, {
+      last_login: new Date(),
+    });
   }
 
   async getProfile(userId: number) {

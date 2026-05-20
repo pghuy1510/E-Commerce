@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  JoinColumn,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { CartItem } from './cart-item.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -13,4 +21,10 @@ export class Cart {
 
   @OneToMany(() => CartItem, (item) => item.cart, { cascade: true })
   items!: CartItem[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updated_at!: Date;
 }

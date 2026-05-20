@@ -28,8 +28,23 @@ export class User {
   @Column({ default: 'user' })
   role!: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
+
+  @Column({ name: 'last_login', type: 'timestamptz', nullable: true })
+  last_login?: Date | null;
+
+  @Column('decimal', {
+    name: 'total_spent',
+    precision: 12,
+    scale: 2,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
+  totalSpent!: number;
 
   // PROFILE
   @Column({ name: 'full_name', type: 'varchar', nullable: true })

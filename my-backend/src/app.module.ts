@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,12 +15,15 @@ import { PaymentModule } from './payment/payment.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { ContactModule } from './contact/contact.module';
+import { CouponModule } from './coupons/coupon.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    ScheduleModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -46,6 +50,7 @@ import { ContactModule } from './contact/contact.module';
     TrackingModule,
     WishlistModule,
     ContactModule,
+    CouponModule,
   ],
   controllers: [AppController],
   providers: [AppService],

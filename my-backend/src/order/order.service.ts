@@ -6,6 +6,8 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { CartService } from '../cart/cart.service';
 import { Product } from '../products/products.entity';
+import { CouponService } from '../coupons/coupon.service';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class OrderService {
@@ -19,7 +21,12 @@ export class OrderService {
     @InjectRepository(Product)
     private productRepo: Repository<Product>,
 
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+
     private cartService: CartService,
+
+    private couponService: CouponService,
   ) {}
 
   async checkout(userId: string) {
@@ -29,7 +36,7 @@ export class OrderService {
       throw new BadRequestException('Cart is empty');
     }
 
-    let total = 0;
+    let subtotal = 0;
 
     const orderItems: OrderItem[] = [];
 
@@ -55,19 +62,42 @@ export class OrderService {
         quantity: item.quantity,
       });
 
-      total += item.price * item.quantity;
+      subtotal += item.price * item.quantity;
       orderItems.push(orderItem);
     }
+
+    const { discountTotal, appliedCoupons, appliedCodes } =
+      await this.couponService.applyBestCouponsForUser(
+        Number(userId),
+        cart.items,
+        subtotal,
+      );
+
+    const total = Math.max(0, subtotal - discountTotal);
 
     const order = this.orderRepo.create({
       user: {
         id: Number(userId),
       },
       totalAmount: total,
+      subtotalAmount: subtotal,
+      discountAmount: discountTotal,
+      couponCodes: appliedCodes,
+      status: 'COMPLETED',
       items: orderItems,
     });
 
     await this.orderRepo.save(order);
+
+    await this.userRepo.increment(
+      { id: Number(userId) },
+      'totalSpent',
+      total,
+    );
+
+    if (appliedCoupons.length > 0) {
+      await this.couponService.markCouponsUsed(appliedCoupons);
+    }
 
     // 🧹 clear cart
     cart.items = [];
