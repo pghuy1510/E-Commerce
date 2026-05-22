@@ -20,10 +20,16 @@ export class Payment {
   amount!: number;
 
   @Column({ default: 'pending' })
-  status!: string; // pending | success | failed
+  status!: string; // pending | paid | failed | expired | refunded
 
   @Column({ nullable: true })
   transaction_id!: string;
+
+  @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
+  paid_at?: Date | null;
+
+  @Column({ name: 'expired_at', type: 'timestamptz', nullable: true })
+  expired_at?: Date | null;
 
   @CreateDateColumn()
   created_at!: Date;

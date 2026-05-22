@@ -64,7 +64,7 @@ export class Coupon {
   maxDiscount?: number | null;
 
   @Column({ name: 'category_id', type: 'int', nullable: true })
-  categoryId?: number | null;
+  categoryId!: number | null;
 
   @Column({ name: 'starts_at', type: 'timestamptz', nullable: true })
   startsAt?: Date | null;

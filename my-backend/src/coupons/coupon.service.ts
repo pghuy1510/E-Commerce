@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Coupon } from './coupon.entity';
 import type { CouponType, DiscountType } from './coupon.entity';
 import { UserCoupon } from './user-coupon.entity';
@@ -25,6 +25,7 @@ type CouponTemplate = {
   categoryId?: number | null;
   startsAt?: Date | null;
   expiresAt?: Date | null;
+  isActive?: boolean;
 };
 
 type CouponCandidate = {
@@ -144,7 +145,7 @@ export class CouponService {
         .createQueryBuilder('orders')
         .where('orders.user_id = :userId', { userId })
         .andWhere('orders.created_at > :lastActivity', { lastActivity })
-        .andWhere('orders.status = :status', { status: 'COMPLETED' })
+        .andWhere('orders.status = :status', { status: 'confirmed' })
         .getCount();
 
       if (hasRecentOrder === 0) {
@@ -280,7 +281,7 @@ export class CouponService {
       if (!userId) continue;
 
       const completedOrders = await this.orderRepo.count({
-        where: { user: { id: userId }, status: 'COMPLETED' },
+        where: { user: { id: userId }, status: 'confirmed' },
       });
 
       if (completedOrders > 0) continue;
@@ -317,7 +318,7 @@ export class CouponService {
         .createQueryBuilder('orders')
         .where('orders.user_id = :userId', { userId: user.id })
         .andWhere('orders.created_at > :cutoff', { cutoff })
-        .andWhere('orders.status = :status', { status: 'COMPLETED' })
+        .andWhere('orders.status = :status', { status: 'confirmed' })
         .getCount();
 
       if (recentOrders > 0) continue;
@@ -351,6 +352,7 @@ export class CouponService {
         discountValue: 20,
         startsAt: now,
         expiresAt,
+        isActive: true,
       },
       true,
     );
@@ -507,7 +509,8 @@ export class CouponService {
     const lockedCoupons = validCoupons
       .filter(
         (item) =>
-          item.coupon.minOrder != null && subtotal < (item.coupon.minOrder ?? 0),
+          item.coupon.minOrder != null &&
+          subtotal < (item.coupon.minOrder ?? 0),
       )
       .map((item) => {
         const minOrder = item.coupon.minOrder ?? subtotal;
@@ -599,6 +602,52 @@ export class CouponService {
     };
   }
 
+  async applyCouponCodeForUser(
+    userId: number,
+    code: string,
+    cartItems: CartItem[],
+    subtotal: number,
+    shippingFee = 0,
+  ) {
+    const now = new Date();
+    const userCoupon = await this.userCouponRepo.findOne({
+      where: { user: { id: userId }, code },
+      relations: ['coupon'],
+    });
+
+    if (!userCoupon) {
+      throw new BadRequestException('Coupon not found');
+    }
+
+    if (
+      userCoupon.isUsed ||
+      userCoupon.usedCount >= userCoupon.usageLimit ||
+      userCoupon.expiresAt <= now ||
+      !userCoupon.coupon?.isActive ||
+      (userCoupon.coupon?.startsAt && userCoupon.coupon.startsAt > now) ||
+      (userCoupon.coupon?.expiresAt && userCoupon.coupon.expiresAt < now)
+    ) {
+      throw new BadRequestException('Coupon is not available');
+    }
+
+    const discount = this.calculateDiscount(
+      userCoupon,
+      cartItems,
+      subtotal,
+      shippingFee,
+    );
+
+    if (discount <= 0) {
+      throw new BadRequestException('Coupon is not applicable');
+    }
+
+    return {
+      discountTotal: discount,
+      appliedCoupons: [userCoupon],
+      appliedCodes: [userCoupon.code],
+    };
+  }
+
   async markCouponsUsed(coupons: UserCoupon[]) {
     const now = new Date();
     for (const coupon of coupons) {
@@ -610,6 +659,15 @@ export class CouponService {
         usedAt: isUsed ? now : (coupon.usedAt ?? now),
       });
     }
+  }
+
+  async markCouponsUsedByCodes(codes: string[]) {
+    if (!codes.length) return;
+    const coupons = await this.userCouponRepo.find({
+      where: { code: In(codes) },
+    });
+    if (!coupons.length) return;
+    await this.markCouponsUsed(coupons);
   }
 
   private selectBestCoupons(candidates: CouponCandidate[]) {
@@ -697,12 +755,18 @@ export class CouponService {
 
       const updated = this.couponRepo.merge(existing, {
         ...template,
+        ...(template.isActive !== undefined
+          ? { isActive: template.isActive }
+          : {}),
       });
       return this.couponRepo.save(updated);
     }
 
     const coupon = this.couponRepo.create({
       ...template,
+      ...(template.isActive !== undefined
+        ? { isActive: template.isActive }
+        : {}),
     });
 
     return this.couponRepo.save(coupon);

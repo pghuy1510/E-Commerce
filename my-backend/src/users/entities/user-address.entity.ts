@@ -25,6 +25,9 @@ export class UserAddress {
   @Column({ type: 'text', nullable: true })
   detail?: string;
 
+  @Column({ name: 'is_default', default: true })
+  is_default!: boolean;
+
   // FK + relation (CHỈ DÙNG 1 CHỖ, KHÔNG DUPLICATE userId)
   @OneToOne(() => User, (user) => user.address, {
     onDelete: 'CASCADE',

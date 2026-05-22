@@ -210,7 +210,14 @@ export default function CartPage() {
           </div>
 
           <div className="mt-6">
-            <button className="w-full bg-[#eba07a] text-white py-3 rounded-full hover:bg-yellow-600 transition">
+            <button
+              onClick={() => router.push("/checkout")}
+              disabled={cart.length === 0}
+              className={`w-full text-white py-3 rounded-full transition ${
+                cart.length === 0
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-[#eba07a] hover:bg-yellow-600"
+              }`}>
               {t("action.proceedToCheckout")}
             </button>
           </div>

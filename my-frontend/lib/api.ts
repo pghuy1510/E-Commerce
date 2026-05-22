@@ -162,6 +162,68 @@ export interface UserAddress {
   detail?: string;
 }
 
+export type PaymentMethod = "qr" | "cod";
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "shipping"
+  | "delivered"
+  | "cancelled"
+  | "refunded";
+export type PaymentStatus =
+  | "pending"
+  | "paid"
+  | "failed"
+  | "expired"
+  | "refunded";
+
+export interface CheckoutPayload {
+  receiverName: string;
+  receiverPhone: string;
+  province: string;
+  district: string;
+  ward: string;
+  detail: string;
+  paymentMethod: PaymentMethod;
+  shippingFee?: number;
+  couponCode?: string;
+  note?: string;
+  machineId?: string;
+}
+
+export interface CheckoutResponse {
+  orderId: number;
+  paymentId: number;
+  orderStatus: OrderStatus;
+  paymentStatus: PaymentStatus;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  qr?: {
+    qrDataURL: string;
+    addInfo: string;
+    expiredAt: string;
+    qrToken: string;
+  } | null;
+}
+
+export interface PaymentStatusResponse {
+  paymentId: number;
+  orderId: number;
+  paymentStatus: PaymentStatus;
+  orderStatus: OrderStatus | null;
+  amount: number;
+  qr?: {
+    qrDataURL: string;
+    addInfo: string;
+    expiredAt: string | null;
+    qrToken: string;
+    status: string;
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+  } | null;
+}
+
 export interface UserBank {
   id: number;
   bankName: string;
@@ -331,6 +393,38 @@ export const userPasswordAPI = {
 export const contactAPI = {
   create: async (payload: ContactPayload) => {
     const res = await api.post("/contact", payload);
+    return res.data;
+  },
+};
+
+export const checkoutAPI = {
+  create: async (payload: CheckoutPayload): Promise<CheckoutResponse> => {
+    requireAuthToken();
+    const res = await api.post("/orders/checkout", payload);
+    return res.data;
+  },
+};
+
+export const paymentAPI = {
+  getStatus: async (paymentId: number): Promise<PaymentStatusResponse> => {
+    requireAuthToken();
+    const res = await api.get(`/payment/${paymentId}/status`);
+    return res.data;
+  },
+  regenerateQr: async (
+    paymentId: number,
+    machineId: string,
+  ): Promise<
+    CheckoutResponse["qr"] & {
+      bankName: string;
+      accountName: string;
+      accountNumber: string;
+    }
+  > => {
+    requireAuthToken();
+    const res = await api.post(`/payment/${paymentId}/regenerate-qr`, {
+      machineId,
+    });
     return res.data;
   },
 };

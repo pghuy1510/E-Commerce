@@ -53,10 +53,25 @@ export class Order {
   })
   discountAmount!: number;
 
+  @Column('decimal', {
+    name: 'shipping_fee',
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
+  shippingFee!: number;
+
   @Column('simple-array', { nullable: true })
   couponCodes?: string[];
 
-  @Column({ default: 'PENDING' })
+  @Column({ name: 'payment_method', type: 'varchar', nullable: true })
+  paymentMethod?: string | null;
+
+  @Column({ default: 'pending' })
   status!: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

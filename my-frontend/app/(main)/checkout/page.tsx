@@ -1,50 +1,142 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePreferences } from "@/lib/i18n";
+import {
+  cartAPI,
+  checkoutAPI,
+  PaymentMethod,
+  userAddressAPI,
+  userProfileAPI,
+} from "@/lib/api";
+import { validateCheckoutPayload } from "@/lib/validation";
+import AddressSelector, {
+  ShippingAddress,
+} from "@/components/checkout/AddressSelector";
+import PaymentMethods from "@/components/checkout/PaymentMethods";
+import CouponInput from "@/components/checkout/CouponInput";
+import OrderSummary from "@/components/checkout/OrderSummary";
 
-const cartItems = [
-  { id: 1, name: "Simple Things You Save BOOK", price: 30, quantity: 1 },
-  { id: 2, name: "How Deal With Very Bad BOOK", price: 39, quantity: 1 },
-];
+type CartItem = {
+  id: number;
+  quantity: number;
+  price: number;
+  product?: {
+    name: string;
+  };
+};
 
 export default function CheckoutPage() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    note: "",
-  });
+  const router = useRouter();
   const { t, formatPrice } = usePreferences();
 
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [address, setAddress] = useState<ShippingAddress>({
+    receiverName: "",
+    receiverPhone: "",
+    province: "",
+    district: "",
+    ward: "",
+    detail: "",
+  });
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("qr");
+  const [couponCode, setCouponCode] = useState("");
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const machineId = useMemo(() => {
+    if (typeof window === "undefined") return "WEB";
+    const key = "checkout-machine-id";
+    const cached = localStorage.getItem(key);
+    if (cached) return cached;
+    const next = `MID-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(key, next);
+    return next;
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [cartRes, addressRes, profileRes] = await Promise.all([
+          cartAPI.get(),
+          userAddressAPI.get(),
+          userProfileAPI.get(),
+        ]);
+
+        setCartItems(cartRes.data?.items ?? []);
+        setAddress((prev) => ({
+          ...prev,
+          receiverName: profileRes.fullName ?? prev.receiverName,
+          receiverPhone: profileRes.phone ?? prev.receiverPhone,
+          province: addressRes.province ?? prev.province,
+          district: addressRes.district ?? prev.district,
+          ward: addressRes.ward ?? prev.ward,
+          detail: addressRes.detail ?? prev.detail,
+        }));
+      } catch (err: any) {
+        setError(
+          err?.response?.data?.message ?? "Failed to load checkout details.",
+        );
+      }
+    };
+    void load();
+  }, []);
+
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + Number(item.price) * item.quantity,
     0,
   );
+  const shippingFee = 0;
+  const discount = 0;
+  const total = Math.max(0, subtotal + shippingFee - discount);
 
-  // button reusable
-  const FancyButton = ({ children }: { children: React.ReactNode }) => (
-    <button className="w-full relative overflow-hidden bg-[#eba07a] text-white py-3 rounded-full group">
-      <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
-      <span className="relative z-10">{children}</span>
-    </button>
-  );
+  const handleSubmit = async () => {
+    setError("");
+    if (!cartItems.length) {
+      setError("Your cart is empty.");
+      return;
+    }
 
-  const handleChange = (e: any) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+    setLoading(true);
+    try {
+      const payload = {
+        ...address,
+        paymentMethod,
+        shippingFee,
+        couponCode: couponCode || undefined,
+        note: note || undefined,
+        machineId: paymentMethod === "qr" ? machineId : undefined,
+      };
+      const validationErrors = validateCheckoutPayload(payload);
+      if (validationErrors.length) {
+        setError(validationErrors[0]);
+        setLoading(false);
+        return;
+      }
 
-  const handleSubmit = () => {
-    console.log("ORDER:", form, cartItems);
-    alert(t("alert.orderSuccess"));
+      const res = await checkoutAPI.create(payload);
+
+      if (paymentMethod === "qr") {
+        router.push(`/checkout/payment?paymentId=${res.paymentId}`);
+      } else {
+        router.push(`/order-success?orderId=${res.orderId}`);
+      }
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ??
+          "Unable to place order. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="w-full">
-      {/* BANNER */}
-      <div className="bg-gradient-to-r from-yellow-600 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">
+    <div className="w-full bg-[#fbf8f3] min-h-screen">
+      <div className="bg-gradient-to-r from-amber-200 via-white to-amber-50 py-16 text-center">
+        <h1 className="text-4xl font-bold text-gray-900">
           {t("label.checkout")}
         </h1>
         <p className="text-gray-500 mt-2">
@@ -52,108 +144,49 @@ export default function CheckoutPage() {
         </p>
       </div>
 
-      {/* CONTENT */}
-      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* LEFT - FORM */}
+      <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-xl font-semibold">{t("label.billingDetails")}</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              name="name"
-              placeholder={t("label.fullName")}
-              onChange={handleChange}
-              className="border border-gray-300 px-4 py-3 rounded-md outline-none focus:border-yellow-500"
-            />
-            <input
-              name="phone"
-              placeholder={t("label.phone")}
-              onChange={handleChange}
-              className="border border-gray-300 px-4 py-3 rounded-md outline-none focus:border-yellow-500"
+          <AddressSelector value={address} onChange={setAddress} />
+          <PaymentMethods value={paymentMethod} onChange={setPaymentMethod} />
+          <CouponInput value={couponCode} onChange={setCouponCode} />
+          <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900">Order note</h2>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Optional note for the courier"
+              className="mt-3 w-full rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300"
             />
           </div>
-
-          <input
-            name="email"
-            placeholder={t("label.email")}
-            onChange={handleChange}
-            className="w-full border border-gray-300 px-4 py-3 rounded-md outline-none focus:border-yellow-500"
-          />
-
-          <input
-            name="address"
-            placeholder={t("label.address")}
-            onChange={handleChange}
-            className="w-full border border-gray-300 px-4 py-3 rounded-md outline-none focus:border-yellow-500"
-          />
-
-          <textarea
-            name="note"
-            placeholder={t("label.orderNotesOptional")}
-            onChange={handleChange}
-            className="w-full border border-gray-300 px-4 py-3 rounded-md outline-none focus:border-yellow-500"
-          />
         </div>
 
-        {/* RIGHT - ORDER SUMMARY */}
-        <div className="border border-gray-200 rounded-lg p-6 h-fit shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">{t("label.yourOrder")}</h2>
+        <div className="space-y-6">
+          <OrderSummary
+            items={cartItems.map((item) => ({
+              id: item.id,
+              name: item.product?.name ?? "Item",
+              price: Number(item.price),
+              quantity: item.quantity,
+            }))}
+            subtotal={subtotal}
+            shippingFee={shippingFee}
+            discount={discount}
+            total={total}
+            formatPrice={formatPrice}
+          />
 
-          {/* ITEMS */}
-          <div className="space-y-3">
-            {cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between text-sm border-b border-gray-100 pb-2">
-                <span>
-                  {item.name} x {item.quantity}
-                </span>
-                <span className="text-yellow-600">
-                  {formatPrice(item.price * item.quantity)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* TOTAL */}
-          <div className="mt-4 space-y-3">
-            <div className="flex justify-between border-b border-gray-200 pb-2">
-              <span className="text-gray-500">{t("label.subtotal")}</span>
-              <span>{formatPrice(subtotal)}</span>
+          {error && (
+            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
             </div>
+          )}
 
-            <div className="flex justify-between border-b border-gray-200 pb-2">
-              <span className="text-gray-500">{t("label.shipping")}</span>
-              <span>{t("label.free")}</span>
-            </div>
-
-            <div className="flex justify-between font-semibold text-lg">
-              <span>{t("label.total")}</span>
-              <span className="text-yellow-600">{formatPrice(subtotal)}</span>
-            </div>
-          </div>
-
-          {/* PAYMENT */}
-          <div className="mt-6 space-y-3 text-sm">
-            <label className="flex gap-2">
-              <input type="radio" name="payment" defaultChecked />
-              {t("label.paymentCashOnDelivery")}
-            </label>
-            <label className="flex gap-2">
-              <input type="radio" name="payment" />
-              {t("label.paymentBankTransfer")}
-            </label>
-          </div>
-
-          {/* BUTTON */}
-          <div className="mt-6">
-            <button
-              onClick={handleSubmit}
-              className="w-full relative overflow-hidden bg-[#eba07a] text-white py-3 rounded-full group">
-              <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
-              <span className="relative z-10">{t("action.placeOrder")}</span>
-            </button>
-          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full rounded-3xl bg-amber-500 px-6 py-4 text-white font-semibold shadow-md hover:bg-amber-600 transition disabled:opacity-60">
+            {loading ? "Processing..." : t("action.placeOrder")}
+          </button>
         </div>
       </div>
     </div>
