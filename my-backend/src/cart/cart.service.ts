@@ -42,7 +42,18 @@ export class CartService {
 
   // 🛒 Lấy cart
   async getCart(userId: number) {
-    let cart = await this.loadCart(userId);
+    let cart = await this.cartRepo.findOne({
+      where: {
+        user: { id: userId },
+      },
+      relations: {
+        items: {
+          product: {
+            category: true,
+          },
+        },
+      },
+    });
 
     if (!cart) {
       const user = await this.userRepo.findOne({
@@ -95,15 +106,19 @@ export class CartService {
 
       await this.itemRepo.save(item);
     } else {
-      item = this.itemRepo.create({
-        product,
-        quantity,
-        price: product.price,
-      });
+        console.log('CART:', cart);
+        console.log('CART ID:', cart.id);
+        item = new CartItem();
+        item.product = product;
+        item.quantity = quantity;
+        item.price = product.price;
+        item.cart = cart;
 
-      item.cart = cart;
+        console.log('ITEM BEFORE SAVE:', item);
 
-      await this.itemRepo.save(item);
+        const saved = await this.itemRepo.save(item);
+
+        console.log('SAVED ITEM:', saved);
     }
 
     await this.cartRepo.save(cart);
