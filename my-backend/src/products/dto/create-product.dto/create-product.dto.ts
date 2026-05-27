@@ -31,5 +31,5 @@ export class CreateProductDto {
   categoryId!: number;
 
   @IsString()
-  image?: string; 
+  image?: string;
 }

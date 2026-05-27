@@ -23,12 +23,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { GenerateVietQrDto } from './dto/generate-vietqr.dto';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
 
-type PaymentStatus =
-  | 'pending'
-  | 'paid'
-  | 'failed'
-  | 'expired'
-  | 'refunded';
+type PaymentStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'refunded';
 
 @Injectable()
 export class PaymentService {

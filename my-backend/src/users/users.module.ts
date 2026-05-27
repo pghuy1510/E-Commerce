@@ -7,9 +7,7 @@ import { UserAddress } from './entities/user-address.entity';
 import { UserBank } from './entities/user-bank.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, UserAddress, UserBank]),
-  ],
+  imports: [TypeOrmModule.forFeature([User, UserAddress, UserBank])],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService], // QUAN TRỌNG để Auth dùng

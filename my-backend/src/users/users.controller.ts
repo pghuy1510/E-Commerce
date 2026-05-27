@@ -69,7 +69,6 @@ export class UsersController {
 
     // Log authorization header for debugging 401 issues
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const authHeader = (req as any).headers?.authorization;
       // Use console.debug so it's easy to filter in dev logs

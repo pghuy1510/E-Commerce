@@ -106,22 +106,15 @@ export class CartService {
 
       await this.itemRepo.save(item);
     } else {
-        console.log('CART:', cart);
-        console.log('CART ID:', cart.id);
-        item = new CartItem();
-        item.product = product;
-        item.quantity = quantity;
-        item.price = product.price;
-        item.cart = cart;
+      item = this.itemRepo.create({
+        cart: { id: cart.id },
+        product: { id: product.id },
+        quantity,
+        price: product.price,
+      });
 
-        console.log('ITEM BEFORE SAVE:', item);
-
-        const saved = await this.itemRepo.save(item);
-
-        console.log('SAVED ITEM:', saved);
+      await this.itemRepo.save(item);
     }
-
-    await this.cartRepo.save(cart);
 
     return this.getCart(userId);
   }
