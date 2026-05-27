@@ -1,10 +1,15 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Cart } from './cart.entity';
 import { CartItem } from './cart-item.entity';
 import { Product } from '../products/products.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class CartService {
@@ -17,21 +22,47 @@ export class CartService {
 
     @InjectRepository(Product)
     private productRepo: Repository<Product>,
+
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
   ) {}
+
+  private async loadCart(userId: number) {
+    return this.cartRepo.findOne({
+      where: { user: { id: userId } },
+      relations: {
+        items: {
+          product: {
+            category: true,
+          },
+        },
+      },
+    });
+  }
 
   // 🛒 Lấy cart
   async getCart(userId: number) {
-    let cart = await this.cartRepo.findOne({
-      where: { user: { id: userId } },
-      relations: ['items', 'items.product', 'items.product.category'],
-    });
+    let cart = await this.loadCart(userId);
 
     if (!cart) {
+      const user = await this.userRepo.findOne({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
       cart = this.cartRepo.create({
-        user: { id: userId },
+        user,
         items: [],
       });
       await this.cartRepo.save(cart);
+      cart = (await this.loadCart(userId)) ?? cart;
+    }
+
+    if (!cart) {
+      throw new BadRequestException('Cart not found');
     }
 
     if (!cart.items) cart.items = [];

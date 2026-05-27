@@ -17,6 +17,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { cartAPI, wishlistAPI } from "@/lib/api";
 import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
+import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
 
 export default function Header() {
@@ -103,7 +104,7 @@ export default function Header() {
     try {
       const res = await cartAPI.get();
 
-      const items = res.data?.items ?? [];
+      const items = normalizeCartItems(res.data);
 
       const count = items.reduce(
         (sum: number, item: { quantity?: number }) =>

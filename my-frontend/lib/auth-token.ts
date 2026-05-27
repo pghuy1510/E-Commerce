@@ -6,7 +6,11 @@ const getAuthToken = (): string | null => {
   const localToken = localStorage.getItem("token");
 
   if (localToken) {
-    return localToken;
+    if (localToken === "test123") {
+      localStorage.removeItem("token");
+    } else {
+      return localToken;
+    }
   }
 
   const match = document.cookie.match(/(?:^|; )token=([^;]*)/);

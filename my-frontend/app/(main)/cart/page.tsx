@@ -3,16 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { X, Minus, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { cartAPI } from "@/lib/api";
+import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
+import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
 
 interface CartItem {
   id: number;
   quantity: number;
   price: number;
-  product: {
+  product?: {
     id: number;
     name: string;
     price: number;
@@ -25,12 +28,26 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { t, formatPrice } = usePreferences();
+  const { data: session, status } = useSession();
 
   // 🔥 load cart từ backend
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
+    const currentToken = getBrowserToken();
+    if (!currentToken) {
+      const sessionToken = session?.backendAccessToken;
+      if (sessionToken) {
+        setAuthToken(sessionToken);
+      } else if (status === "unauthenticated") {
+        router.push("/login");
+        return;
+      } else {
+        return;
+      }
+    }
+
     try {
       const res = await cartAPI.get();
-      setCart(res.data.items || []);
+      setCart(normalizeCartItems(res.data));
     } catch (err: any) {
       const status = err?.response?.status as number | undefined;
       const code = err?.code as string | undefined;
@@ -44,11 +61,23 @@ export default function CartPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, session?.backendAccessToken, status]);
 
   useEffect(() => {
-    fetchCart();
-  }, []);
+    void fetchCart();
+  }, [fetchCart]);
+
+  useEffect(() => {
+    const handleCartUpdated = () => {
+      void fetchCart();
+    };
+
+    window.addEventListener("cart-updated", handleCartUpdated);
+
+    return () => {
+      window.removeEventListener("cart-updated", handleCartUpdated);
+    };
+  }, [fetchCart]);
 
   // 🔄 update quantity
   const updateQuantity = async (
@@ -62,7 +91,7 @@ export default function CartPage() {
 
     try {
       await cartAPI.update(productId, newQty);
-      fetchCart();
+      void fetchCart();
     } catch (err: any) {
       const status = err?.response?.status as number | undefined;
       const code = err?.code as string | undefined;
@@ -80,7 +109,7 @@ export default function CartPage() {
   const removeItem = async (productId: number) => {
     try {
       await cartAPI.remove(productId);
-      fetchCart();
+      void fetchCart();
     } catch (err: any) {
       const status = err?.response?.status as number | undefined;
       const code = err?.code as string | undefined;
@@ -132,26 +161,41 @@ export default function CartPage() {
               {/* PRODUCT */}
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => removeItem(item.product.id)}
+                  onClick={() => item.product && removeItem(item.product.id)}
                   className="text-gray-400 hover:text-yellow-600">
                   <X size={18} />
                 </button>
 
                 {/* CLICK PRODUCT */}
-                <Link
-                  href={`/product/${item.product.id}`}
-                  className="flex items-center gap-4 group">
-                  <Image
-                    src={item.product.image || "/placeholder.png"}
-                    alt={item.product.name}
-                    width={60}
-                    height={80}
-                  />
+                {item.product ? (
+                  <Link
+                    href={`/product/${item.product.id}`}
+                    className="flex items-center gap-4 group">
+                    <Image
+                      src={item.product.image || "/placeholder.png"}
+                      alt={item.product.name}
+                      width={60}
+                      height={80}
+                    />
 
-                  <span className="font-medium group-hover:text-yellow-600 transition">
-                    {item.product.name}
-                  </span>
-                </Link>
+                    <span className="font-medium group-hover:text-yellow-600 transition">
+                      {item.product.name}
+                    </span>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <Image
+                      src="/placeholder.png"
+                      alt={t("label.product")}
+                      width={60}
+                      height={80}
+                    />
+
+                    <span className="font-medium text-gray-500">
+                      {t("label.product")}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* PRICE */}
@@ -164,6 +208,7 @@ export default function CartPage() {
                 <div className="flex items-center border rounded-full px-3 py-1 gap-3">
                   <button
                     onClick={() =>
+                      item.product &&
                       updateQuantity(item.product.id, "dec", item.quantity)
                     }>
                     <Minus size={16} />
@@ -173,6 +218,7 @@ export default function CartPage() {
 
                   <button
                     onClick={() =>
+                      item.product &&
                       updateQuantity(item.product.id, "inc", item.quantity)
                     }>
                     <Plus size={16} />

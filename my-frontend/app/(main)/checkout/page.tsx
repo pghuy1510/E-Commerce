@@ -10,6 +10,7 @@ import {
   userAddressAPI,
   userProfileAPI,
 } from "@/lib/api";
+import { normalizeCartItems } from "@/lib/cart";
 import { validateCheckoutPayload } from "@/lib/validation";
 import AddressSelector, {
   ShippingAddress,
@@ -65,7 +66,7 @@ export default function CheckoutPage() {
           userProfileAPI.get(),
         ]);
 
-        setCartItems(cartRes.data?.items ?? []);
+        setCartItems(normalizeCartItems(cartRes.data));
         setAddress((prev) => ({
           ...prev,
           receiverName: profileRes.fullName ?? prev.receiverName,

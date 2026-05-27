@@ -19,14 +19,12 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       const res = await login({ username, password });
+      const token = res.data?.access_token;
+      if (!token) {
+        throw new Error("Missing access token");
+      }
 
-      console.log("LOGIN RESPONSE:", res.data);
-
-      // TEST localStorage
-      localStorage.setItem("token", "test123");
-      console.log("TOKEN:", res.data.access_token);
-
-      setAuthToken(res.data.access_token);
+      setAuthToken(token);
 
       localStorage.setItem("username", username);
 

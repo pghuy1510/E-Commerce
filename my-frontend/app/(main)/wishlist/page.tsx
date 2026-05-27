@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { wishlistAPI } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { cartAPI, wishlistAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 
 interface WishlistItem {
@@ -18,8 +19,18 @@ interface WishlistItem {
   };
 }
 
-const FancyButton = ({ children }: { children: React.ReactNode }) => (
-  <button className="relative overflow-hidden bg-[#eba07a] text-white px-4 py-2 rounded-full text-sm group">
+type FancyButtonProps = {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+};
+
+const FancyButton = ({ children, onClick, disabled }: FancyButtonProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className="relative overflow-hidden bg-[#eba07a] text-white px-4 py-2 rounded-full text-sm group disabled:cursor-not-allowed disabled:opacity-60">
     <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
     <span className="relative z-10">{children}</span>
   </button>
@@ -29,6 +40,7 @@ export default function WishlistPage() {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const userId = 1;
 
+  const router = useRouter();
   const { t, formatPrice } = usePreferences();
 
   useEffect(() => {
@@ -47,6 +59,32 @@ export default function WishlistPage() {
   const handleRemove = async (productId: number) => {
     await wishlistAPI.remove(userId, productId);
     fetchWishlist();
+  };
+
+  const handleAddToCart = async (productId: number) => {
+    try {
+      await cartAPI.add(productId);
+      alert(t("alert.addedToCartShort"));
+    } catch (err: any) {
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+
+      if (status === 401 || code === "AUTH_REQUIRED") {
+        alert(t("alert.loginToAddCart"));
+        router.push("/login");
+        return;
+      }
+      if (code === "CART_DUPLICATE") {
+        alert(t("alert.cartDuplicate"));
+        return;
+      }
+
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        t("alert.addToCartFailed");
+      alert(message);
+    }
   };
 
   return (
@@ -122,7 +160,11 @@ export default function WishlistPage() {
 
             {/* ACTION */}
             <div className="flex justify-end">
-              <FancyButton>{t("action.addToCart")}</FancyButton>
+              <FancyButton
+                onClick={() => handleAddToCart(item.product.id)}
+                disabled={item.product.stock <= 0}>
+                {t("action.addToCart")}
+              </FancyButton>
             </div>
           </div>
         ))}
