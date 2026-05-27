@@ -68,8 +68,8 @@ export default function CartPage() {
   }, [fetchCart]);
 
   useEffect(() => {
-    const handleCartUpdated = () => {
-      void fetchCart();
+    const handleCartUpdated = async () => {
+      await fetchCart();
     };
 
     window.addEventListener("cart-updated", handleCartUpdated);
@@ -156,7 +156,7 @@ export default function CartPage() {
 
           {cart.map((item) => (
             <div
-              key={item.id}
+              key={item.product?.id || item.id}
               className="grid grid-cols-4 items-center py-6 border-b">
               {/* PRODUCT */}
               <div className="flex items-center gap-4">

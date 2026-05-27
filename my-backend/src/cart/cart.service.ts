@@ -27,9 +27,9 @@ export class CartService {
     private userRepo: Repository<User>,
   ) {}
 
-  private async loadCart(userId: number) {
+  private async loadCart(cartId: number) {
     return this.cartRepo.findOne({
-      where: { user: { id: userId } },
+      where: { id: cartId },
       relations: {
         items: {
           product: {
@@ -53,12 +53,12 @@ export class CartService {
         throw new UnauthorizedException('User not found');
       }
 
-      cart = this.cartRepo.create({
+      const newCart = this.cartRepo.create({
         user,
-        items: [],
       });
-      await this.cartRepo.save(cart);
-      cart = (await this.loadCart(userId)) ?? cart;
+
+      const savedCart = await this.cartRepo.save(newCart);
+      cart = await this.loadCart(savedCart.id);
     }
 
     if (!cart) {
@@ -99,8 +99,9 @@ export class CartService {
         product,
         quantity,
         price: product.price,
-        cart,
       });
+
+      item.cart = cart;
 
       await this.itemRepo.save(item);
     }

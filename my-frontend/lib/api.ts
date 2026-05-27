@@ -1,4 +1,5 @@
 import axios from "axios";
+import { normalizeCartItems } from "./cart";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api",
@@ -82,18 +83,6 @@ function hasProductIdMatch(item: any, productId: number): boolean {
     return item.productId === productId;
   }
   return item?.id === productId;
-}
-
-export function normalizeCartItems(data: any): any[] {
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  if (Array.isArray(data?.items)) {
-    return data.items;
-  }
-
-  return [];
 }
 
 api.interceptors.request.use((config) => {
