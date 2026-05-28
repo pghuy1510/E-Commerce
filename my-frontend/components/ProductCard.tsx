@@ -10,6 +10,7 @@ import {
   type BestSellerProduct,
   type Product,
 } from "@/lib/api";
+import ProductQr from "@/components/qr/ProductQr";
 
 type BadgeTone = "amber" | "emerald" | "gray";
 
@@ -77,8 +78,7 @@ export default function ProductCard({
     }
   };
 
-  const soldCount =
-    showSold && "sold" in product ? product.sold : undefined;
+  const soldCount = showSold && "sold" in product ? product.sold : undefined;
 
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-yellow-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
@@ -174,6 +174,15 @@ export default function ProductCard({
             {t("action.addToCart")}
           </span>
         </button>
+
+        {product.stock > 0 && (
+          <ProductQr
+            amount={product.price}
+            addInfo={`PROD${product.id}`}
+            productName={product.name}
+            className="mt-4"
+          />
+        )}
       </div>
     </div>
   );

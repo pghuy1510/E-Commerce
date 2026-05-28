@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -29,8 +28,6 @@ export class OrderService {
     private couponService: CouponService,
 
     private paymentService: PaymentService,
-
-    private configService: ConfigService,
 
     private dataSource: DataSource,
   ) {}
@@ -74,6 +71,10 @@ export class OrderService {
     const appliedCodes = couponResult.appliedCodes;
 
     const total = Math.max(0, subtotal + shippingFee - discountTotal);
+    const totalForPayment =
+      dto.paymentMethod === 'qr'
+        ? this.paymentService.normalizeVietQrAmount(total)
+        : total;
 
     const result = await this.dataSource.transaction(async (manager) => {
       const cartRepo = manager.getRepository(Cart);
@@ -125,7 +126,7 @@ export class OrderService {
 
       const order = orderRepo.create({
         user: { id: userIdNumber },
-        totalAmount: total,
+        totalAmount: totalForPayment,
         subtotalAmount: subtotal,
         discountAmount: discountTotal,
         shippingFee,
@@ -158,7 +159,7 @@ export class OrderService {
       const payment = paymentRepo.create({
         order_id: savedOrder.id,
         method: dto.paymentMethod,
-        amount: total,
+        amount: totalForPayment,
         status: 'pending',
       });
 
@@ -178,7 +179,7 @@ export class OrderService {
 
         const addInfoBase = `ORD${savedOrder.id}-PAY${savedPayment.id}`;
         const qrResponse = await this.paymentService.generateVietQr({
-          amount: total,
+          amount: totalForPayment,
           addInfo: addInfoBase,
           machineId: dto.machineId,
         });
@@ -189,24 +190,16 @@ export class OrderService {
         savedPayment.expired_at = expiredAt;
         await paymentRepo.save(savedPayment);
 
-        const bankName =
-          this.configService.get<string>('VIETQR_BANK_NAME') ??
-          this.configService.get<string>('VIETQR_ACQ_ID') ??
-          'VietQR';
-
-        const accountName =
-          this.configService.get<string>('VIETQR_ACCOUNT_NAME') ?? '';
-        const accountNumber =
-          this.configService.get<string>('VIETQR_ACCOUNT_NO') ?? '';
+        const bankInfo = this.paymentService.getVietQrBankInfo();
 
         const qrPayment = qrPaymentRepo.create({
           order: savedOrder,
           payment: savedPayment,
           qrToken,
-          bankName,
-          accountName,
-          accountNumber,
-          amount: total,
+          bankName: bankInfo.bankName,
+          accountName: bankInfo.accountName,
+          accountNumber: bankInfo.accountNumber,
+          amount: totalForPayment,
           addInfo: qrResponse.addInfo,
           qrDataUrl: qrResponse.qrDataURL,
           status: 'pending',

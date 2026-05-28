@@ -9,6 +9,7 @@ import { Star, Heart, Minus, Plus, ShoppingCart, Eye } from "lucide-react";
 
 import { productAPI, type Product, wishlistAPI, cartAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import ProductQr from "@/components/qr/ProductQr";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -108,6 +109,8 @@ export default function ProductDetailPage() {
       </div>
     );
   }
+
+  const qrAmount = product.price * quantity;
 
   return (
     <div className="w-full">
@@ -224,6 +227,17 @@ export default function ProductDetailPage() {
               <Heart size={18} />
             </button>
           </div>
+
+          {product.stock > 0 && (
+            <ProductQr
+              amount={qrAmount}
+              addInfo={`PROD${product.id}`}
+              productName={product.name}
+              size="lg"
+              showBankInfo
+              className="mt-8"
+            />
+          )}
         </div>
       </div>
 

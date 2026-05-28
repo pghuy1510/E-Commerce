@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { join } from 'path';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -21,6 +22,10 @@ import { CouponModule } from './coupons/coupon.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        join(process.cwd(), '.env'),
+        join(process.cwd(), 'my-backend', '.env'),
+      ],
     }),
 
     ScheduleModule.forRoot(),

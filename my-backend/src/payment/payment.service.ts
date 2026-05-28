@@ -24,6 +24,20 @@ import { GenerateVietQrDto } from './dto/generate-vietqr.dto';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
 
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'refunded';
+type VietQrBankConfig = {
+  accountNo: string;
+  accountName: string;
+  acqId: number;
+  acqIdRaw: string;
+  bankName: string;
+};
+
+const DEFAULT_VIETQR_BANK = {
+  accountNo: '4604996654',
+  accountName: 'Pham Gia Huy',
+  acqId: '970418',
+  bankName: 'BIDV',
+};
 
 @Injectable()
 export class PaymentService {
@@ -392,9 +406,7 @@ export class PaymentService {
   }
 
   async generateVietQr(dto: GenerateVietQrDto) {
-    const accountNo = this.configService.get<string>('VIETQR_ACCOUNT_NO');
-    const accountName = this.configService.get<string>('VIETQR_ACCOUNT_NAME');
-    const acqId = this.configService.get<string>('VIETQR_ACQ_ID');
+    const { accountNo, accountName, acqId } = this.resolveVietQrBankConfig();
     const template =
       this.configService.get<string>('VIETQR_TEMPLATE') ?? 'compact';
     const clientId = this.configService.get<string>('VIETQR_CLIENT_ID');
@@ -402,12 +414,7 @@ export class PaymentService {
     const expireMinutes = Number(
       this.configService.get('VIETQR_EXPIRE_MINUTES') ?? 15,
     );
-
-    if (!accountNo || !accountName || !acqId) {
-      throw new BadRequestException(
-        'VietQR configuration is missing (account, name, or acqId).',
-      );
-    }
+    const normalizedAmount = this.normalizeVietQrAmount(dto.amount);
 
     const timestamp = Date.now();
     const addInfo = `${dto.addInfo} | MID:${dto.machineId} | TS:${timestamp}`;
@@ -419,7 +426,7 @@ export class PaymentService {
       accountNo,
       accountName,
       acqId,
-      amount: dto.amount,
+      amount: normalizedAmount,
       addInfo,
       format: 'text',
       template,
@@ -457,7 +464,7 @@ export class PaymentService {
 
       return {
         qrDataURL,
-        amount: dto.amount,
+        amount: normalizedAmount,
         addInfo,
         expiredAt: expiredAt.toISOString(),
       };
@@ -467,6 +474,69 @@ export class PaymentService {
       }
       throw new ServiceUnavailableException('VietQR service unavailable.');
     }
+  }
+
+  getVietQrBankInfo() {
+    const config = this.resolveVietQrBankConfig();
+    return {
+      bankName: config.bankName,
+      accountName: config.accountName,
+      accountNumber: config.accountNo,
+      acqId: config.acqIdRaw,
+    };
+  }
+
+  normalizeVietQrAmount(amount: number): number {
+    const numericAmount = Number(amount);
+    const normalized = Math.round(numericAmount);
+
+    if (!Number.isFinite(normalized) || normalized <= 0) {
+      throw new BadRequestException('Invalid payment amount.');
+    }
+
+    if (String(Math.abs(normalized)).length > 13) {
+      throw new BadRequestException(
+        'Payment amount exceeds the 13-digit limit.',
+      );
+    }
+
+    return normalized;
+  }
+
+  private resolveVietQrBankConfig(): VietQrBankConfig {
+    const accountNo =
+      this.configService.get<string>('VIETQR_ACCOUNT_NO') ??
+      DEFAULT_VIETQR_BANK.accountNo;
+    const accountName =
+      this.configService.get<string>('VIETQR_ACCOUNT_NAME') ??
+      DEFAULT_VIETQR_BANK.accountName;
+    const acqIdRaw =
+      this.configService.get<string>('VIETQR_ACQ_ID') ??
+      DEFAULT_VIETQR_BANK.acqId;
+    const bankName =
+      this.configService.get<string>('VIETQR_BANK_NAME') ??
+      DEFAULT_VIETQR_BANK.bankName ??
+      acqIdRaw ??
+      'VietQR';
+
+    if (!accountNo || !accountName || !acqIdRaw) {
+      throw new BadRequestException(
+        'VietQR configuration is missing (account, name, or acqId).',
+      );
+    }
+
+    const acqId = Number(acqIdRaw);
+    if (!Number.isFinite(acqId) || acqId <= 0) {
+      throw new BadRequestException('VietQR acqId is invalid.');
+    }
+
+    return {
+      accountNo,
+      accountName,
+      acqId,
+      acqIdRaw,
+      bankName,
+    };
   }
 
   @Cron('*/1 * * * *')
