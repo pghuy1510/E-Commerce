@@ -8,13 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { formatVnd } from "@/lib/money";
 
 export type Language = "en" | "vi";
 export type Currency = "USD" | "VND";
 
 const DEFAULT_LANGUAGE: Language = "en";
 const DEFAULT_CURRENCY: Currency = "USD";
-const USD_TO_VND = 25000;
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
@@ -50,6 +50,7 @@ const translations: Record<Language, Record<string, string>> = {
     "action.shopNowPlain": "Shop Now",
     "action.shop": "Shop",
     "action.exploreMore": "Explore More →",
+    "action.showLess": "Show Less",
     "action.viewMoreBooks": "View More Books →",
     "action.explore": "Explore →",
     "action.addToCart": "Add To Cart",
@@ -175,7 +176,7 @@ const translations: Record<Language, Record<string, string>> = {
     "topSelling.title": "Top Selling Products",
     "topRating.title": "Product Suggestions",
     "topRating.categoryFallback": "Category",
-    "categoryProducts.title": "🔥 {category} Products",
+    "categoryProducts.title": "{category} Products",
     "parallax.get25Off": "Get 25% OFF",
     "parallax.titleLine1": "Discount In All",
     "parallax.titleLine2": "Kind Of Super Selling",
@@ -531,6 +532,7 @@ const translations: Record<Language, Record<string, string>> = {
     "action.shopNowPlain": "Mua ngay",
     "action.shop": "Mua sắm",
     "action.exploreMore": "Khám phá thêm →",
+    "action.showLess": "Thu gọn",
     "action.viewMoreBooks": "Xem thêm sách →",
     "action.explore": "Khám phá →",
     "action.addToCart": "Thêm vào giỏ",
@@ -656,7 +658,7 @@ const translations: Record<Language, Record<string, string>> = {
     "topSelling.title": "Sản phẩm bán chạy",
     "topRating.title": "Gợi ý sản phẩm",
     "topRating.categoryFallback": "Danh mục",
-    "categoryProducts.title": "🔥 Sản phẩm {category}",
+    "categoryProducts.title": "Sản phẩm {category}",
     "parallax.get25Off": "Giảm 25%",
     "parallax.titleLine1": "Giảm giá cho tất cả",
     "parallax.titleLine2": "Mặt hàng bán chạy",
@@ -1018,23 +1020,12 @@ function translate(
   return interpolate(template, params);
 }
 
-function convertPrice(amountUsd: number, currency: Currency): number {
-  return currency === "VND" ? amountUsd * USD_TO_VND : amountUsd;
+function convertPrice(amount: number): number {
+  return amount;
 }
 
-function formatPrice(amountUsd: number, currency: Currency): string {
-  const amount = convertPrice(amountUsd, currency);
-  const locale = currency === "VND" ? "vi-VN" : "en-US";
-  const options =
-    currency === "VND"
-      ? { style: "currency", currency: "VND", maximumFractionDigits: 0 }
-      : {
-          style: "currency",
-          currency: "USD",
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        };
-  return new Intl.NumberFormat(locale, options).format(amount);
+function formatPrice(amount: number): string {
+  return formatVnd(amount);
 }
 
 export function translateCategory(name: string, language: Language): string {
@@ -1099,8 +1090,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setLanguage: setLanguageState,
       setCurrency: setCurrencyState,
       t: (key, params) => translate(key, language, params),
-      formatPrice: (amountUsd) => formatPrice(amountUsd, currency),
-      convertPrice: (amountUsd) => convertPrice(amountUsd, currency),
+      formatPrice: (amountUsd) => formatPrice(amountUsd),
+      convertPrice: (amountUsd) => convertPrice(amountUsd),
       translateCategory: (name) => translateCategory(name, language),
     };
   }, [language, currency]);

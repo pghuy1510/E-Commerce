@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import {
   CheckCircle2,
   ChevronDown,
@@ -23,7 +23,7 @@ const statusStyles: Record<string, string> = {
   closed: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
-const statusIcons: Record<string, JSX.Element> = {
+const statusIcons: Record<string, ReactElement> = {
   pending: <Clock3 className="w-3 h-3" />,
   processing: <ShieldCheck className="w-3 h-3" />,
   resolved: <CheckCircle2 className="w-3 h-3" />,

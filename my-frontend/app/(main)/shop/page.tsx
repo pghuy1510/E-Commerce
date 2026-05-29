@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { productAPI, type Product } from "@/lib/api";
+import { productAPI, categoryAPI, type Product } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import ProductCard from "@/components/ProductCard";
+import { Star } from "lucide-react";
 
 const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
   <div className="mb-4">
@@ -16,24 +17,68 @@ const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-export default function ShopPage() {
+function ShopContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [inStock, setInStock] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
   const [priceInitialized, setPriceInitialized] = useState(false);
   const [sort, setSort] = useState("default");
+  const [rating, setRating] = useState<number | undefined>(undefined);
+  
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+
   const searchParams = useSearchParams();
   const { t, formatPrice, translateCategory } = usePreferences();
 
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [debouncedPriceRange, setDebouncedPriceRange] = useState(priceRange);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPriceRange(priceRange);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [priceRange]);
+
+  // Load categories list from DB on mount
+  useEffect(() => {
+    const fetchCats = async () => {
+      try {
+        const data = await categoryAPI.getAll();
+        setDbCategories(data);
+      } catch (err) {
+        console.error("Lỗi khi tải danh mục:", err);
+      }
+    };
+    fetchCats();
+  }, []);
+
+  // Fetch filtered products from backend
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const data = await productAPI.getAll();
+        const params: any = {
+          search: debouncedSearch.trim() || undefined,
+          category: categories.length > 0 ? categories[0] : undefined,
+          minPrice: priceInitialized ? debouncedPriceRange[0] : undefined,
+          maxPrice: priceInitialized ? debouncedPriceRange[1] : undefined,
+          inStock: inStock || undefined,
+          sortBy: sort !== "default" ? sort : undefined,
+          rating: rating || undefined,
+        };
+        const data = await productAPI.getAll(params);
         setProducts(data);
         setError(null);
       } catch (err) {
@@ -45,7 +90,16 @@ export default function ShopPage() {
     };
 
     fetchProducts();
-  }, [t]);
+  }, [
+    debouncedSearch,
+    categories,
+    debouncedPriceRange,
+    priceInitialized,
+    inStock,
+    sort,
+    rating,
+    t,
+  ]);
 
   useEffect(() => {
     const query = searchParams.get("search") ?? "";
@@ -55,87 +109,30 @@ export default function ShopPage() {
   }, [searchParams]);
 
   const priceBounds = useMemo<[number, number]>(() => {
-    if (!products.length) {
-      return [0, 0];
-    }
-    const prices = products
-      .map((item) => item.price)
-      .filter((value) => Number.isFinite(value));
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    return [min, max];
-  }, [products]);
-
-  useEffect(() => {
-    if (!products.length) return;
-    if (!priceInitialized) {
-      setPriceRange(priceBounds);
-      setPriceInitialized(true);
-      return;
-    }
-
-    setPriceRange(([min, max]) => [
-      Math.min(Math.max(min, priceBounds[0]), priceBounds[1]),
-      Math.min(Math.max(max, priceBounds[0]), priceBounds[1]),
-    ]);
-  }, [priceBounds, priceInitialized, products.length]);
+    return [0, 2000000];
+  }, []);
 
   const uniqueCategories = useMemo(
-    () =>
-      [
-        ...new Set(products.map((p) => p.category?.name).filter(Boolean)),
-      ] as string[],
-    [products],
+    () => dbCategories.map((c) => c.name),
+    [dbCategories],
   );
-
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return products.filter((item) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        item.name.toLowerCase().includes(normalizedSearch) ||
-        (item.description ?? "").toLowerCase().includes(normalizedSearch);
-
-      const matchesCategory =
-        categories.length === 0 ||
-        categories.includes(item.category?.name ?? "");
-
-      const matchesStock = !inStock || item.stock > 0;
-
-      const matchesPrice =
-        !priceInitialized ||
-        (item.price >= priceRange[0] && item.price <= priceRange[1]);
-
-      return matchesSearch && matchesCategory && matchesStock && matchesPrice;
-    });
-  }, [categories, inStock, priceInitialized, priceRange, products, search]);
-
-  const sortedProducts = useMemo(() => {
-    const items = [...filteredProducts];
-    if (sort === "price-asc") {
-      items.sort((a, b) => a.price - b.price);
-    }
-    if (sort === "price-desc") {
-      items.sort((a, b) => b.price - a.price);
-    }
-    return items;
-  }, [filteredProducts, sort]);
 
   const toggleCategory = (cat: string) => {
     setCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [cat],
     );
   };
 
   const handleMinPriceChange = (value: number) => {
     const nextMin = Math.min(value, priceRange[1]);
     setPriceRange([nextMin, priceRange[1]]);
+    setPriceInitialized(true);
   };
 
   const handleMaxPriceChange = (value: number) => {
     const nextMax = Math.max(value, priceRange[0]);
     setPriceRange([priceRange[0], nextMax]);
+    setPriceInitialized(true);
   };
 
   const hasActiveFilters =
@@ -143,23 +140,22 @@ export default function ShopPage() {
     categories.length > 0 ||
     inStock ||
     sort !== "default" ||
-    (priceInitialized &&
-      (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]));
+    rating !== undefined ||
+    priceInitialized;
 
   const clearFilters = () => {
     setSearch("");
     setCategories([]);
     setInStock(false);
     setSort("default");
-    if (products.length) {
-      setPriceRange(priceBounds);
-      setPriceInitialized(true);
-    }
+    setRating(undefined);
+    setPriceRange([0, 2000000]);
+    setPriceInitialized(false);
   };
 
   return (
     <div className="w-full">
-      <div className="bg-gradient-to-r from-yellow-600/90 via-yellow-100 to-white py-16">
+      <div className="bg-gradient-to-r from-yellow-600/95 via-yellow-100 to-white py-16">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-yellow-700">
             {t("label.shop")}
@@ -187,6 +183,7 @@ export default function ShopPage() {
           </div>
 
           <div className="space-y-6">
+            {/* SEARCH */}
             <div className="pb-6 border-b border-gray-200">
               <SidebarTitle>{t("label.search")}</SidebarTitle>
               <input
@@ -197,6 +194,7 @@ export default function ShopPage() {
               />
             </div>
 
+            {/* CATEGORIES */}
             {uniqueCategories.length > 0 && (
               <div className="pb-6 border-b border-gray-200">
                 <SidebarTitle>{t("label.categories")}</SidebarTitle>
@@ -208,7 +206,7 @@ export default function ShopPage() {
                 </button>
                 <div className="space-y-2">
                   {uniqueCategories.map((cat) => (
-                    <label key={cat} className="flex gap-2 text-sm">
+                    <label key={cat} className="flex gap-2 text-sm cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={categories.includes(cat)}
@@ -222,6 +220,7 @@ export default function ShopPage() {
               </div>
             )}
 
+            {/* PRICE FILTER */}
             <div className="pb-6 border-b border-gray-200">
               <SidebarTitle>{t("label.filterByPrice")}</SidebarTitle>
               <div className="grid grid-cols-2 gap-3">
@@ -274,15 +273,45 @@ export default function ShopPage() {
                   }
                   className="w-full accent-yellow-600"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 font-semibold mt-1">
                   {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
                 </p>
               </div>
             </div>
 
+            {/* RATINGS FILTER */}
             <div className="pb-6 border-b border-gray-200">
+              <SidebarTitle>Đánh giá khách hàng</SidebarTitle>
+              <div className="space-y-2">
+                {[5, 4, 3, 2, 1].map((stars) => (
+                  <label key={stars} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="radio"
+                      name="rating"
+                      checked={rating === stars}
+                      onChange={() => setRating(stars)}
+                      className="accent-yellow-600"
+                    />
+                    <span className="flex items-center gap-0.5 text-amber-500">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          size={14}
+                          fill={i < stars ? "currentColor" : "none"}
+                          className={i < stars ? "text-amber-500" : "text-gray-300"}
+                        />
+                      ))}
+                    </span>
+                    <span className="text-xs text-gray-500 font-medium">trở lên</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* STOCK STATUS */}
+            <div className="pb-6">
               <SidebarTitle>{t("label.productStatus")}</SidebarTitle>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={inStock}
@@ -312,32 +341,35 @@ export default function ShopPage() {
           ) : (
             <>
               <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-gray-600">
-                  {t("label.showingCount", { count: sortedProducts.length })}
+                <p className="text-sm text-gray-600 font-semibold">
+                  {t("label.showingCount", { count: products.length })}
                 </p>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 font-medium">
                     {t("label.sort")}
                   </span>
                   <select
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
-                    className="rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-yellow-500">
+                    className="rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-yellow-500 font-medium bg-white">
                     <option value="default">{t("label.sortDefault")}</option>
+                    <option value="newest">Mới nhất</option>
                     <option value="price-asc">{t("label.sortPriceAsc")}</option>
                     <option value="price-desc">{t("label.sortPriceDesc")}</option>
+                    <option value="best-selling">Bán chạy nhất</option>
+                    <option value="top-rated">Đánh giá tốt nhất</option>
                   </select>
                 </div>
               </div>
 
-              {sortedProducts.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center">
-                  <p className="text-gray-500">{t("label.noProductsFound")}</p>
+              {products.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center shadow-sm">
+                  <p className="text-gray-500 font-medium">{t("label.noProductsFound")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                  {sortedProducts.map((item) => (
+                  {products.map((item) => (
                     <ProductCard key={item.id} product={item} />
                   ))}
                 </div>
@@ -347,5 +379,20 @@ export default function ShopPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full bg-gray-50 min-h-screen">
+          <div className="max-w-7xl mx-auto px-6 py-12">
+            <p className="text-sm text-gray-500">Loading products...</p>
+          </div>
+        </div>
+      }>
+      <ShopContent />
+    </Suspense>
   );
 }

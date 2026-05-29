@@ -15,7 +15,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { FaFacebook } from "react-icons/fa";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { cartAPI, wishlistAPI } from "@/lib/api";
+import { cartAPI, wishlistAPI, userProfileAPI } from "@/lib/api";
 import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
 import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
@@ -25,6 +25,7 @@ export default function Header() {
     usePreferences();
 
   const [localUsername, setLocalUsername] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,10 +69,18 @@ export default function Header() {
 
     if (token && storedUsername) {
       setLocalUsername(storedUsername);
+      userProfileAPI.get()
+        .then((profile) => {
+          setUserRole(profile.role || "user");
+        })
+        .catch((err) => {
+          console.error("Error fetching user profile in header:", err);
+        });
       return;
     }
 
     setLocalUsername(null);
+    setUserRole(null);
   }, []);
 
   useEffect(() => {
@@ -83,6 +92,14 @@ export default function Header() {
 
     localStorage.setItem("username", name);
     setLocalUsername(name);
+
+    userProfileAPI.get()
+      .then((profile) => {
+        setUserRole(profile.role || "user");
+      })
+      .catch((err) => {
+        console.error("Error fetching user profile in header:", err);
+      });
   }, [session]);
 
   const displayName = session?.user?.name || localUsername;
@@ -179,6 +196,7 @@ export default function Header() {
     localStorage.removeItem("username");
 
     setLocalUsername(null);
+    setUserRole(null);
     setCartCount(0);
     setWishlistCount(0);
 
@@ -346,6 +364,14 @@ export default function Header() {
               </div>
 
               <div className="invisible absolute right-0 z-50 mt-3 w-40 rounded bg-white opacity-0 shadow-lg transition-all duration-300 group-hover:visible group-hover:opacity-100">
+                {userRole === "admin" && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="block px-4 py-2 hover:bg-amber-50 hover:text-amber-700 font-extrabold transition">
+                    Trang Quản Trị
+                  </Link>
+                )}
+
                 <Link
                   href="/profile"
                   className="block px-4 py-2 hover:text-yellow-600">

@@ -17,6 +17,8 @@ import { TrackingModule } from './tracking/tracking.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { ContactModule } from './contact/contact.module';
 import { CouponModule } from './coupons/coupon.module';
+import { AdminModule } from './admin/admin.module';
+import { MailModule } from './common/mail.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { CouponModule } from './coupons/coupon.module';
     WishlistModule,
     ContactModule,
     CouponModule,
+    AdminModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

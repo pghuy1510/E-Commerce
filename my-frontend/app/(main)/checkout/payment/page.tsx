@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { paymentAPI, PaymentStatusResponse } from "@/lib/api";
+import { paymentAPI, orderAPI, PaymentStatusResponse } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import QRPaymentBox from "@/components/checkout/QRPaymentBox";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import PaymentStatus from "@/components/checkout/PaymentStatus";
 
-export default function CheckoutPaymentPage() {
+function CheckoutPaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { formatPrice } = usePreferences();
@@ -71,6 +71,7 @@ export default function CheckoutPaymentPage() {
                     status: "pending",
                   }
                 : prev.qr,
+              amount: qr?.amount ?? prev.amount,
             }
           : prev,
       );
@@ -78,6 +79,31 @@ export default function CheckoutPaymentPage() {
       setError(
         err?.response?.data?.message ?? "Unable to regenerate QR payment.",
       );
+    }
+  };
+
+  const handleChangeToCod = async () => {
+    if (!status?.orderId) return;
+    if (
+      !confirm(
+        "Bạn có chắc chắn muốn đổi phương thức thanh toán sang COD (thanh toán khi nhận hàng)?"
+      )
+    )
+      return;
+
+    try {
+      setLoading(true);
+      await orderAPI.changeToCod(status.orderId);
+      alert("Đã chuyển đổi phương thức thanh toán sang COD thành công!");
+      router.replace(`/order-success?orderId=${status.orderId}`);
+    } catch (err: any) {
+      console.error(err);
+      setError(
+        err?.response?.data?.message ??
+          "Không thể chuyển đổi phương thức thanh toán."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,6 +157,26 @@ export default function CheckoutPaymentPage() {
               accountNumber={qr.accountNumber}
               formatPrice={formatPrice}
             />
+
+            {/* PAYMENT RECOVERY OPTION */}
+            {["pending", "expired", "failed"].includes(status.paymentStatus) && (
+              <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h4 className="font-bold text-gray-900 text-sm">
+                    Gặp khó khăn khi quét mã QR?
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Bạn có thể chuyển đổi sang hình thức thanh toán khi nhận hàng (COD) bất kỳ lúc nào.
+                  </p>
+                </div>
+                <button
+                  onClick={handleChangeToCod}
+                  className="px-5 py-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-600 font-bold text-xs shrink-0 transition"
+                >
+                  Đổi sang COD
+                </button>
+              </div>
+            )}
           </>
         )}
 
@@ -156,5 +202,24 @@ export default function CheckoutPaymentPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full min-h-screen bg-[#fbf8f3]">
+          <div className="max-w-5xl mx-auto px-6 py-14">
+            <div className="rounded-3xl bg-white border border-amber-100 p-6 shadow-sm">
+              <p className="text-sm text-gray-500">
+                Loading payment details...
+              </p>
+            </div>
+          </div>
+        </div>
+      }>
+      <CheckoutPaymentContent />
+    </Suspense>
   );
 }

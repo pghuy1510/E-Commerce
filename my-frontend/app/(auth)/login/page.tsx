@@ -66,9 +66,9 @@ export default function LoginPage() {
                 <input type="checkbox" className="mr-2" />
                 {t("auth.rememberMe")}
               </label>
-              <a href="#" className="hover:text-yellow-500">
+              <Link href="/forgot-password" className="hover:text-yellow-500">
                 {t("auth.forgotPassword")}
-              </a>
+              </Link>
             </div>
 
             {/* LOGIN THƯỜNG */}

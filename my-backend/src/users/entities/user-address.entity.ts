@@ -2,7 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToOne,
+  ManyToOne,
   JoinColumn,
 } from 'typeorm';
 
@@ -12,6 +12,12 @@ import { User } from './user.entity';
 export class UserAddress {
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @Column({ name: 'receiver_name', type: 'varchar', nullable: true })
+  receiverName?: string;
+
+  @Column({ name: 'receiver_phone', type: 'varchar', nullable: true })
+  receiverPhone?: string;
 
   @Column({ type: 'varchar', nullable: true })
   province?: string;
@@ -25,11 +31,13 @@ export class UserAddress {
   @Column({ type: 'text', nullable: true })
   detail?: string;
 
-  @Column({ name: 'is_default', default: true })
-  is_default!: boolean;
+  @Column({ type: 'varchar', default: 'home' })
+  label!: string;
 
-  // FK + relation (CHỈ DÙNG 1 CHỖ, KHÔNG DUPLICATE userId)
-  @OneToOne(() => User, (user) => user.address, {
+  @Column({ name: 'is_default', default: false })
+  isDefault!: boolean;
+
+  @ManyToOne(() => User, (user) => user.addresses, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })

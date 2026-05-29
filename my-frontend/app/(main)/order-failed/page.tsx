@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { XCircle } from "lucide-react";
 
-export default function OrderFailedPage() {
+function OrderFailedContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
@@ -38,5 +39,20 @@ export default function OrderFailedPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderFailedPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#fbf8f3] flex items-center justify-center px-6">
+          <div className="max-w-xl w-full bg-white rounded-3xl shadow-lg border border-rose-100 p-8 text-center">
+            <p className="text-sm text-gray-600">Loading order...</p>
+          </div>
+        </div>
+      }>
+      <OrderFailedContent />
+    </Suspense>
   );
 }

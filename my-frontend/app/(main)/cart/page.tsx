@@ -10,6 +10,7 @@ import { cartAPI } from "@/lib/api";
 import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
 import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
+import { calculateCartSubtotal } from "@/lib/money";
 
 interface CartItem {
   id: number;
@@ -20,6 +21,7 @@ interface CartItem {
     name: string;
     price: number;
     image: string;
+    stock: number;
   };
 }
 
@@ -102,6 +104,7 @@ export default function CartPage() {
       }
 
       console.error("Update cart error:", err);
+      alert(err?.response?.data?.message || "Không thể cập nhật số lượng lúc này.");
     }
   };
 
@@ -124,10 +127,7 @@ export default function CartPage() {
   };
 
   // subtotal
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
+  const subtotal = calculateCartSubtotal(cart);
 
   if (loading) {
     return <p className="text-center py-10">{t("label.loadingCart")}</p>;
@@ -161,8 +161,10 @@ export default function CartPage() {
               {/* PRODUCT */}
               <div className="flex items-center gap-4">
                 <button
+                  type="button"
                   onClick={() => item.product && removeItem(item.product.id)}
-                  className="text-gray-400 hover:text-yellow-600">
+                  className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative z-10"
+                  aria-label="Xóa sản phẩm">
                   <X size={18} />
                 </button>
 
@@ -178,9 +180,18 @@ export default function CartPage() {
                       height={80}
                     />
 
-                    <span className="font-medium group-hover:text-yellow-600 transition">
-                      {item.product.name}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="font-medium group-hover:text-yellow-600 transition">
+                        {item.product.name}
+                      </span>
+                      {item.product.stock === 0 ? (
+                        <span className="text-xs font-semibold text-red-500 mt-1">Hết hàng</span>
+                      ) : item.quantity > item.product.stock ? (
+                        <span className="text-xs font-semibold text-red-500 mt-1">Không đủ hàng (Tồn: {item.product.stock})</span>
+                      ) : item.product.stock < 5 ? (
+                        <span className="text-xs text-orange-500 mt-1">Chỉ còn {item.product.stock} sản phẩm</span>
+                      ) : null}
+                    </div>
                   </Link>
                 ) : (
                   <div className="flex items-center gap-4">
@@ -207,20 +218,24 @@ export default function CartPage() {
               <div className="flex justify-center">
                 <div className="flex items-center border rounded-full px-3 py-1 gap-3">
                   <button
+                    disabled={item.quantity <= 1}
                     onClick={() =>
                       item.product &&
                       updateQuantity(item.product.id, "dec", item.quantity)
-                    }>
+                    }
+                    className="disabled:opacity-30 disabled:cursor-not-allowed">
                     <Minus size={16} />
                   </button>
 
-                  <span>{item.quantity}</span>
+                  <span className="font-semibold">{item.quantity}</span>
 
                   <button
+                    disabled={item.product ? item.quantity >= item.product.stock : false}
                     onClick={() =>
                       item.product &&
                       updateQuantity(item.product.id, "inc", item.quantity)
-                    }>
+                    }
+                    className="disabled:opacity-30 disabled:cursor-not-allowed">
                     <Plus size={16} />
                   </button>
                 </div>

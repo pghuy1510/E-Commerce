@@ -25,8 +25,17 @@ export class User {
   @Column()
   password!: string;
 
+  @Column({ name: 'reset_password_token', type: 'varchar', nullable: true })
+  resetPasswordToken?: string | null;
+
+  @Column({ name: 'reset_password_expires', type: 'timestamptz', nullable: true })
+  resetPasswordExpires?: Date | null;
+
   @Column({ default: 'user' })
   role!: string;
+
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
@@ -66,8 +75,8 @@ export class User {
   @OneToMany(() => UserBank, (bank) => bank.user)
   banks?: UserBank[];
 
-  @OneToOne(() => UserAddress, (address) => address.user, {
+  @OneToMany(() => UserAddress, (address) => address.user, {
     cascade: true,
   })
-  address?: UserAddress;
+  addresses?: UserAddress[];
 }

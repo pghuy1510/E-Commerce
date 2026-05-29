@@ -23,7 +23,6 @@ export function getBrowserToken(): string | undefined {
     return undefined;
   }
 
-  // Prefer native cookie parsing (works even if js-cookie isn't bundled here)
   const match = document.cookie.match(/(?:^|; )token=([^;]*)/);
   if (match?.[1]) {
     try {
@@ -34,10 +33,12 @@ export function getBrowserToken(): string | undefined {
   }
 
   try {
-    // Lazy import to avoid breaking server-side imports
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Cookies = require("js-cookie") as typeof import("js-cookie");
-    return Cookies.get("token");
+    const Cookies = require("js-cookie") as {
+      default?: { get: (name: string) => string | undefined };
+      get?: (name: string) => string | undefined;
+    };
+    return Cookies.get?.("token") ?? Cookies.default?.get("token");
   } catch {
     return undefined;
   }
@@ -90,7 +91,6 @@ api.interceptors.request.use((config) => {
 
   const debug = process.env.NEXT_PUBLIC_DEBUG_AUTH === "true";
   if (debug) {
-    // don't log token value
     // eslint-disable-next-line no-console
     console.debug("[api] request", {
       url: config.url,
@@ -103,7 +103,6 @@ api.interceptors.request.use((config) => {
     return config;
   }
 
-  // Axios v1+ may use AxiosHeaders (has .set)
   config.headers = config.headers ?? {};
   const headersAny = config.headers as any;
   if (typeof headersAny.set === "function") {
@@ -158,13 +157,15 @@ export interface UserProfile {
   phone?: string;
   gender?: string;
   dateOfBirth?: string | null;
+  role?: string;
 }
 
 export interface UserAddress {
   province?: string;
+  commune?: string;
   district?: string;
-  ward?: string;
   detail?: string;
+  formattedAddress?: string;
 }
 
 export type PaymentMethod = "qr" | "cod";
@@ -186,8 +187,7 @@ export interface CheckoutPayload {
   receiverName: string;
   receiverPhone: string;
   province: string;
-  district: string;
-  ward: string;
+  commune: string;
   detail: string;
   paymentMethod: PaymentMethod;
   shippingFee?: number;
@@ -208,6 +208,7 @@ export interface CheckoutResponse {
     addInfo: string;
     expiredAt: string;
     qrToken: string;
+    amount: number;
   } | null;
 }
 
@@ -244,8 +245,16 @@ export interface ContactPayload {
 }
 
 export const productAPI = {
-  getAll: async (): Promise<Product[]> => {
-    const response = await api.get("/products");
+  getAll: async (params?: {
+    search?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    rating?: number;
+    inStock?: boolean;
+    sortBy?: string;
+  }): Promise<Product[]> => {
+    const response = await api.get("/products", { params });
     return response.data;
   },
 
@@ -360,6 +369,13 @@ export const userProfileAPI = {
     const res = await api.patch("/users/me/profile", payload);
     return res.data;
   },
+  uploadAvatar: async (payload: FormData) => {
+    requireAuthToken();
+    const res = await api.patch("/users/me/avatar", payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
 };
 
 export const userAddressAPI = {
@@ -371,6 +387,31 @@ export const userAddressAPI = {
   update: async (payload: UserAddress): Promise<UserAddress> => {
     requireAuthToken();
     const res = await api.patch("/users/me/address", payload);
+    return res.data;
+  },
+  list: async (): Promise<UserAddress[]> => {
+    requireAuthToken();
+    const res = await api.get("/users/me/addresses");
+    return res.data;
+  },
+  add: async (payload: UserAddress & { receiverName?: string; receiverPhone?: string; label?: string; isDefault?: boolean }): Promise<UserAddress> => {
+    requireAuthToken();
+    const res = await api.post("/users/me/addresses", payload);
+    return res.data;
+  },
+  patch: async (id: number, payload: Partial<UserAddress & { receiverName?: string; receiverPhone?: string; label?: string; isDefault?: boolean }>): Promise<UserAddress> => {
+    requireAuthToken();
+    const res = await api.patch(`/users/me/addresses/${id}`, payload);
+    return res.data;
+  },
+  remove: async (id: number): Promise<{ success: boolean }> => {
+    requireAuthToken();
+    const res = await api.delete(`/users/me/addresses/${id}`);
+    return res.data;
+  },
+  setDefault: async (id: number): Promise<{ success: boolean }> => {
+    requireAuthToken();
+    const res = await api.patch(`/users/me/addresses/${id}/default`);
     return res.data;
   },
 };
@@ -395,6 +436,21 @@ export const userPasswordAPI = {
   },
 };
 
+export const forgotPasswordAPI = {
+  forgot: async (email: string) => {
+    const res = await api.post("/auth/forgot-password", { email });
+    return res.data;
+  },
+  verifyToken: async (email: string, token: string) => {
+    const res = await api.post("/auth/verify-reset-token", { email, token });
+    return res.data;
+  },
+  reset: async (payload: { email: string; token: string; newPassword: string }) => {
+    const res = await api.post("/auth/reset-password", payload);
+    return res.data;
+  },
+};
+
 export const contactAPI = {
   create: async (payload: ContactPayload) => {
     const res = await api.post("/contact", payload);
@@ -406,6 +462,47 @@ export const checkoutAPI = {
   create: async (payload: CheckoutPayload): Promise<CheckoutResponse> => {
     requireAuthToken();
     const res = await api.post("/orders/checkout", payload);
+    return res.data;
+  },
+  createGuest: async (payload: CheckoutPayload & { guestEmail: string; items: { productId: number; quantity: number }[] }): Promise<CheckoutResponse> => {
+    const res = await api.post("/orders/checkout-guest", payload);
+    return res.data;
+  },
+};
+
+export const orderAPI = {
+  list: async () => {
+    requireAuthToken();
+    const res = await api.get("/orders/my");
+    return res.data;
+  },
+  getById: async (id: number) => {
+    requireAuthToken();
+    const res = await api.get(`/orders/${id}`);
+    return res.data;
+  },
+  getGuestOrder: async (id: number, email: string) => {
+    const res = await api.get(`/orders/guest/${id}`, { params: { email } });
+    return res.data;
+  },
+  cancel: async (id: number, reason: string) => {
+    requireAuthToken();
+    const res = await api.post(`/orders/${id}/cancel`, { reason });
+    return res.data;
+  },
+  requestReturn: async (id: number, payload: { reason: string; imageProof?: string }) => {
+    requireAuthToken();
+    const res = await api.post(`/orders/${id}/return`, payload);
+    return res.data;
+  },
+  getReturn: async (id: number) => {
+    requireAuthToken();
+    const res = await api.get(`/orders/${id}/return`);
+    return res.data;
+  },
+  changeToCod: async (id: number) => {
+    requireAuthToken();
+    const res = await api.post(`/orders/${id}/change-to-cod`);
     return res.data;
   },
 };
@@ -424,12 +521,198 @@ export const paymentAPI = {
       bankName: string;
       accountName: string;
       accountNumber: string;
+      amount: number;
     }
   > => {
     requireAuthToken();
     const res = await api.post(`/payment/${paymentId}/regenerate-qr`, {
       machineId,
     });
+    return res.data;
+  },
+};
+
+export const reviewsAPI = {
+  create: async (payload: {
+    productId: number;
+    orderId: number;
+    rating: number;
+    comment: string;
+    images?: string[];
+  }) => {
+    requireAuthToken();
+    const res = await api.post("/reviews", payload);
+    return res.data;
+  },
+  getByProduct: async (productId: number) => {
+    const res = await api.get(`/reviews/product/${productId}`);
+    return res.data;
+  },
+  getSummary: async (productId: number) => {
+    const res = await api.get(`/reviews/product/${productId}/summary`);
+    return res.data;
+  },
+};
+
+export const adminAPI = {
+  getStats: async () => {
+    requireAuthToken();
+    const res = await api.get("/admin/stats");
+    return res.data;
+  },
+  getOrders: async () => {
+    requireAuthToken();
+    const res = await api.get("/admin/orders");
+    return res.data;
+  },
+  updateOrderStatus: async (id: number, payload: {
+    status: string;
+    trackingNumber?: string;
+    estimatedDeliveryDate?: string;
+    note?: string;
+  }) => {
+    requireAuthToken();
+    const res = await api.patch(`/admin/orders/${id}/status`, payload);
+    return res.data;
+  },
+  getReturns: async () => {
+    requireAuthToken();
+    const res = await api.get("/admin/returns");
+    return res.data;
+  },
+  handleReturn: async (id: number, payload: {
+    action: "approve" | "reject";
+    note?: string;
+  }) => {
+    requireAuthToken();
+    const res = await api.post(`/admin/returns/${id}/action`, payload);
+    return res.data;
+  },
+  createProduct: async (payload: {
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    image?: string;
+    categoryId: number;
+  }) => {
+    requireAuthToken();
+    const res = await api.post("/admin/products", payload);
+    return res.data;
+  },
+  updateProduct: async (id: number, payload: {
+    name?: string;
+    description?: string;
+    price?: number;
+    stock?: number;
+    image?: string;
+    categoryId?: number;
+  }) => {
+    requireAuthToken();
+    const res = await api.patch(`/admin/products/${id}`, payload);
+    return res.data;
+  },
+  deleteProduct: async (id: number) => {
+    requireAuthToken();
+    const res = await api.delete(`/admin/products/${id}`);
+    return res.data;
+  },
+  getUsers: async () => {
+    requireAuthToken();
+    const res = await api.get("/admin/users");
+    return res.data;
+  },
+  updateUserRole: async (id: number, role: string) => {
+    requireAuthToken();
+    const res = await api.patch(`/admin/users/${id}/role`, { role });
+    return res.data;
+  },
+  banUser: async (id: number, isActive: boolean) => {
+    requireAuthToken();
+    const res = await api.patch(`/admin/users/${id}/ban`, { isActive });
+    return res.data;
+  },
+  getUserOrders: async (id: number) => {
+    requireAuthToken();
+    const res = await api.get(`/admin/users/${id}/orders`);
+    return res.data;
+  },
+};
+
+export interface CouponInfo {
+  code: string;
+  expiresAt: string;
+  remainingUses: number;
+  source: string | null;
+  coupon: {
+    code: string;
+    name: string;
+    type: "shipping" | "shop" | "platform";
+    discountType: "percentage" | "fixed";
+    discountValue: number;
+    minOrder: number | null;
+    maxDiscount: number | null;
+    categoryId: number | null;
+  };
+}
+
+export interface CouponProgress {
+  freeShippingThreshold: number;
+  neededForFreeShipping: number;
+  currentBestSaving: number;
+  nextCoupon: {
+    code: string;
+    needed: number;
+    estimatedSaving: number;
+  } | null;
+}
+
+export const couponAPI = {
+  getMyCoupons: async (): Promise<CouponInfo[]> => {
+    requireAuthToken();
+    const res = await api.get<CouponInfo[]>("/coupons/my");
+    return res.data;
+  },
+  getProgress: async (subtotal: number): Promise<CouponProgress> => {
+    requireAuthToken();
+    const res = await api.get<CouponProgress>("/coupons/progress", {
+      params: { subtotal },
+    });
+    return res.data;
+  },
+  validate: async (code: string, subtotal: number, shippingFee?: number): Promise<{ valid: boolean; discountTotal: number; couponCode: string }> => {
+    requireAuthToken();
+    const res = await api.post<{ valid: boolean; discountTotal: number; couponCode: string }>("/coupons/validate", {
+      code,
+      subtotal,
+      shippingFee,
+    });
+    return res.data;
+  },
+  validateGuest: async (
+    code: string,
+    subtotal: number,
+    items: { productId: number; quantity: number }[],
+    shippingFee?: number,
+  ): Promise<{ valid: boolean; discountTotal: number; couponCode: string }> => {
+    const res = await api.post<{ valid: boolean; discountTotal: number; couponCode: string }>("/coupons/validate-guest", {
+      code,
+      subtotal,
+      items,
+      shippingFee,
+    });
+    return res.data;
+  },
+};
+
+export interface Category {
+  id: number;
+  name: string;
+}
+
+export const categoryAPI = {
+  getAll: async (): Promise<Category[]> => {
+    const res = await api.get<Category[]>("/categories");
     return res.data;
   },
 };

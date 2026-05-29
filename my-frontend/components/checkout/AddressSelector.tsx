@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
+import { formatVietnameseAddress } from "@/lib/address";
 
 export type ShippingAddress = {
   receiverName: string;
   receiverPhone: string;
   province: string;
-  district: string;
-  ward: string;
+  commune: string;
   detail: string;
 };
 
@@ -23,6 +23,7 @@ export default function AddressSelector({
   const handleChange = (key: keyof ShippingAddress, newValue: string) => {
     onChange({ ...value, [key]: newValue });
   };
+  const formattedAddress = formatVietnameseAddress(value);
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 space-y-4">
@@ -50,23 +51,17 @@ export default function AddressSelector({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <input
           value={value.province}
           onChange={(e) => handleChange("province", e.target.value)}
-          placeholder="Province"
+          placeholder="Tỉnh / thành phố"
           className="rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300"
         />
         <input
-          value={value.district}
-          onChange={(e) => handleChange("district", e.target.value)}
-          placeholder="District"
-          className="rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300"
-        />
-        <input
-          value={value.ward}
-          onChange={(e) => handleChange("ward", e.target.value)}
-          placeholder="Ward"
+          value={value.commune}
+          onChange={(e) => handleChange("commune", e.target.value)}
+          placeholder="Xã / phường"
           className="rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300"
         />
       </div>
@@ -74,9 +69,18 @@ export default function AddressSelector({
       <input
         value={value.detail}
         onChange={(e) => handleChange("detail", e.target.value)}
-        placeholder="Street, building, apartment..."
+        placeholder="Địa chỉ chi tiết: số nhà, đường, tòa nhà..."
         className="w-full rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300"
       />
+
+      {formattedAddress && (
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/50 px-4 py-3 text-sm text-gray-700">
+          <span className="font-semibold text-gray-900">
+            Địa chỉ giao hàng:
+          </span>{" "}
+          {formattedAddress}
+        </div>
+      )}
     </div>
   );
 }

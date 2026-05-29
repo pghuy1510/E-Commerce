@@ -29,7 +29,9 @@ export function buildVietQrImageUrl({
   template = DEFAULT_TEMPLATE,
   bank = BANK_INFO,
 }: VietQrImageOptions): string {
-  const normalizedAmount = Number.isFinite(amount) ? Math.max(0, amount) : 0;
+  const normalizedAmount = Number.isFinite(amount)
+    ? Math.max(0, Math.round(amount))
+    : 0;
   const params = new URLSearchParams();
 
   if (normalizedAmount > 0) {

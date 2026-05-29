@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/entities/user.entity';
+import { OrderStatusLog } from './order-status-log.entity';
 
 @Entity('orders')
 @Index('idx_orders_created_at', ['created_at'])
@@ -17,9 +18,12 @@ export class Order {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user?: User | null;
+
+  @Column({ name: 'guest_email', type: 'varchar', nullable: true })
+  guestEmail?: string | null;
 
   @Column('decimal', {
     precision: 10,
@@ -79,4 +83,13 @@ export class Order {
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items!: OrderItem[];
+
+  @Column({ name: 'tracking_number', type: 'varchar', nullable: true })
+  trackingNumber?: string | null;
+
+  @Column({ name: 'estimated_delivery_date', type: 'timestamptz', nullable: true })
+  estimatedDeliveryDate?: Date | null;
+
+  @OneToMany(() => OrderStatusLog, (log) => log.order, { cascade: true })
+  statusLogs!: OrderStatusLog[];
 }

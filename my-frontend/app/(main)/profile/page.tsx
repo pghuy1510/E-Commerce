@@ -17,6 +17,7 @@ import {
   userProfileAPI,
   type UserBank,
 } from "@/lib/api";
+import { toLegacyAddressPayload } from "@/lib/address";
 import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
 
 export default function ProfilePage() {
@@ -49,8 +50,7 @@ export default function ProfilePage() {
 
   const [address, setAddress] = useState({
     province: "",
-    district: "",
-    ward: "",
+    commune: "",
     detail: "",
   });
 
@@ -115,8 +115,7 @@ export default function ProfilePage() {
 
         setAddress({
           province: addressData.province || "",
-          district: addressData.district || "",
-          ward: addressData.ward || "",
+          commune: addressData.commune || addressData.district || "",
           detail: addressData.detail || "",
         });
 
@@ -233,10 +232,11 @@ export default function ProfilePage() {
   const handleSaveAddress = async () => {
     try {
       await userAddressAPI.update({
-        province: address.province.trim(),
-        district: address.district.trim(),
-        ward: address.ward.trim(),
-        detail: address.detail.trim(),
+        ...toLegacyAddressPayload({
+          province: address.province.trim(),
+          commune: address.commune.trim(),
+          detail: address.detail.trim(),
+        }),
       });
       alert("Address saved successfully!");
     } catch (err) {
@@ -670,30 +670,14 @@ export default function ProfilePage() {
                     />
                   </FormGroup>
 
-                  <FormGroup label="District">
+                  <FormGroup label="Xã / phường">
                     <input
                       type="text"
-                      value={address.district}
+                      value={address.commune}
                       onChange={(e) =>
                         setAddress({
                           ...address,
-                          district: e.target.value,
-                        })
-                      }
-                      className={inputClass}
-                    />
-                  </FormGroup>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <FormGroup label="Ward">
-                    <input
-                      type="text"
-                      value={address.ward}
-                      onChange={(e) =>
-                        setAddress({
-                          ...address,
-                          ward: e.target.value,
+                          commune: e.target.value,
                         })
                       }
                       className={inputClass}

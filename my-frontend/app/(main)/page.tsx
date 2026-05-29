@@ -29,7 +29,10 @@ export default function Home() {
       <FeaturedProducts />
 
       {/* CATEGORY */}
-      <TopCategories onHoverCategory={setCategory} />
+      <TopCategories
+        activeCategory={category as any}
+        onSelectCategory={setCategory}
+      />
 
       {/* DYNAMIC PRODUCT */}
       {category && (
@@ -38,6 +41,7 @@ export default function Home() {
           title={t("categoryProducts.title", {
             category: translateCategory(category),
           })}
+          onClose={() => setCategory(null)}
         />
       )}
 
@@ -47,7 +51,6 @@ export default function Home() {
 
       <TopRatingProducts />
 
-      {/* OTHER SECTIONS */}
       <TopProducts />
     </main>
   );

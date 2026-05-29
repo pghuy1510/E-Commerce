@@ -9,16 +9,13 @@ export function validateCheckoutPayload(payload: CheckoutPayload): string[] {
     errors.push("Receiver phone is required.");
   }
   if (!payload.province?.trim()) {
-    errors.push("Province is required.");
+    errors.push("Tỉnh / thành phố là bắt buộc.");
   }
-  if (!payload.district?.trim()) {
-    errors.push("District is required.");
-  }
-  if (!payload.ward?.trim()) {
-    errors.push("Ward is required.");
+  if (!payload.commune?.trim()) {
+    errors.push("Xã / phường là bắt buộc.");
   }
   if (!payload.detail?.trim()) {
-    errors.push("Address detail is required.");
+    errors.push("Địa chỉ chi tiết là bắt buộc.");
   }
   if (payload.paymentMethod === "qr" && !payload.machineId) {
     errors.push("Machine ID is required for QR payment.");

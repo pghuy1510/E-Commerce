@@ -1,9 +1,12 @@
 "use client";
 
 import { usePreferences } from "@/lib/i18n";
+import { useRouter } from "next/navigation";
 
 export default function BannerGrid() {
   const { t } = usePreferences();
+  const router = useRouter();
+
   return (
     <section className="w-full max-w-[1330px] mx-auto px-4 mt-20">
       <div className="grid md:grid-cols-2 gap-6">
@@ -32,7 +35,9 @@ export default function BannerGrid() {
               {t("banner.allBooks")}
             </h3>
 
-            <button className="mt-5 w-fit bg-white text-black px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition">
+            <button
+              onClick={() => router.push("/shop")}
+              className="mt-5 w-fit bg-white text-black px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition cursor-pointer">
               {t("action.shopNow")}
             </button>
           </div>
@@ -62,7 +67,9 @@ export default function BannerGrid() {
               {t("banner.discoverNextFavoriteBook")}
             </h3>
 
-            <button className="mt-5 w-fit bg-yellow-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition">
+            <button
+              onClick={() => router.push("/shop")}
+              className="mt-5 w-fit bg-yellow-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition cursor-pointer">
               {t("action.explore")}
             </button>
           </div>

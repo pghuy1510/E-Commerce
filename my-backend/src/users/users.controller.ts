@@ -111,6 +111,66 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me/addresses')
+  listAddresses(@Req() req: AuthenticatedRequest) {
+    const userId = Number(req.user.id);
+    if (!userId) {
+      throw new BadRequestException('Invalid userId');
+    }
+    return this.usersService.listAddresses(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/addresses')
+  addAddress(@Req() req: AuthenticatedRequest, @Body() body: UpdateAddressDto) {
+    const userId = Number(req.user.id);
+    if (!userId) {
+      throw new BadRequestException('Invalid userId');
+    }
+    return this.usersService.addAddress(userId, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/addresses/:id')
+  patchAddress(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') addressId: string,
+    @Body() body: UpdateAddressDto,
+  ) {
+    const userId = Number(req.user.id);
+    if (!userId) {
+      throw new BadRequestException('Invalid userId');
+    }
+    return this.usersService.patchAddress(userId, Number(addressId), body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/addresses/:id')
+  deleteAddress(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') addressId: string,
+  ) {
+    const userId = Number(req.user.id);
+    if (!userId) {
+      throw new BadRequestException('Invalid userId');
+    }
+    return this.usersService.deleteAddress(userId, Number(addressId));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/addresses/:id/default')
+  setDefaultAddress(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') addressId: string,
+  ) {
+    const userId = Number(req.user.id);
+    if (!userId) {
+      throw new BadRequestException('Invalid userId');
+    }
+    return this.usersService.setDefaultAddress(userId, Number(addressId));
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('me/banks')
   listBanks(@Req() req: AuthenticatedRequest) {
     const userId = Number(req.user.id);

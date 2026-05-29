@@ -116,8 +116,10 @@ export default function WishlistPage() {
             {/* PRODUCT */}
             <div className="flex items-center gap-4">
               <button
+                type="button"
                 onClick={() => handleRemove(item.product.id)}
-                className="text-gray-400 hover:text-yellow-600">
+                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative z-10"
+                aria-label="Xóa khỏi danh sách yêu thích">
                 <X size={18} />
               </button>
 

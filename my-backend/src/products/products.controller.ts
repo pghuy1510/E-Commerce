@@ -23,8 +23,24 @@ export class ProductsController {
   }
 
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('rating') rating?: string,
+    @Query('inStock') inStock?: string,
+    @Query('sortBy') sortBy?: string,
+  ) {
+    return this.productService.findAll({
+      search,
+      category,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      rating: rating ? Number(rating) : undefined,
+      inStock: inStock === 'true',
+      sortBy,
+    });
   }
 
   @Get('category/:name')

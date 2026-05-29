@@ -5,6 +5,7 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { OrderShippingAddress } from './order-shipping-address.entity';
 import { OrderStatusLog } from './order-status-log.entity';
+import { OrderReturn } from './order-return.entity';
 import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
 import { Product } from '../products/products.entity';
@@ -22,6 +23,7 @@ import { QrPayment } from '../payment/entities/qr-payment.entity';
       OrderItem,
       OrderShippingAddress,
       OrderStatusLog,
+      OrderReturn,
       Product,
       User,
       Payment,

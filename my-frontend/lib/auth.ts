@@ -14,3 +14,6 @@ export const login = (data: LoginPayload) => api.post("/auth/login", data);
 
 export const register = (data: RegisterPayload) =>
   api.post("/auth/register", data);
+
+export const registerGuestConvert = (data: { email: string; password: string }) =>
+  api.post("/auth/register-guest-convert", data);

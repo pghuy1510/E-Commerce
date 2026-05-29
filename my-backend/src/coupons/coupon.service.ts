@@ -616,18 +616,41 @@ export class CouponService {
     });
 
     if (!userCoupon) {
-      throw new BadRequestException('Coupon not found');
+      throw new BadRequestException('Mã coupon không tồn tại hoặc không thuộc sở hữu của bạn.');
     }
 
-    if (
-      userCoupon.isUsed ||
-      userCoupon.usedCount >= userCoupon.usageLimit ||
-      userCoupon.expiresAt <= now ||
-      !userCoupon.coupon?.isActive ||
-      (userCoupon.coupon?.startsAt && userCoupon.coupon.startsAt > now) ||
-      (userCoupon.coupon?.expiresAt && userCoupon.coupon.expiresAt < now)
-    ) {
-      throw new BadRequestException('Coupon is not available');
+    if (!userCoupon.coupon?.isActive) {
+      throw new BadRequestException('Mã coupon này hiện không còn hoạt động.');
+    }
+
+    if (userCoupon.isUsed || userCoupon.usedCount >= userCoupon.usageLimit) {
+      throw new BadRequestException('Mã coupon này đã được sử dụng hoặc hết lượt dùng.');
+    }
+
+    if (userCoupon.expiresAt <= now || (userCoupon.coupon?.expiresAt && userCoupon.coupon.expiresAt < now)) {
+      throw new BadRequestException('Mã coupon này đã hết hạn sử dụng.');
+    }
+
+    if (userCoupon.coupon?.startsAt && userCoupon.coupon.startsAt > now) {
+      throw new BadRequestException('Mã coupon này chưa đến thời gian áp dụng.');
+    }
+
+    const coupon = userCoupon.coupon;
+    if (coupon.minOrder != null && subtotal < coupon.minOrder) {
+      throw new BadRequestException(
+        `Đơn hàng tối thiểu phải từ ${coupon.minOrder.toLocaleString('vi-VN')}đ để áp dụng coupon này. Hiện tại đơn hàng chỉ có ${subtotal.toLocaleString('vi-VN')}đ.`,
+      );
+    }
+
+    if (coupon.categoryId) {
+      const hasCategory = cartItems.some(
+        (item) => item.product?.category?.id === coupon.categoryId,
+      );
+      if (!hasCategory) {
+        throw new BadRequestException(
+          'Mã coupon này chỉ áp dụng cho danh mục sản phẩm cụ thể không có trong giỏ hàng của bạn.',
+        );
+      }
     }
 
     const discount = this.calculateDiscount(
@@ -638,13 +661,117 @@ export class CouponService {
     );
 
     if (discount <= 0) {
-      throw new BadRequestException('Coupon is not applicable');
+      throw new BadRequestException('Mã coupon này không phù hợp cho đơn hàng hiện tại.');
     }
 
     return {
       discountTotal: discount,
       appliedCoupons: [userCoupon],
       appliedCodes: [userCoupon.code],
+    };
+  }
+
+  async validateCouponCode(userId: number, code: string, shippingFee = 0) {
+    const cart = await this.cartRepo.findOne({
+      where: { user: { id: userId } },
+      relations: ['items', 'items.product', 'items.product.category'],
+    });
+
+    if (!cart || !cart.items.length) {
+      throw new BadRequestException('Giỏ hàng của bạn đang trống.');
+    }
+
+    const subtotal = cart.items.reduce(
+      (sum, item) => sum + Number(item.price) * item.quantity,
+      0,
+    );
+
+    const result = await this.applyCouponCodeForUser(
+      userId,
+      code,
+      cart.items,
+      subtotal,
+      shippingFee,
+    );
+
+    return {
+      valid: true,
+      discountTotal: result.discountTotal,
+      couponCode: code,
+    };
+  }
+
+  async validateCouponCodeForGuest(
+    code: string,
+    cartItems: { productId: number; quantity: number }[],
+    subtotal: number,
+    shippingFee = 0,
+  ) {
+    const now = new Date();
+    const coupon = await this.couponRepo.findOne({
+      where: { code, isActive: true },
+    });
+
+    if (!coupon) {
+      throw new BadRequestException('Mã coupon không tồn tại hoặc đã hết hạn.');
+    }
+
+    if (coupon.startsAt && coupon.startsAt > now) {
+      throw new BadRequestException('Mã coupon này chưa đến thời gian áp dụng.');
+    }
+
+    if (coupon.expiresAt && coupon.expiresAt < now) {
+      throw new BadRequestException('Mã coupon này đã hết hạn sử dụng.');
+    }
+
+    if (coupon.minOrder != null && subtotal < coupon.minOrder) {
+      throw new BadRequestException(
+        `Đơn hàng tối thiểu phải từ ${coupon.minOrder.toLocaleString('vi-VN')}đ để áp dụng coupon này. Hiện tại đơn hàng chỉ có ${subtotal.toLocaleString('vi-VN')}đ.`,
+      );
+    }
+
+    if (coupon.categoryId) {
+      let hasCategory = false;
+      for (const item of cartItems) {
+        const prod = await this.productRepo.findOne({
+          where: { id: item.productId },
+          relations: ['category'],
+        });
+        if (prod?.category?.id === coupon.categoryId) {
+          hasCategory = true;
+          break;
+        }
+      }
+      if (!hasCategory) {
+        throw new BadRequestException(
+          'Mã coupon này chỉ áp dụng cho danh mục sản phẩm cụ thể không có trong giỏ hàng của bạn.',
+        );
+      }
+    }
+
+    let discount = 0;
+    if (coupon.type === 'shipping') {
+      discount = coupon.discountType === 'fixed'
+        ? coupon.discountValue
+        : (shippingFee * coupon.discountValue) / 100;
+      discount = Math.min(discount, shippingFee);
+    } else {
+      discount = coupon.discountType === 'fixed'
+        ? coupon.discountValue
+        : (subtotal * coupon.discountValue) / 100;
+      if (coupon.maxDiscount != null) {
+        discount = Math.min(discount, coupon.maxDiscount);
+      }
+    }
+
+    if (discount <= 0) {
+      throw new BadRequestException('Mã coupon này không phù hợp cho đơn hàng hiện tại.');
+    }
+
+    return {
+      valid: true,
+      discountTotal: discount,
+      couponCode: code,
     };
   }
 

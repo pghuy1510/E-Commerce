@@ -10,7 +10,6 @@ import {
   type BestSellerProduct,
   type Product,
 } from "@/lib/api";
-import ProductQr from "@/components/qr/ProductQr";
 
 type BadgeTone = "amber" | "emerald" | "gray";
 
@@ -174,15 +173,6 @@ export default function ProductCard({
             {t("action.addToCart")}
           </span>
         </button>
-
-        {product.stock > 0 && (
-          <ProductQr
-            amount={product.price}
-            addInfo={`PROD${product.id}`}
-            productName={product.name}
-            className="mt-4"
-          />
-        )}
       </div>
     </div>
   );

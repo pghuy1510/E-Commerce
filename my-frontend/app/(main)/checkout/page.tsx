@@ -9,8 +9,11 @@ import {
   PaymentMethod,
   userAddressAPI,
   userProfileAPI,
+  couponAPI,
 } from "@/lib/api";
 import { normalizeCartItems } from "@/lib/cart";
+import { toLegacyAddressPayload } from "@/lib/address";
+import { calculateCheckoutTotals, toMoneyNumber } from "@/lib/money";
 import { validateCheckoutPayload } from "@/lib/validation";
 import AddressSelector, {
   ShippingAddress,
@@ -25,6 +28,7 @@ type CartItem = {
   price: number;
   product?: {
     name: string;
+    stock: number;
   };
 };
 
@@ -37,12 +41,12 @@ export default function CheckoutPage() {
     receiverName: "",
     receiverPhone: "",
     province: "",
-    district: "",
-    ward: "",
+    commune: "",
     detail: "",
   });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("qr");
   const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -66,14 +70,24 @@ export default function CheckoutPage() {
           userProfileAPI.get(),
         ]);
 
-        setCartItems(normalizeCartItems(cartRes.data));
+        const items = normalizeCartItems(cartRes.data);
+        setCartItems(items);
+        
+        const hasOutOfStock = items.some(
+          (item: any) => item.product && item.quantity > item.product.stock,
+        );
+        if (hasOutOfStock) {
+          setError(
+            "Một số sản phẩm trong giỏ hàng đã hết hàng hoặc không đủ số lượng tồn kho. Vui lòng quay lại giỏ hàng để cập nhật.",
+          );
+        }
+
         setAddress((prev) => ({
           ...prev,
           receiverName: profileRes.fullName ?? prev.receiverName,
           receiverPhone: profileRes.phone ?? prev.receiverPhone,
           province: addressRes.province ?? prev.province,
-          district: addressRes.district ?? prev.district,
-          ward: addressRes.ward ?? prev.ward,
+          commune: addressRes.commune ?? addressRes.district ?? prev.commune,
           detail: addressRes.detail ?? prev.detail,
         }));
       } catch (err: any) {
@@ -85,16 +99,29 @@ export default function CheckoutPage() {
     void load();
   }, []);
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + Number(item.price) * item.quantity,
-    0,
-  );
   const shippingFee = 0;
-  const discount = 0;
-  const total = Math.max(0, subtotal + shippingFee - discount);
+  const discount = couponDiscount;
+  const totals = calculateCheckoutTotals({
+    items: cartItems.map((item) => ({
+      price: toMoneyNumber(item.price),
+      quantity: item.quantity,
+    })),
+    shippingFee,
+    discount,
+  });
 
   const handleSubmit = async () => {
     setError("");
+    const hasOutOfStock = cartItems.some(
+      (item) => item.product && item.quantity > item.product.stock,
+    );
+    if (hasOutOfStock) {
+      setError(
+        "Không thể đặt hàng. Có sản phẩm đã hết hàng hoặc không đủ tồn kho.",
+      );
+      return;
+    }
+
     if (!cartItems.length) {
       setError("Your cart is empty.");
       return;
@@ -103,9 +130,10 @@ export default function CheckoutPage() {
     setLoading(true);
     try {
       const payload = {
-        ...address,
+        ...toLegacyAddressPayload(address),
+        commune: address.commune,
         paymentMethod,
-        shippingFee,
+        shippingFee: totals.shippingFee,
         couponCode: couponCode || undefined,
         note: note || undefined,
         machineId: paymentMethod === "qr" ? machineId : undefined,
@@ -149,7 +177,21 @@ export default function CheckoutPage() {
         <div className="lg:col-span-2 space-y-6">
           <AddressSelector value={address} onChange={setAddress} />
           <PaymentMethods value={paymentMethod} onChange={setPaymentMethod} />
-          <CouponInput value={couponCode} onChange={setCouponCode} />
+          <CouponInput
+            value={couponCode}
+            onChange={setCouponCode}
+            subtotal={totals.subtotal}
+            shippingFee={totals.shippingFee}
+            onApplyCoupon={(discount, code) => {
+              setCouponDiscount(discount);
+              setCouponCode(code);
+            }}
+            onRemoveCoupon={() => {
+              setCouponDiscount(0);
+              setCouponCode("");
+            }}
+            appliedCode={couponCode}
+          />
           <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900">Order note</h2>
             <textarea
@@ -166,13 +208,13 @@ export default function CheckoutPage() {
             items={cartItems.map((item) => ({
               id: item.id,
               name: item.product?.name ?? "Item",
-              price: Number(item.price),
+              price: toMoneyNumber(item.price),
               quantity: item.quantity,
             }))}
-            subtotal={subtotal}
-            shippingFee={shippingFee}
-            discount={discount}
-            total={total}
+            subtotal={totals.subtotal}
+            shippingFee={totals.shippingFee}
+            discount={totals.discount}
+            total={totals.finalTotal}
             formatPrice={formatPrice}
           />
 

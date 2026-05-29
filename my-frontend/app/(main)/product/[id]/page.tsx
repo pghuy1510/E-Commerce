@@ -5,11 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-import { Star, Heart, Minus, Plus, ShoppingCart, Eye } from "lucide-react";
+import { Star, Heart, Minus, Plus, ShoppingCart, Eye, CheckCircle } from "lucide-react";
 
-import { productAPI, type Product, wishlistAPI, cartAPI } from "@/lib/api";
+import { productAPI, type Product, wishlistAPI, cartAPI, reviewsAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
-import ProductQr from "@/components/qr/ProductQr";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -20,6 +19,12 @@ export default function ProductDetailPage() {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>({
+    average: 5,
+    count: 0,
+    distribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 },
+  });
   const { t, formatPrice, translateCategory } = usePreferences();
 
   const userId = 1;
@@ -36,10 +41,21 @@ export default function ProductDetailPage() {
         setProduct(null);
         setRelatedProducts([]);
 
-        const data = await productAPI.getById(Number(idParam));
+        const prodId = Number(idParam);
+        const data = await productAPI.getById(prodId);
         setProduct(data);
 
-        const allProducts = await productAPI.getAll();
+        // Fetch related products and reviews in parallel
+        const [allProducts, sumData, listData] = await Promise.all([
+          productAPI.getAll(),
+          reviewsAPI.getSummary(prodId).catch(() => ({
+            average: 5,
+            count: 0,
+            distribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 },
+          })),
+          reviewsAPI.getByProduct(prodId).catch(() => []),
+        ]);
+
         const related = allProducts
           .filter(
             (item: Product) =>
@@ -48,6 +64,8 @@ export default function ProductDetailPage() {
           .slice(0, 4);
 
         setRelatedProducts(related);
+        setSummary(sumData);
+        setReviews(listData);
       } catch (err) {
         console.error("Fetch product error:", err);
       } finally {
@@ -154,13 +172,22 @@ export default function ProductDetailPage() {
           </h1>
 
           {/* RATING */}
-          <div className="flex items-center gap-1 text-orange-400 mt-4">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} size={18} fill="currentColor" />
-            ))}
-
-            <span className="text-gray-500 text-sm ml-2">
-              {t("label.customerReviews", { count: 5 })}
+          <div className="flex items-center gap-1.5 text-orange-400 mt-4">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={18}
+                  fill={star <= Math.round(summary.average) ? "currentColor" : "none"}
+                  className={star <= Math.round(summary.average) ? "text-amber-500" : "text-gray-300"}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-bold text-gray-800 ml-1">
+              {summary.average} / 5
+            </span>
+            <span className="text-gray-400 text-sm">
+              ({summary.count} đánh giá)
             </span>
           </div>
 
@@ -201,7 +228,8 @@ export default function ProductDetailPage() {
 
               <span className="font-semibold">{quantity}</span>
 
-              <button onClick={() => setQuantity((prev) => prev + 1)}>
+              <button
+                onClick={() => setQuantity((prev) => Math.min(product.stock, prev + 1))}>
                 <Plus size={16} />
               </button>
             </div>
@@ -227,17 +255,108 @@ export default function ProductDetailPage() {
               <Heart size={18} />
             </button>
           </div>
+        </div>
+      </div>
 
-          {product.stock > 0 && (
-            <ProductQr
-              amount={qrAmount}
-              addInfo={`PROD${product.id}`}
-              productName={product.name}
-              size="lg"
-              showBankInfo
-              className="mt-8"
-            />
-          )}
+      {/* REVIEWS SECTION */}
+      <div className="max-w-7xl mx-auto px-6 py-16 border-t border-gray-200">
+        <h2 className="text-3xl font-bold text-gray-900 mb-8">Đánh giá từ khách hàng</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Summary Breakdown */}
+          <div className="bg-amber-50/40 border border-amber-100 rounded-3xl p-8 space-y-6 self-start">
+            <div className="text-center space-y-2">
+              <p className="text-5xl font-black text-amber-600">{summary.average}</p>
+              <div className="flex justify-center gap-1 text-amber-500">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={22}
+                    fill={star <= Math.round(summary.average) ? "currentColor" : "none"}
+                    className={star <= Math.round(summary.average) ? "text-amber-500" : "text-gray-300"}
+                  />
+                ))}
+              </div>
+              <p className="text-sm font-semibold text-gray-500">{summary.count} nhận xét từ người mua</p>
+            </div>
+
+            {/* Distribution bars */}
+            <div className="space-y-3">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = summary.distribution[star.toString()] || 0;
+                const percent = summary.count > 0 ? (count / summary.count) * 100 : 0;
+                return (
+                  <div key={star} className="flex items-center gap-3 text-sm">
+                    <span className="w-3 font-semibold text-gray-600">{star}</span>
+                    <Star size={14} className="text-amber-500 fill-amber-500 shrink-0" />
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                    <span className="w-8 text-right font-medium text-gray-400">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Reviews List */}
+          <div className="lg:col-span-2 space-y-6">
+            {reviews.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                <p className="text-gray-400 font-medium">Chưa có đánh giá nào cho sản phẩm này.</p>
+                <p className="text-xs text-gray-400 mt-1">Hãy mua sản phẩm để trở thành người đầu tiên đánh giá!</p>
+              </div>
+            ) : (
+              <div className="space-y-6 divide-y divide-gray-100">
+                {reviews.map((rev, idx) => (
+                  <div key={rev.id} className={`pt-6 ${idx === 0 ? "pt-0" : ""}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-gray-900">{rev.user?.fullName || rev.user?.username}</p>
+                          {rev.isVerifiedPurchase && (
+                            <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-green-100">
+                              <CheckCircle size={10} className="fill-green-600 text-white" /> Đã mua hàng
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 text-amber-500 mt-1.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={14}
+                              fill={star <= rev.rating ? "currentColor" : "none"}
+                              className={star <= rev.rating ? "text-amber-500" : "text-gray-300"}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-400">
+                        {new Date(rev.createdAt).toLocaleDateString("vi-VN", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+
+                    <p className="text-gray-700 text-sm mt-3.5 leading-relaxed">{rev.comment}</p>
+
+                    {rev.images && rev.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {rev.images.map((img: string, i: number) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={i} src={img} alt="review media" className="w-20 h-20 object-cover rounded-2xl border border-gray-100 hover:shadow-md transition" />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

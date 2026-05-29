@@ -22,6 +22,8 @@ import { CouponService } from '../coupons/coupon.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { GenerateVietQrDto } from './dto/generate-vietqr.dto';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
+import { calculateCartSubtotal, calculateOrderTotals, toMoneyNumber } from '../order/order-totals';
+import { MailService } from '../common/mail.service';
 
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'refunded';
 type VietQrBankConfig = {
@@ -71,6 +73,8 @@ export class PaymentService {
     private configService: ConfigService,
 
     private dataSource: DataSource,
+
+    private mailService: MailService,
   ) {}
 
   async create(dto: CreatePaymentDto) {
@@ -171,8 +175,9 @@ export class PaymentService {
     }
 
     const addInfoBase = `ORD${order.id}-PAY${payment.id}`;
+    const amount = this.normalizeVietQrAmount(payment.amount);
     const qrResponse = await this.generateVietQr({
-      amount: Number(payment.amount),
+      amount,
       addInfo: addInfoBase,
       machineId,
     });
@@ -210,7 +215,7 @@ export class PaymentService {
       bankName,
       accountName,
       accountNumber,
-      amount: Number(payment.amount),
+      amount,
       addInfo: qrResponse.addInfo,
       qrDataUrl: qrResponse.qrDataURL,
       status: 'pending',
@@ -224,6 +229,7 @@ export class PaymentService {
       addInfo: qrResponse.addInfo,
       expiredAt: qrResponse.expiredAt,
       qrToken,
+      amount,
       bankName,
       accountName,
       accountNumber,
@@ -239,7 +245,7 @@ export class PaymentService {
       throw new NotFoundException('Payment not found');
     }
 
-    const amount = Number(payment.amount);
+    const amount = this.normalizeVietQrAmount(payment.amount);
     if (Math.abs(amount - dto.amount) > 0.01) {
       throw new BadRequestException('Amount mismatch');
     }
@@ -380,24 +386,40 @@ export class PaymentService {
         status: newStatus,
       });
 
-      if (newStatus === 'paid' && currentOrder.user?.id) {
-        const cart = await cartRepo.findOne({
-          where: { user: { id: currentOrder.user.id } },
-        });
-        if (cart) {
-          await cartItemRepo.delete({ cart: { id: cart.id } });
+      if (newStatus === 'paid') {
+        const userEmail = currentOrder.user?.email || (currentOrder as any).guestEmail;
+        if (userEmail) {
+          try {
+            this.mailService.sendPaymentStatus(
+              userEmail,
+              currentOrder.id,
+              true,
+              currentOrder.paymentMethod || 'qr',
+            );
+          } catch (e) {
+            console.error('Lỗi khi gửi email thanh toán thành công:', e);
+          }
         }
 
-        await userRepo.increment(
-          { id: currentOrder.user.id },
-          'totalSpent',
-          Number(currentOrder.totalAmount),
-        );
+        if (currentOrder.user?.id) {
+          const cart = await cartRepo.findOne({
+            where: { user: { id: currentOrder.user.id } },
+          });
+          if (cart) {
+            await cartItemRepo.delete({ cart: { id: cart.id } });
+          }
 
-        if (currentOrder.couponCodes?.length) {
-          await this.couponService.markCouponsUsedByCodes(
-            currentOrder.couponCodes,
+          await userRepo.increment(
+            { id: currentOrder.user.id },
+            'totalSpent',
+            Number(currentOrder.totalAmount),
           );
+
+          if (currentOrder.couponCodes?.length) {
+            await this.couponService.markCouponsUsedByCodes(
+              currentOrder.couponCodes,
+            );
+          }
         }
       }
 
@@ -487,10 +509,9 @@ export class PaymentService {
   }
 
   normalizeVietQrAmount(amount: number): number {
-    const numericAmount = Number(amount);
-    const normalized = Math.round(numericAmount);
+    const normalized = toMoneyNumber(amount, 'Payment amount');
 
-    if (!Number.isFinite(normalized) || normalized <= 0) {
+    if (normalized <= 0 || !Number.isInteger(normalized)) {
       throw new BadRequestException('Invalid payment amount.');
     }
 
@@ -564,6 +585,7 @@ export class PaymentService {
 
       const order = await this.orderRepo.findOne({
         where: { id: payment.order_id },
+        relations: ['user'],
       });
       if (!order) continue;
 
@@ -575,6 +597,20 @@ export class PaymentService {
           newStatus: 'cancelled',
           note: 'Payment expired',
         });
+
+        const userEmail = order.user?.email || (order as any).guestEmail;
+        if (userEmail) {
+          try {
+            this.mailService.sendPaymentStatus(
+              userEmail,
+              order.id,
+              false,
+              order.paymentMethod || 'qr',
+            );
+          } catch (e) {
+            console.error('Lỗi khi gửi email thanh toán thất bại (hết hạn):', e);
+          }
+        }
       }
     }
   }

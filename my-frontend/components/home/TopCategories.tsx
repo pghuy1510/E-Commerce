@@ -21,6 +21,8 @@ type Category =
   | "Keyboard";
 
 type Props = {
+  activeCategory?: Category | null;
+  onSelectCategory?: (category: Category | null) => void;
   onHoverCategory?: (category: Category | null) => void;
 };
 
@@ -35,10 +37,22 @@ const categories: { name: Category; image: string }[] = [
   { name: "Keyboard", image: "/img/keyboard.jpg" },
 ];
 
-export default function TopCategories({ onHoverCategory }: Props) {
-  const [active, setActive] = useState<Category | null>(null);
+export default function TopCategories({
+  activeCategory,
+  onSelectCategory,
+  onHoverCategory,
+}: Props) {
+  const [localActive, setLocalActive] = useState<Category | null>(null);
+  const active = activeCategory !== undefined ? activeCategory : localActive;
   const [isMobile, setIsMobile] = useState(false);
   const { t, translateCategory } = usePreferences();
+
+  /* Sync local active state if parent state changes */
+  useEffect(() => {
+    if (activeCategory !== undefined) {
+      setLocalActive(activeCategory);
+    }
+  }, [activeCategory]);
 
   /* ✅ detect mobile để fix parallax */
   useEffect(() => {
@@ -53,17 +67,16 @@ export default function TopCategories({ onHoverCategory }: Props) {
   }, []);
 
   const handleSelect = (category: Category) => {
-    setActive(category);
-    onHoverCategory?.(category);
+    const nextActive = active === category ? null : category;
+    if (activeCategory === undefined) {
+      setLocalActive(nextActive);
+    }
+    onSelectCategory?.(nextActive);
+    onHoverCategory?.(nextActive);
   };
 
   return (
-    <section
-      className="relative w-full mt-16"
-      onMouseLeave={() => {
-        setActive(null);
-        onHoverCategory?.(null);
-      }}>
+    <section className="relative w-full mt-16">
       {/* 🔥 PARALLAX BACKGROUND */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -114,8 +127,7 @@ export default function TopCategories({ onHoverCategory }: Props) {
             return (
               <SwiperSlide key={item.name}>
                 <div
-                  className="group cursor-pointer"
-                  onMouseEnter={() => handleSelect(item.name)}
+                  className="group cursor-pointer animate-none"
                   onClick={() => handleSelect(item.name)}>
                   {/* CARD */}
                   <div
@@ -153,7 +165,7 @@ export default function TopCategories({ onHoverCategory }: Props) {
                     className={`mt-3 text-sm font-medium text-center transition
                     ${
                       isActive
-                        ? "text-yellow-600"
+                        ? "text-yellow-600 font-semibold"
                         : "text-white group-hover:text-yellow-300"
                     }`}>
                     {translateCategory(item.name)}

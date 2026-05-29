@@ -90,7 +90,7 @@ export class CartService {
     if (!product) throw new BadRequestException('Product not found');
 
     if (product.stock < quantity) {
-      throw new BadRequestException('Not enough stock');
+      throw new BadRequestException(`Sản phẩm này chỉ còn ${product.stock} sản phẩm trong kho.`);
     }
 
     const cart = await this.getCart(userId);
@@ -101,7 +101,7 @@ export class CartService {
       item.quantity += quantity;
 
       if (product.stock < item.quantity) {
-        throw new BadRequestException('Not enough stock');
+        throw new BadRequestException(`Sản phẩm này chỉ còn ${product.stock} sản phẩm trong kho. Bạn đang có ${item.quantity - quantity} sản phẩm trong giỏ.`);
       }
 
       await this.itemRepo.save(item);
@@ -128,8 +128,6 @@ export class CartService {
 
     await this.itemRepo.delete(item.id);
 
-    await this.cartRepo.save(cart);
-
     return this.getCart(userId);
   }
 
@@ -148,8 +146,11 @@ export class CartService {
       where: { id: productId },
     });
 
-    if (!product || product.stock < quantity) {
-      throw new BadRequestException('Not enough stock');
+    if (!product) {
+      throw new BadRequestException('Sản phẩm không tồn tại.');
+    }
+    if (product.stock < quantity) {
+      throw new BadRequestException(`Sản phẩm này chỉ còn ${product.stock} sản phẩm trong kho.`);
     }
 
     item.quantity = quantity;
