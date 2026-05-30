@@ -67,14 +67,25 @@ export default function Header() {
     const token = getBrowserToken();
     const storedUsername = localStorage.getItem("username");
 
-    if (token && storedUsername) {
-      setLocalUsername(storedUsername);
+    if (token) {
+      if (storedUsername) {
+        setLocalUsername(storedUsername);
+      }
       userProfileAPI.get()
         .then((profile) => {
+          const name = profile.username || profile.email || "User";
+          localStorage.setItem("username", name);
+          setLocalUsername(name);
           setUserRole(profile.role || "user");
         })
         .catch((err) => {
           console.error("Error fetching user profile in header:", err);
+          if (err.response?.status === 401) {
+            setAuthToken(null);
+            localStorage.removeItem("username");
+            setLocalUsername(null);
+            setUserRole(null);
+          }
         });
       return;
     }
@@ -99,6 +110,12 @@ export default function Header() {
       })
       .catch((err) => {
         console.error("Error fetching user profile in header:", err);
+        if (err.response?.status === 401) {
+          setAuthToken(null);
+          localStorage.removeItem("username");
+          setLocalUsername(null);
+          setUserRole(null);
+        }
       });
   }, [session]);
 
@@ -114,6 +131,20 @@ export default function Header() {
   ========================= */
   const refreshCartCount = useCallback(async () => {
     if (!getBrowserToken()) {
+      try {
+        const localCartStr = localStorage.getItem("guest-cart");
+        if (localCartStr) {
+          const items = JSON.parse(localCartStr);
+          const count = items.reduce(
+            (sum: number, item: { quantity?: number }) => sum + (item.quantity ?? 0),
+            0,
+          );
+          setCartCount(count);
+          return;
+        }
+      } catch (e) {
+        console.error("Lỗi parse giỏ hàng khách:", e);
+      }
       setCartCount(0);
       return;
     }

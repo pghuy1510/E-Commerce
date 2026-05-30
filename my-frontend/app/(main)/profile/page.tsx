@@ -9,6 +9,10 @@ import {
   CreditCard,
   Camera,
   ChevronDown,
+  Plus,
+  Edit2,
+  Trash2,
+  Check,
 } from "lucide-react";
 import {
   userAddressAPI,
@@ -16,9 +20,12 @@ import {
   userPasswordAPI,
   userProfileAPI,
   type UserBank,
+  locationAPI,
+  ProvinceOption,
 } from "@/lib/api";
 import { toLegacyAddressPayload } from "@/lib/address";
 import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
+import AddressSelectorDropdown from "@/components/address-selector";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -54,6 +61,20 @@ export default function ProfilePage() {
     detail: "",
   });
 
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [provinces, setProvinces] = useState<ProvinceOption[]>([]);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    receiverName: "",
+    receiverPhone: "",
+    provinceId: undefined as number | undefined,
+    wardId: undefined as number | undefined,
+    addressDetail: "",
+    label: "home",
+    isDefault: false,
+  });
+  const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
+
   const [bank, setBank] = useState({
     bankName: "",
     accountName: "",
@@ -84,11 +105,14 @@ export default function ProfilePage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [profileData, addressData, bankData] = await Promise.all([
+        const [profileData, addressListData, bankData, provincesData] = await Promise.all([
           userProfileAPI.get(),
-          userAddressAPI.get(),
+          userAddressAPI.list().catch(() => []),
           userBankAPI.list(),
+          locationAPI.getProvinces().catch(() => []),
         ]);
+
+        setProvinces(provincesData);
 
         let day = "";
         let month = "";
@@ -113,15 +137,21 @@ export default function ProfilePage() {
           year,
         });
 
+        setAddresses(addressListData);
+        const defAddress = addressListData.find((a: any) => a.isDefault) || addressListData[0];
         setAddress({
-          province: addressData.province || "",
-          commune: addressData.commune || addressData.district || "",
-          detail: addressData.detail || "",
+          province: defAddress?.province || "",
+          commune: defAddress?.district || "",
+          detail: defAddress?.detail || "",
         });
 
         setBanks(bankData);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Profile load error:", err);
+        if (err.response?.status === 401) {
+          setAuthToken(null);
+          setHasAuth(false);
+        }
       } finally {
         setLoading(false);
       }
@@ -229,19 +259,96 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveAddress = async () => {
+  const handleAddAddress = () => {
+    setAddressForm({
+      receiverName: "",
+      receiverPhone: "",
+      provinceId: undefined,
+      wardId: undefined,
+      addressDetail: "",
+      label: "home",
+      isDefault: false,
+    });
+    setEditingAddressId(null);
+    setShowAddressForm(true);
+  };
+
+  const handleEditAddress = (addr: any) => {
+    setAddressForm({
+      receiverName: addr.receiverName || "",
+      receiverPhone: addr.receiverPhone || "",
+      provinceId: addr.provinceId || undefined,
+      wardId: addr.wardId || undefined,
+      addressDetail: addr.addressDetail || addr.detail || "",
+      label: addr.label || "home",
+      isDefault: addr.isDefault || false,
+    });
+    setEditingAddressId(addr.id);
+    setShowAddressForm(true);
+  };
+
+  const handleDeleteAddress = async (id: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa địa chỉ này?")) {
+      try {
+        await userAddressAPI.remove(id);
+        const list = await userAddressAPI.list();
+        setAddresses(list);
+        alert("Xóa địa chỉ thành công!");
+      } catch (err) {
+        console.error("Delete address error:", err);
+        alert("Không thể xóa địa chỉ.");
+      }
+    }
+  };
+
+  const handleSetDefaultAddress = async (id: number) => {
     try {
-      await userAddressAPI.update({
-        ...toLegacyAddressPayload({
-          province: address.province.trim(),
-          commune: address.commune.trim(),
-          detail: address.detail.trim(),
-        }),
-      });
-      alert("Address saved successfully!");
+      await userAddressAPI.setDefault(id);
+      const list = await userAddressAPI.list();
+      setAddresses(list);
+      alert("Đã thiết lập địa chỉ mặc định!");
     } catch (err) {
-      console.error("Address save error:", err);
-      alert("Failed to save address.");
+      console.error("Set default address error:", err);
+      alert("Không thể thiết lập địa chỉ mặc định.");
+    }
+  };
+
+  const handleSaveAddressBook = async () => {
+    if (
+      !addressForm.receiverName.trim() ||
+      !addressForm.receiverPhone.trim() ||
+      !addressForm.provinceId ||
+      !addressForm.wardId ||
+      !addressForm.addressDetail.trim()
+    ) {
+      alert("Vui lòng điền đầy đủ các thông tin địa chỉ.");
+      return;
+    }
+
+    const payload = {
+      receiverName: addressForm.receiverName.trim(),
+      receiverPhone: addressForm.receiverPhone.trim(),
+      provinceId: addressForm.provinceId,
+      wardId: addressForm.wardId,
+      addressDetail: addressForm.addressDetail.trim(),
+      label: addressForm.label,
+      isDefault: addressForm.isDefault,
+    };
+
+    try {
+      if (editingAddressId) {
+        await userAddressAPI.patch(editingAddressId, payload);
+        alert("Cập nhật địa chỉ thành công!");
+      } else {
+        await userAddressAPI.add(payload);
+        alert("Thêm địa chỉ mới thành công!");
+      }
+      setShowAddressForm(false);
+      const list = await userAddressAPI.list();
+      setAddresses(list);
+    } catch (err: any) {
+      console.error("Save address book error:", err);
+      alert(err?.response?.data?.message ?? "Không thể lưu địa chỉ. Vui lòng thử lại.");
     }
   };
 
@@ -646,67 +753,226 @@ export default function ProfilePage() {
           {/* ADDRESS */}
           {activeTab === "address" && (
             <div>
-              <div className="border-b pb-5 mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Address</h1>
-
-                <p className="text-gray-500 mt-2">
-                  Manage your shipping address
-                </p>
-              </div>
-
-              <div className="space-y-6 max-w-3xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <FormGroup label="Province / City">
-                    <input
-                      type="text"
-                      value={address.province}
-                      onChange={(e) =>
-                        setAddress({
-                          ...address,
-                          province: e.target.value,
-                        })
-                      }
-                      className={inputClass}
-                    />
-                  </FormGroup>
-
-                  <FormGroup label="Xã / phường">
-                    <input
-                      type="text"
-                      value={address.commune}
-                      onChange={(e) =>
-                        setAddress({
-                          ...address,
-                          commune: e.target.value,
-                        })
-                      }
-                      className={inputClass}
-                    />
-                  </FormGroup>
+              <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-5 mb-8 gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                    <MapPin className="w-8 h-8 text-amber-600" />
+                    Sổ địa chỉ
+                  </h1>
+                  <p className="text-gray-500 mt-2">
+                    Quản lý danh sách địa chỉ nhận hàng của bạn
+                  </p>
                 </div>
-
-                <FormGroup label="Detailed Address">
-                  <textarea
-                    rows={5}
-                    value={address.detail}
-                    onChange={(e) =>
-                      setAddress({
-                        ...address,
-                        detail: e.target.value,
-                      })
-                    }
-                    placeholder="House number, street name..."
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-300 bg-gray-50 outline-none focus:ring-2 focus:ring-gray-300 transition resize-none"
-                  />
-                </FormGroup>
-
-                <button
-                  type="button"
-                  onClick={handleSaveAddress}
-                  className={buttonClass}>
-                  Save Address
-                </button>
+                {!showAddressForm && (
+                  <button
+                    type="button"
+                    onClick={handleAddAddress}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-2xl font-semibold hover:bg-amber-700 transition shadow-sm"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Thêm địa chỉ mới
+                  </button>
+                )}
               </div>
+
+              {showAddressForm ? (
+                <div className="bg-white rounded-3xl border border-amber-100 p-6 md:p-8 space-y-6 max-w-3xl shadow-sm">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {editingAddressId ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ nhận hàng mới"}
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <FormGroup label="Họ và tên người nhận">
+                      <input
+                        type="text"
+                        value={addressForm.receiverName}
+                        onChange={(e) =>
+                          setAddressForm({
+                            ...addressForm,
+                            receiverName: e.target.value,
+                          })
+                        }
+                        className={inputClass}
+                        placeholder="Nguyễn Văn A"
+                      />
+                    </FormGroup>
+
+                    <FormGroup label="Số điện thoại nhận hàng">
+                      <input
+                        type="text"
+                        value={addressForm.receiverPhone}
+                        onChange={(e) =>
+                          setAddressForm({
+                            ...addressForm,
+                            receiverPhone: e.target.value,
+                          })
+                        }
+                        className={inputClass}
+                        placeholder="09XXXXXXXX"
+                      />
+                    </FormGroup>
+                  </div>
+
+                  <div className="col-span-full">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Địa chỉ nhận hàng
+                    </label>
+                    <AddressSelectorDropdown
+                      value={{
+                        provinceId: addressForm.provinceId,
+                        wardId: addressForm.wardId,
+                        addressDetail: addressForm.addressDetail,
+                      }}
+                      provinces={provinces}
+                      onChange={(val) =>
+                        setAddressForm({
+                          ...addressForm,
+                          provinceId: val.provinceId,
+                          wardId: val.wardId,
+                          addressDetail: val.addressDetail || "",
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Loại địa chỉ
+                    </label>
+                    <div className="flex gap-4">
+                      {["home", "work", "other"].map((lbl) => (
+                        <button
+                          key={lbl}
+                          type="button"
+                          onClick={() => setAddressForm({ ...addressForm, label: lbl })}
+                          className={`px-5 py-2.5 rounded-2xl text-sm font-semibold border transition ${
+                            addressForm.label === lbl
+                              ? "border-amber-600 bg-amber-50 text-amber-700 shadow-sm"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {lbl === "home" ? "Nhà riêng" : lbl === "work" ? "Văn phòng / Công ty" : "Khác"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="isDefault"
+                      checked={addressForm.isDefault}
+                      onChange={(e) =>
+                        setAddressForm({ ...addressForm, isDefault: e.target.checked })
+                      }
+                      className="w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                    />
+                    <label htmlFor="isDefault" className="text-sm font-medium text-gray-700 cursor-pointer">
+                      Đặt làm địa chỉ nhận hàng mặc định
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={handleSaveAddressBook}
+                      className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-2xl transition shadow-sm"
+                    >
+                      Lưu địa chỉ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddressForm(false)}
+                      className="px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-2xl transition"
+                    >
+                      Hủy bỏ
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl">
+                  {addresses.length === 0 ? (
+                    <div className="col-span-full border-2 border-dashed border-gray-200 rounded-3xl p-12 text-center text-gray-500">
+                      <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      Bạn chưa thêm địa chỉ nhận hàng nào.
+                      <button
+                        type="button"
+                        onClick={handleAddAddress}
+                        className="block mt-4 mx-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl font-semibold transition"
+                      >
+                        Thêm địa chỉ ngay
+                      </button>
+                    </div>
+                  ) : (
+                    addresses.map((addr) => (
+                      <div
+                        key={addr.id}
+                        className={`bg-white rounded-3xl border p-6 flex flex-col justify-between transition duration-200 relative ${
+                          addr.isDefault
+                            ? "border-amber-500 bg-amber-50/5 shadow-sm"
+                            : "border-gray-200 hover:border-amber-300"
+                        }`}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-1">
+                              <h3 className="font-bold text-gray-900 text-base">
+                                {addr.receiverName || "Người nhận"}
+                              </h3>
+                              <p className="text-sm font-medium text-gray-500 font-mono">
+                                {addr.receiverPhone || "Chưa có SĐT"}
+                              </p>
+                            </div>
+                            <div className="flex gap-1.5 flex-wrap">
+                              <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                                {addr.label === "work" ? "Công ty" : addr.label === "home" ? "Nhà riêng" : "Khác"}
+                              </span>
+                              {addr.isDefault && (
+                                <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 flex items-center gap-0.5">
+                                  <Check className="w-3 h-3" /> Mặc định
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            {addr.formattedAddress}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-gray-100 pt-4 mt-6">
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleEditAddress(addr)}
+                              className="text-sm font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1"
+                            >
+                              <Edit2 className="w-4 h-4" /> Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAddress(addr.id)}
+                              className="text-sm font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                            >
+                              <Trash2 className="w-4 h-4" /> Xóa
+                            </button>
+                          </div>
+
+                          {!addr.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetDefaultAddress(addr.id)}
+                              className="text-xs font-bold text-gray-500 hover:text-amber-600 uppercase tracking-wider"
+                            >
+                              Đặt mặc định
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -826,17 +1092,17 @@ function SelectBox({
       <select
         value={value}
         onChange={onChange}
-        className="w-full h-12 px-4 rounded-2xl border border-gray-300 bg-gray-50 appearance-none outline-none focus:ring-2 focus:ring-gray-300 transition">
+        className="w-full h-12 px-4 rounded-2xl border border-amber-100 bg-amber-50/40 text-gray-800 appearance-none outline-none focus:ring-2 focus:ring-amber-300 transition">
         {children}
       </select>
 
-      <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+      <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-amber-600 pointer-events-none" />
     </div>
   );
 }
 
 const inputClass =
-  "w-full h-12 px-4 rounded-2xl border border-gray-300 bg-gray-50 outline-none focus:ring-2 focus:ring-gray-300 transition";
+  "w-full h-12 px-4 rounded-2xl border border-amber-100 bg-amber-50/40 text-gray-800 outline-none focus:ring-2 focus:ring-amber-300 transition";
 
 const buttonClass =
-  "bg-gray-900 hover:bg-black transition text-white px-10 py-3 rounded-2xl font-medium shadow-sm";
+  "bg-amber-600 hover:bg-amber-700 transition text-white px-10 py-3 rounded-2xl font-medium shadow-sm disabled:opacity-50";

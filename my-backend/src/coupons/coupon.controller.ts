@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, Param, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { CouponService } from './coupon.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminGuard } from '../auth/admin-auth.guard';
+import { CouponType, DiscountType } from './coupon.entity';
 
 type AuthenticatedRequest = Request & {
   user: {
@@ -62,5 +64,38 @@ export class CouponController {
       body.subtotal,
       body.shippingFee ?? 0,
     );
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  listAllCoupons() {
+    return this.couponService.listAllCoupons();
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  createCoupon(
+    @Body()
+    body: {
+      code: string;
+      name?: string;
+      type: CouponType;
+      discountType: DiscountType;
+      discountValue: number;
+      minOrder?: number | null;
+      maxDiscount?: number | null;
+      categoryId?: number | null;
+      startsAt?: string | null;
+      expiresAt?: string | null;
+      isActive?: boolean;
+    },
+  ) {
+    return this.couponService.createCoupon(body);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  deleteCoupon(@Param('id', ParseIntPipe) id: number) {
+    return this.couponService.deleteCoupon(id);
   }
 }

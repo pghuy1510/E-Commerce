@@ -16,6 +16,9 @@ import { PaymentModule } from '../payment/payment.module';
 import { Payment } from '../payment/entities/payment.entity';
 import { QrPayment } from '../payment/entities/qr-payment.entity';
 
+import { LocationModule } from '../locations/location.module';
+import { DealsModule } from '../deals/deals.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -32,6 +35,8 @@ import { QrPayment } from '../payment/entities/qr-payment.entity';
     CartModule,
     CouponModule,
     PaymentModule,
+    LocationModule,
+    DealsModule,
   ],
   providers: [OrderService],
   controllers: [OrderController],

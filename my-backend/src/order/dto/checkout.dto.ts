@@ -16,9 +16,20 @@ export class CheckoutDto {
   @MaxLength(20)
   receiverPhone!: string;
 
+  @IsNumber()
+  provinceId!: number;
+
+  @IsNumber()
+  wardId!: number;
+
+  @IsString()
+  @MaxLength(200)
+  addressDetail!: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(100)
-  province!: string;
+  province?: string;
 
   @IsOptional()
   @IsString()
@@ -35,9 +46,10 @@ export class CheckoutDto {
   @MaxLength(100)
   ward?: string;
 
+  @IsOptional()
   @IsString()
   @MaxLength(200)
-  detail!: string;
+  detail?: string;
 
   @IsIn(['qr', 'cod'])
   paymentMethod!: 'qr' | 'cod';
@@ -81,9 +93,20 @@ export class GuestCheckoutDto {
   @MaxLength(20)
   receiverPhone!: string;
 
+  @IsNumber()
+  provinceId!: number;
+
+  @IsNumber()
+  wardId!: number;
+
+  @IsString()
+  @MaxLength(200)
+  addressDetail!: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(100)
-  province!: string;
+  province?: string;
 
   @IsOptional()
   @IsString()
@@ -100,9 +123,10 @@ export class GuestCheckoutDto {
   @MaxLength(100)
   ward?: string;
 
+  @IsOptional()
   @IsString()
   @MaxLength(200)
-  detail!: string;
+  detail?: string;
 
   @IsIn(['qr', 'cod'])
   paymentMethod!: 'qr' | 'cod';

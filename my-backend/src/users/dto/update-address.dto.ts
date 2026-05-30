@@ -1,6 +1,18 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsNumber } from 'class-validator';
 
 export class UpdateAddressDto {
+  @IsOptional()
+  @IsNumber()
+  provinceId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  wardId?: number;
+
+  @IsOptional()
+  @IsString()
+  addressDetail?: string;
+
   @IsOptional()
   @IsString()
   province?: string;

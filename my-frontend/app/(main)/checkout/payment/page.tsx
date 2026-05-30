@@ -13,6 +13,7 @@ function CheckoutPaymentContent() {
   const router = useRouter();
   const { formatPrice } = usePreferences();
   const paymentId = Number(searchParams.get("paymentId"));
+  const guestEmail = searchParams.get("email");
 
   const [status, setStatus] = useState<PaymentStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +31,12 @@ function CheckoutPaymentContent() {
       setStatus(res);
       setError("");
       if (res.paymentStatus === "paid") {
-        router.replace(`/order-success?orderId=${res.orderId}`);
+        const emailParam = guestEmail ? `&email=${guestEmail}` : "";
+        router.replace(`/order-success?orderId=${res.orderId}${emailParam}`);
       }
       if (res.paymentStatus === "failed") {
-        router.replace(`/order-failed?orderId=${res.orderId}`);
+        const emailParam = guestEmail ? `&email=${guestEmail}` : "";
+        router.replace(`/order-failed?orderId=${res.orderId}${emailParam}`);
       }
     } catch (err: any) {
       setError(

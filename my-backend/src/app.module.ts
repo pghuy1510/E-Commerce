@@ -19,6 +19,8 @@ import { ContactModule } from './contact/contact.module';
 import { CouponModule } from './coupons/coupon.module';
 import { AdminModule } from './admin/admin.module';
 import { MailModule } from './common/mail.module';
+import { LocationModule } from './locations/location.module';
+import { DealsModule } from './deals/deals.module';
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { MailModule } from './common/mail.module';
     CouponModule,
     AdminModule,
     MailModule,
+    LocationModule,
+    DealsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

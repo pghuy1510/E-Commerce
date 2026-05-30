@@ -18,6 +18,7 @@ import { UpdateAddressDto } from './dto/update-address.dto';
 import { CreateBankDto } from './dto/create-bank.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { formatVietnameseAddress, getCommuneName } from '../common/address';
+import { LocationService } from '../locations/location.service';
 
 @Injectable()
 export class UsersService {
@@ -30,6 +31,8 @@ export class UsersService {
 
     @InjectRepository(UserBank)
     private bankRepo: Repository<UserBank>,
+
+    private readonly locationService: LocationService,
   ) {}
 
   async findByUsername(username: string) {
@@ -173,7 +176,7 @@ export class UsersService {
   async getAddress(userId: number) {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      relations: ['addresses'],
+      relations: ['addresses', 'addresses.provinceObj', 'addresses.wardObj'],
     });
 
     if (!user) {
@@ -182,16 +185,34 @@ export class UsersService {
 
     const defaultAddress = user.addresses?.find((a) => a.isDefault) ?? user.addresses?.[0];
 
-    const address = {
-      province: defaultAddress?.province ?? '',
-      commune: defaultAddress?.district ?? '',
-      district: defaultAddress?.district ?? '',
-      detail: defaultAddress?.detail ?? '',
-    };
+    if (!defaultAddress) {
+      return {
+        provinceId: null,
+        wardId: null,
+        addressDetail: '',
+        province: '',
+        commune: '',
+        district: '',
+        detail: '',
+        formattedAddress: '',
+      };
+    }
+
+    const provinceName = defaultAddress.provinceObj?.name ?? defaultAddress.province ?? '';
+    const wardName = defaultAddress.wardObj?.name ?? defaultAddress.ward ?? '';
+    const detail = defaultAddress.addressDetail ?? defaultAddress.detail ?? '';
+    const formattedAddress = [detail, wardName, provinceName].filter(Boolean).join(', ');
 
     return {
-      ...address,
-      formattedAddress: formatVietnameseAddress(address),
+      id: defaultAddress.id,
+      provinceId: defaultAddress.provinceId ?? null,
+      wardId: defaultAddress.wardId ?? null,
+      addressDetail: detail,
+      province: provinceName,
+      commune: wardName,
+      district: '',
+      detail: detail,
+      formattedAddress,
     };
   }
 
@@ -214,41 +235,57 @@ export class UsersService {
       });
     }
 
-    if (dto.province !== undefined) {
-      address.province = dto.province;
+    if (dto.provinceId !== undefined && dto.wardId !== undefined) {
+      const { provinceName, wardName } = this.locationService.validateAddress(dto.provinceId, dto.wardId);
+      address.provinceId = dto.provinceId;
+      address.wardId = dto.wardId;
+      address.province = provinceName;
+      address.ward = wardName;
+      address.district = '';
     }
 
-    if (dto.commune !== undefined || dto.district !== undefined) {
-      address.district = getCommuneName(dto);
+    if (dto.addressDetail !== undefined) {
+      address.addressDetail = dto.addressDetail;
+      address.detail = dto.addressDetail;
     }
 
-    if (dto.ward !== undefined) {
-      address.ward = '';
-    }
-
-    if (dto.detail !== undefined) {
-      address.detail = dto.detail;
+    if (address.provinceId && address.wardId && address.addressDetail) {
+      const duplicate = await this.addressRepo.findOne({
+        where: {
+          user: { id: userId },
+          provinceId: address.provinceId,
+          wardId: address.wardId,
+          addressDetail: address.addressDetail,
+        },
+      });
+      if (duplicate && duplicate.id !== address.id) {
+        throw new BadRequestException('Địa chỉ này đã tồn tại trong sổ địa chỉ của bạn.');
+      }
     }
 
     await this.addressRepo.save(address);
-
     return this.getAddress(userId);
   }
 
   async listAddresses(userId: number) {
     const addresses = await this.addressRepo.find({
       where: { user: { id: userId } },
+      relations: ['provinceObj', 'wardObj'],
       order: { isDefault: 'DESC', id: 'ASC' },
     });
-    return addresses.map((addr) => ({
-      ...addr,
-      formattedAddress: formatVietnameseAddress({
-        province: addr.province ?? '',
-        commune: addr.district ?? '',
-        district: addr.district ?? '',
-        detail: addr.detail ?? '',
-      }),
-    }));
+    return addresses.map((addr) => {
+      const provinceName = addr.provinceObj?.name ?? addr.province ?? '';
+      const wardName = addr.wardObj?.name ?? addr.ward ?? '';
+      const detail = addr.addressDetail ?? addr.detail ?? '';
+      return {
+        ...addr,
+        province: provinceName,
+        commune: wardName,
+        district: '',
+        detail: detail,
+        formattedAddress: [detail, wardName, provinceName].filter(Boolean).join(', '),
+      };
+    });
   }
 
   async addAddress(userId: number, dto: UpdateAddressDto) {
@@ -261,6 +298,26 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    if (!dto.provinceId || !dto.wardId || !dto.addressDetail) {
+      throw new BadRequestException('Vui lòng cung cấp đầy đủ thông tin địa chỉ.');
+    }
+
+    // Check duplicate
+    const duplicate = await this.addressRepo.findOne({
+      where: {
+        user: { id: userId },
+        provinceId: dto.provinceId,
+        wardId: dto.wardId,
+        addressDetail: dto.addressDetail.trim(),
+      },
+    });
+
+    if (duplicate) {
+      throw new BadRequestException('Địa chỉ này đã tồn tại trong sổ địa chỉ của bạn.');
+    }
+
+    const { provinceName, wardName } = this.locationService.validateAddress(dto.provinceId, dto.wardId);
+
     const hasAddresses = user.addresses && user.addresses.length > 0;
     const shouldBeDefault = dto.isDefault || !hasAddresses;
 
@@ -270,10 +327,14 @@ export class UsersService {
 
     const newAddr = this.addressRepo.create({
       user,
-      province: dto.province,
-      district: getCommuneName(dto) || dto.district,
-      ward: dto.ward || '',
-      detail: dto.detail,
+      provinceId: dto.provinceId,
+      wardId: dto.wardId,
+      addressDetail: dto.addressDetail.trim(),
+      // legacy compatibility
+      province: provinceName,
+      district: '',
+      ward: wardName,
+      detail: dto.addressDetail.trim(),
       receiverName: dto.receiverName || '',
       receiverPhone: dto.receiverPhone || '',
       label: dto.label || 'home',
@@ -297,15 +358,45 @@ export class UsersService {
       address.isDefault = true;
     }
 
-    if (dto.province !== undefined) address.province = dto.province;
-    if (dto.commune !== undefined || dto.district !== undefined) {
-      address.district = getCommuneName(dto) || dto.district;
+    let pId = dto.provinceId !== undefined ? dto.provinceId : address.provinceId;
+    let wId = dto.wardId !== undefined ? dto.wardId : address.wardId;
+    let detail = dto.addressDetail !== undefined ? dto.addressDetail.trim() : address.addressDetail;
+
+    if (dto.provinceId !== undefined || dto.wardId !== undefined) {
+      if (!pId || !wId) {
+        throw new BadRequestException('Tỉnh và Xã không hợp lệ.');
+      }
+      const { provinceName, wardName } = this.locationService.validateAddress(pId, wId);
+      address.provinceId = pId;
+      address.wardId = wId;
+      address.province = provinceName;
+      address.ward = wardName;
+      address.district = '';
     }
-    if (dto.ward !== undefined) address.ward = dto.ward;
-    if (dto.detail !== undefined) address.detail = dto.detail;
+
+    if (dto.addressDetail !== undefined) {
+      address.addressDetail = detail;
+      address.detail = detail;
+    }
+
     if (dto.receiverName !== undefined) address.receiverName = dto.receiverName;
     if (dto.receiverPhone !== undefined) address.receiverPhone = dto.receiverPhone;
     if (dto.label !== undefined) address.label = dto.label;
+
+    if (address.provinceId && address.wardId && address.addressDetail) {
+      const duplicate = await this.addressRepo.findOne({
+        where: {
+          user: { id: userId },
+          provinceId: address.provinceId,
+          wardId: address.wardId,
+          addressDetail: address.addressDetail,
+        },
+      });
+
+      if (duplicate && duplicate.id !== address.id) {
+        throw new BadRequestException('Địa chỉ này đã tồn tại trong sổ địa chỉ của bạn.');
+      }
+    }
 
     return this.addressRepo.save(address);
   }

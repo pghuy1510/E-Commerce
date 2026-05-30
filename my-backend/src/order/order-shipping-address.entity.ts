@@ -37,6 +37,25 @@ export class OrderShippingAddress {
   @Column({ type: 'text' })
   detail!: string;
 
+  @Column({ name: 'province_id', type: 'integer', nullable: true })
+  provinceId?: number;
+
+  @Column({ name: 'ward_id', type: 'integer', nullable: true })
+  wardId?: number;
+
+  @Column({ name: 'province_name', type: 'varchar', nullable: true })
+  provinceName?: string;
+
+  @Column({ name: 'ward_name', type: 'varchar', nullable: true })
+  wardName?: string;
+
+  @Column({ name: 'address_detail', type: 'text', nullable: true })
+  addressDetail?: string;
+
+  @Column({ name: 'full_address', type: 'text', nullable: true })
+  fullAddress?: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
+

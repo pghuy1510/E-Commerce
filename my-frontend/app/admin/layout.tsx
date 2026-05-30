@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   Menu,
   X,
-  Loader2
+  Loader2,
+  Ticket
 } from "lucide-react";
 import { userProfileAPI } from "@/lib/api";
 
@@ -68,6 +69,7 @@ export default function AdminLayout({
     { label: "Đơn Hàng", href: "/admin/orders", icon: ShoppingBag },
     { label: "Khách Hàng", href: "/admin/users", icon: Users },
     { label: "Yêu Cầu Trả Hàng", href: "/admin/returns", icon: Undo2 },
+    { label: "Khuyến Mãi", href: "/admin/promotions", icon: Ticket },
   ];
 
   return (
@@ -191,6 +193,7 @@ export default function AdminLayout({
               {pathname === "/admin/orders" && "Quản lý đơn hàng"}
               {pathname === "/admin/users" && "Quản lý khách hàng"}
               {pathname === "/admin/returns" && "Quản lý trả hàng"}
+              {pathname === "/admin/promotions" && "Quản lý khuyến mãi"}
             </h1>
           </div>
 

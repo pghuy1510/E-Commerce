@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -34,7 +34,7 @@ type CouponCandidate = {
   type: CouponType;
 };
 
-const WELCOME_MIN_ORDER = 500000;
+const WELCOME_MIN_ORDER = 300000;
 const VIP_THRESHOLD = 10_000_000;
 const FREE_SHIPPING_THRESHOLD = 500000;
 const CLEARANCE_STOCK_THRESHOLD = 100;
@@ -100,7 +100,9 @@ export class CouponService {
       type: 'platform',
       discountType: 'percentage',
       discountValue: 10,
-      minOrder: WELCOME_MIN_ORDER,
+      minOrder: 300000,
+      maxDiscount: 100000,
+      isActive: true,
     });
 
     await this.assignCouponToUser(userId, coupon, {
@@ -188,112 +190,6 @@ export class CouponService {
     }
   }
 
-  @Cron('10 0 * * *')
-  async issueVipCoupons() {
-    const rows = await this.userRepo
-      .createQueryBuilder('users')
-      .select('users.id', 'user_id')
-      .addSelect('users.total_spent', 'total')
-      .where('users.total_spent > :threshold', {
-        threshold: VIP_THRESHOLD,
-      })
-      .getRawMany();
-
-    const coupon = await this.ensureCouponTemplate({
-      code: 'VIP20',
-      name: 'VIP Coupon',
-      type: 'platform',
-      discountType: 'percentage',
-      discountValue: 20,
-      maxDiscount: 500000,
-    });
-
-    for (const row of rows) {
-      const userId = Number(row.user_id);
-      if (!userId) continue;
-      await this.assignCouponToUser(userId, coupon, {
-        expiresInHours: 24 * 7,
-        usageLimit: 1,
-        source: 'vip',
-      });
-    }
-  }
-
-  @Cron('20 0 * * *')
-  async issueCategoryPersonalizedCoupons() {
-    const rows = await this.categoryViewRepo.query(`
-      SELECT DISTINCT ON (cv.user_id)
-        cv.user_id,
-        cv.category_id,
-        SUM(cv.weight) AS total
-      FROM category_views cv
-      GROUP BY cv.user_id, cv.category_id
-      ORDER BY cv.user_id, total DESC
-    `);
-
-    for (const row of rows) {
-      const userId = Number(row.user_id);
-      const categoryId = Number(row.category_id);
-      if (!userId || !categoryId) continue;
-
-      const category = await this.categoryRepo.findOne({
-        where: { id: categoryId },
-      });
-      if (!category) continue;
-
-      const prefix = this.normalizePrefix(category.name);
-      const coupon = await this.ensureCouponTemplate({
-        code: `${prefix}15`,
-        name: `Favorite Category ${category.name}`,
-        type: 'shop',
-        discountType: 'percentage',
-        discountValue: 15,
-        categoryId,
-      });
-
-      await this.assignCouponToUser(userId, coupon, {
-        expiresInHours: 24 * 5,
-        usageLimit: 1,
-        source: 'favorite_category',
-      });
-    }
-  }
-
-  @Cron('30 0 * * *')
-  async issueWishlistCoupons() {
-    const rows = await this.wishlistRepo
-      .createQueryBuilder('wishlist')
-      .select('wishlist.user_id', 'user_id')
-      .addSelect('COUNT(*)', 'total')
-      .groupBy('wishlist.user_id')
-      .getRawMany();
-
-    const coupon = await this.ensureCouponTemplate({
-      code: 'WISH10',
-      name: 'Wishlist Coupon',
-      type: 'platform',
-      discountType: 'percentage',
-      discountValue: 10,
-    });
-
-    for (const row of rows) {
-      const userId = Number(row.user_id);
-      if (!userId) continue;
-
-      const completedOrders = await this.orderRepo.count({
-        where: { user: { id: userId }, status: 'confirmed' },
-      });
-
-      if (completedOrders > 0) continue;
-
-      await this.assignCouponToUser(userId, coupon, {
-        expiresInHours: 48,
-        usageLimit: 1,
-        source: 'wishlist',
-      });
-    }
-  }
-
   @Cron('40 0 * * *')
   async issueInactiveCoupons() {
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -328,89 +224,6 @@ export class CouponService {
         usageLimit: 1,
         source: 'inactive',
       });
-    }
-  }
-
-  @Cron('0 20 * * 5')
-  async issueFlashSaleCoupons() {
-    const now = new Date();
-    const expiresAt = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      22,
-      0,
-      0,
-    );
-
-    const coupon = await this.ensureCouponTemplate(
-      {
-        code: 'FLASH20',
-        name: 'Flash Sale',
-        type: 'platform',
-        discountType: 'percentage',
-        discountValue: 20,
-        startsAt: now,
-        expiresAt,
-        isActive: true,
-      },
-      true,
-    );
-
-    const users = await this.userRepo.find({ select: ['id'] });
-    for (const user of users) {
-      await this.assignCouponToUser(user.id, coupon, {
-        expiresAt,
-        usageLimit: 1,
-        source: 'flash_sale',
-      });
-    }
-  }
-
-  @Cron('50 0 * * *')
-  async issueClearanceCoupons() {
-    const users = await this.userRepo.find({ select: ['id'] });
-    const rows = await this.productRepo.query(
-      `
-      SELECT p.category_id,
-             SUM(p.stock) AS total_stock,
-             COALESCE(SUM(oi.quantity), 0) AS total_sales
-      FROM products p
-      LEFT JOIN order_items oi ON oi.product_id = p.id
-      GROUP BY p.category_id
-      HAVING SUM(p.stock) >= $1
-      ORDER BY total_stock DESC, total_sales ASC
-      LIMIT 5
-    `,
-      [CLEARANCE_STOCK_THRESHOLD],
-    );
-
-    for (const row of rows) {
-      const categoryId = Number(row.category_id);
-      if (!categoryId) continue;
-
-      const category = await this.categoryRepo.findOne({
-        where: { id: categoryId },
-      });
-      if (!category) continue;
-
-      const prefix = this.normalizePrefix(category.name);
-      const coupon = await this.ensureCouponTemplate({
-        code: `CLEAR15-${prefix}`,
-        name: `Clearance ${category.name}`,
-        type: 'shop',
-        discountType: 'percentage',
-        discountValue: 15,
-        categoryId,
-      });
-
-      for (const user of users) {
-        await this.assignCouponToUser(user.id, coupon, {
-          expiresInHours: 24 * 3,
-          usageLimit: 1,
-          source: 'clearance',
-        });
-      }
     }
   }
 
@@ -610,10 +423,53 @@ export class CouponService {
     shippingFee = 0,
   ) {
     const now = new Date();
-    const userCoupon = await this.userCouponRepo.findOne({
+    let userCoupon = await this.userCouponRepo.findOne({
       where: { user: { id: userId }, code },
       relations: ['coupon'],
     });
+
+    if (!userCoupon) {
+      const couponTemplate = await this.couponRepo.findOne({
+        where: { code, isActive: true },
+      });
+      if (couponTemplate) {
+        const existingUserCoupon = await this.userCouponRepo.findOne({
+          where: {
+            user: { id: userId },
+            coupon: { id: couponTemplate.id },
+            isUsed: false,
+          },
+          relations: ['coupon'],
+        });
+
+        if (existingUserCoupon && existingUserCoupon.expiresAt > now) {
+          userCoupon = existingUserCoupon;
+        } else {
+          const allUserCoupons = await this.userCouponRepo.find({
+            where: { user: { id: userId }, coupon: { id: couponTemplate.id } }
+          });
+          const totalUsed = allUserCoupons.reduce((sum, uc) => sum + uc.usedCount, 0);
+
+          if (totalUsed >= 1) {
+            throw new BadRequestException('Bạn đã sử dụng mã giảm giá này rồi.');
+          }
+
+          await this.assignCouponToUser(userId, couponTemplate, {
+            usageLimit: 1,
+            source: 'claimed_from_code',
+          });
+
+          userCoupon = await this.userCouponRepo.findOne({
+            where: {
+              user: { id: userId },
+              coupon: { id: couponTemplate.id },
+              isUsed: false,
+            },
+            relations: ['coupon'],
+          });
+        }
+      }
+    }
 
     if (!userCoupon) {
       throw new BadRequestException('Mã coupon không tồn tại hoặc không thuộc sở hữu của bạn.');
@@ -980,5 +836,99 @@ export class CouponService {
       .replace(/[^A-Z0-9]/g, '')
       .slice(0, 12);
     return cleaned.length ? cleaned : 'COUPON';
+  }
+
+  /**
+   * List all coupon templates for admin management
+   */
+  async listAllCoupons(): Promise<Coupon[]> {
+    return this.couponRepo.find({
+      order: { id: 'DESC' },
+    });
+  }
+
+  /**
+   * Create a new coupon template (Admin Controlled)
+   */
+  async createCoupon(dto: {
+    code: string;
+    name?: string;
+    type: CouponType;
+    discountType: DiscountType;
+    discountValue: number;
+    minOrder?: number | null;
+    maxDiscount?: number | null;
+    categoryId?: number | null;
+    startsAt?: string | null;
+    expiresAt?: string | null;
+    isActive?: boolean;
+  }): Promise<Coupon> {
+    const coupon = this.couponRepo.create({
+      code: dto.code.trim().toUpperCase(),
+      name: dto.name,
+      type: dto.type,
+      discountType: dto.discountType,
+      discountValue: Number(dto.discountValue),
+      minOrder: dto.minOrder ? Number(dto.minOrder) : null,
+      maxDiscount: dto.maxDiscount ? Number(dto.maxDiscount) : null,
+      categoryId: dto.categoryId ? Number(dto.categoryId) : null,
+      startsAt: dto.startsAt ? new Date(dto.startsAt) : null,
+      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+      isActive: dto.isActive !== undefined ? dto.isActive : true,
+    });
+    return this.couponRepo.save(coupon);
+  }
+
+  /**
+   * Update an existing coupon template (Admin Controlled)
+   */
+  async updateCoupon(
+    id: number,
+    dto: {
+      code: string;
+      name?: string;
+      type: CouponType;
+      discountType: DiscountType;
+      discountValue: number;
+      minOrder?: number | null;
+      maxDiscount?: number | null;
+      categoryId?: number | null;
+      startsAt?: string | null;
+      expiresAt?: string | null;
+      isActive?: boolean;
+    },
+  ): Promise<Coupon> {
+    const coupon = await this.couponRepo.findOne({ where: { id } });
+    if (!coupon) {
+      throw new NotFoundException(`Coupon với ID ${id} không tồn tại.`);
+    }
+
+    coupon.code = dto.code.trim().toUpperCase();
+    coupon.name = dto.name;
+    coupon.type = dto.type;
+    coupon.discountType = dto.discountType;
+    coupon.discountValue = Number(dto.discountValue);
+    coupon.minOrder = dto.minOrder ? Number(dto.minOrder) : null;
+    coupon.maxDiscount = dto.maxDiscount ? Number(dto.maxDiscount) : null;
+    coupon.categoryId = dto.categoryId ? Number(dto.categoryId) : null;
+    coupon.startsAt = dto.startsAt ? new Date(dto.startsAt) : null;
+    coupon.expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
+    if (dto.isActive !== undefined) {
+      coupon.isActive = dto.isActive;
+    }
+
+    return this.couponRepo.save(coupon);
+  }
+
+  /**
+   * Delete a coupon template
+   */
+  async deleteCoupon(id: number): Promise<{ success: boolean }> {
+    const coupon = await this.couponRepo.findOne({ where: { id } });
+    if (!coupon) {
+      throw new NotFoundException(`Coupon với ID ${id} không tồn tại.`);
+    }
+    await this.couponRepo.remove(coupon);
+    return { success: true };
   }
 }

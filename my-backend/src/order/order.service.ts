@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { randomUUID } from 'crypto';
 
 import { Order } from './order.entity';
@@ -21,6 +21,9 @@ import { getCommuneName } from '../common/address';
 import { calculateCartSubtotal, calculateOrderTotals } from './order-totals';
 import { User } from '../users/entities/user.entity';
 import { MailService } from '../common/mail.service';
+import { LocationService } from '../locations/location.service';
+import { DealsService } from '../deals/deals.service';
+import { DealProduct } from '../deals/entities/deal-product.entity';
 
 @Injectable()
 export class OrderService {
@@ -37,6 +40,10 @@ export class OrderService {
     private dataSource: DataSource,
 
     private mailService: MailService,
+
+    private locationService: LocationService,
+
+    private dealsService: DealsService,
   ) {}
 
   async checkout(userId: string, dto: CheckoutDto) {
@@ -50,10 +57,7 @@ export class OrderService {
       throw new BadRequestException('Cart is empty');
     }
 
-    const commune = getCommuneName(dto);
-    if (!commune) {
-      throw new BadRequestException('Commune is required');
-    }
+    const { provinceName, wardName } = this.locationService.validateAddress(dto.provinceId, dto.wardId);
 
     const subtotal = calculateCartSubtotal(cart.items);
     const baseTotals = calculateOrderTotals({
@@ -124,13 +128,38 @@ export class OrderService {
           );
         }
 
+        // Check active deal for this product
+        const dealProduct = await manager.getRepository(DealProduct).findOne({
+          where: {
+            productId: product.id,
+            deal: {
+              isActive: true,
+              startsAt: LessThanOrEqual(new Date()),
+              expiresAt: MoreThanOrEqual(new Date()),
+            },
+          },
+          relations: ['deal'],
+        });
+
+        let purchasePrice = Number(product.price);
+        if (dealProduct) {
+          if (dealProduct.dealStock - dealProduct.soldCount < item.quantity) {
+            throw new BadRequestException(
+              `Sản phẩm "${product.name}" đã hết số lượng giảm giá Flash Sale.`,
+            );
+          }
+          dealProduct.soldCount += item.quantity;
+          await manager.save(dealProduct);
+          purchasePrice = Number(dealProduct.dealPrice);
+        }
+
         product.stock -= item.quantity;
         await productRepo.save(product);
 
         const orderItem = orderItemRepo.create({
           productId: product.id,
           productName: product.name,
-          price: item.price,
+          price: purchasePrice,
           quantity: item.quantity,
         });
 
@@ -157,10 +186,16 @@ export class OrderService {
         order: savedOrder,
         receiverName: dto.receiverName,
         receiverPhone: dto.receiverPhone,
-        province: dto.province,
-        district: commune,
-        ward: '',
-        detail: dto.detail,
+        province: provinceName,
+        district: '',
+        ward: wardName,
+        detail: dto.addressDetail,
+        provinceId: dto.provinceId,
+        wardId: dto.wardId,
+        provinceName,
+        wardName,
+        addressDetail: dto.addressDetail,
+        fullAddress: `${dto.addressDetail}, ${wardName}, ${provinceName}`,
       });
       await orderShippingRepo.save(shipping);
 
@@ -288,13 +323,19 @@ export class OrderService {
       if (product.stock < item.quantity) {
         throw new BadRequestException(`Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng.`);
       }
-      subtotal += Number(product.price) * item.quantity;
+      
+      const dealPrice = await this.dealsService.getProductDealPrice(product.id);
+      const finalPrice = dealPrice !== null ? dealPrice : Number(product.price);
+      
+      subtotal += finalPrice * item.quantity;
       itemsWithProduct.push({
         product,
         quantity: item.quantity,
-        price: Number(product.price),
+        price: finalPrice,
       });
     }
+
+    const { provinceName, wardName } = this.locationService.validateAddress(dto.provinceId, dto.wardId);
 
     const baseTotals = calculateOrderTotals({
       subtotal,
@@ -346,13 +387,38 @@ export class OrderService {
           );
         }
 
+        // Check active deal for this product
+        const dealProduct = await manager.getRepository(DealProduct).findOne({
+          where: {
+            productId: product.id,
+            deal: {
+              isActive: true,
+              startsAt: LessThanOrEqual(new Date()),
+              expiresAt: MoreThanOrEqual(new Date()),
+            },
+          },
+          relations: ['deal'],
+        });
+
+        let purchasePrice = item.price;
+        if (dealProduct) {
+          if (dealProduct.dealStock - dealProduct.soldCount < item.quantity) {
+            throw new BadRequestException(
+              `Sản phẩm "${product.name}" đã hết số lượng giảm giá Flash Sale.`,
+            );
+          }
+          dealProduct.soldCount += item.quantity;
+          await manager.save(dealProduct);
+          purchasePrice = Number(dealProduct.dealPrice);
+        }
+
         product.stock -= item.quantity;
         await productRepo.save(product);
 
         const orderItem = orderItemRepo.create({
           productId: product.id,
           productName: product.name,
-          price: item.price,
+          price: purchasePrice,
           quantity: item.quantity,
         });
 
@@ -376,15 +442,20 @@ export class OrderService {
 
       const savedOrder = await orderRepo.save(order);
 
-      const commune = getCommuneName(dto);
       const shipping = orderShippingRepo.create({
         order: savedOrder,
         receiverName: dto.receiverName,
         receiverPhone: dto.receiverPhone,
-        province: dto.province,
-        district: commune || '',
-        ward: '',
-        detail: dto.detail,
+        province: provinceName,
+        district: '',
+        ward: wardName,
+        detail: dto.addressDetail,
+        provinceId: dto.provinceId,
+        wardId: dto.wardId,
+        provinceName,
+        wardName,
+        addressDetail: dto.addressDetail,
+        fullAddress: `${dto.addressDetail}, ${wardName}, ${provinceName}`,
       });
       await orderShippingRepo.save(shipping);
 

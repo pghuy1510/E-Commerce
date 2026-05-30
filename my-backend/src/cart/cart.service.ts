@@ -10,6 +10,7 @@ import { Cart } from './cart.entity';
 import { CartItem } from './cart-item.entity';
 import { Product } from '../products/products.entity';
 import { User } from '../users/entities/user.entity';
+import { DealsService } from '../deals/deals.service';
 
 @Injectable()
 export class CartService {
@@ -25,6 +26,8 @@ export class CartService {
 
     @InjectRepository(User)
     private userRepo: Repository<User>,
+
+    private readonly dealsService: DealsService,
   ) {}
 
   private async loadCart(cartId: number) {
@@ -78,6 +81,22 @@ export class CartService {
 
     if (!cart.items) cart.items = [];
 
+    // Sync product prices with active deals
+    for (const item of cart.items) {
+      const dealPrice = await this.dealsService.getProductDealPrice(item.product.id);
+      if (dealPrice !== null) {
+        if (Number(item.price) !== dealPrice) {
+          item.price = dealPrice;
+          await this.itemRepo.save(item);
+        }
+      } else {
+        if (Number(item.price) !== Number(item.product.price)) {
+          item.price = item.product.price;
+          await this.itemRepo.save(item);
+        }
+      }
+    }
+
     return cart;
   }
 
@@ -104,13 +123,18 @@ export class CartService {
         throw new BadRequestException(`Sản phẩm này chỉ còn ${product.stock} sản phẩm trong kho. Bạn đang có ${item.quantity - quantity} sản phẩm trong giỏ.`);
       }
 
+      // Re-sync price in case it's in a deal
+      const dealPrice = await this.dealsService.getProductDealPrice(productId);
+      item.price = dealPrice !== null ? dealPrice : product.price;
+
       await this.itemRepo.save(item);
     } else {
+      const dealPrice = await this.dealsService.getProductDealPrice(productId);
       item = this.itemRepo.create({
         cart: { id: cart.id },
         product: { id: product.id },
         quantity,
-        price: product.price,
+        price: dealPrice !== null ? dealPrice : product.price,
       });
 
       await this.itemRepo.save(item);

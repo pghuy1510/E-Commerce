@@ -32,18 +32,13 @@ export default function CartPage() {
   const { t, formatPrice } = usePreferences();
   const { data: session, status } = useSession();
 
-  // 🔥 load cart từ backend
+  // 🔥 load cart
   const fetchCart = useCallback(async () => {
     const currentToken = getBrowserToken();
     if (!currentToken) {
       const sessionToken = session?.backendAccessToken;
       if (sessionToken) {
         setAuthToken(sessionToken);
-      } else if (status === "unauthenticated") {
-        router.push("/login");
-        return;
-      } else {
-        return;
       }
     }
 
@@ -51,19 +46,11 @@ export default function CartPage() {
       const res = await cartAPI.get();
       setCart(normalizeCartItems(res.data));
     } catch (err: any) {
-      const status = err?.response?.status as number | undefined;
-      const code = err?.code as string | undefined;
-
-      if (status === 401 || code === "AUTH_REQUIRED") {
-        router.push("/login");
-        return;
-      }
-
       console.error("Fetch cart error:", err);
     } finally {
       setLoading(false);
     }
-  }, [router, session?.backendAccessToken, status]);
+  }, [session?.backendAccessToken]);
 
   useEffect(() => {
     void fetchCart();
@@ -95,16 +82,8 @@ export default function CartPage() {
       await cartAPI.update(productId, newQty);
       void fetchCart();
     } catch (err: any) {
-      const status = err?.response?.status as number | undefined;
-      const code = err?.code as string | undefined;
-
-      if (status === 401 || code === "AUTH_REQUIRED") {
-        router.push("/login");
-        return;
-      }
-
       console.error("Update cart error:", err);
-      alert(err?.response?.data?.message || "Không thể cập nhật số lượng lúc này.");
+      alert(err?.response?.data?.message || err?.message || "Không thể cập nhật số lượng lúc này.");
     }
   };
 
@@ -114,14 +93,6 @@ export default function CartPage() {
       await cartAPI.remove(productId);
       void fetchCart();
     } catch (err: any) {
-      const status = err?.response?.status as number | undefined;
-      const code = err?.code as string | undefined;
-
-      if (status === 401 || code === "AUTH_REQUIRED") {
-        router.push("/login");
-        return;
-      }
-
       console.error("Remove error:", err);
     }
   };

@@ -5,9 +5,13 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { UserAddress } from './entities/user-address.entity';
 import { UserBank } from './entities/user-bank.entity';
+import { LocationModule } from '../locations/location.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserAddress, UserBank])],
+  imports: [
+    TypeOrmModule.forFeature([User, UserAddress, UserBank]),
+    LocationModule,
+  ],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService], // QUAN TRỌNG để Auth dùng

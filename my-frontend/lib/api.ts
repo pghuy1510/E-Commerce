@@ -161,11 +161,20 @@ export interface UserProfile {
 }
 
 export interface UserAddress {
+  id?: number;
+  receiverName?: string;
+  receiverPhone?: string;
   province?: string;
   commune?: string;
   district?: string;
   detail?: string;
+  label?: string;
+  isDefault?: boolean;
   formattedAddress?: string;
+  // normalized location properties
+  provinceId?: number | null;
+  wardId?: number | null;
+  addressDetail?: string;
 }
 
 export type PaymentMethod = "qr" | "cod";
@@ -186,9 +195,12 @@ export type PaymentStatus =
 export interface CheckoutPayload {
   receiverName: string;
   receiverPhone: string;
-  province: string;
-  commune: string;
-  detail: string;
+  provinceId: number;
+  wardId: number;
+  addressDetail: string;
+  province?: string;
+  commune?: string;
+  detail?: string;
   paymentMethod: PaymentMethod;
   shippingFee?: number;
   couponCode?: string;
@@ -312,7 +324,44 @@ export const wishlistAPI = {
 
 export const cartAPI = {
   add: async (productId: number, quantity = 1) => {
-    requireAuthToken();
+    const token = getBrowserToken();
+    if (!token) {
+      const localCartStr = localStorage.getItem("guest-cart");
+      const localCart = localCartStr ? JSON.parse(localCartStr) : [];
+      const exists = localCart.some((item: any) =>
+        item.product?.id === productId || item.productId === productId
+      );
+      if (exists) {
+        throw createDuplicateError(
+          "Sản phẩm đã có trong giỏ hàng.",
+          "CART_DUPLICATE",
+        );
+      }
+
+      const product = await productAPI.getById(productId);
+      if (product.stock < quantity) {
+        throw new Error(`Sản phẩm này chỉ còn ${product.stock} sản phẩm trong kho.`);
+      }
+
+      localCart.push({
+        id: productId,
+        productId,
+        quantity,
+        price: product.price,
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          stock: product.stock,
+        },
+      });
+
+      localStorage.setItem("guest-cart", JSON.stringify(localCart));
+      emitCartUpdated();
+      return { data: { items: localCart } };
+    }
+
     const current = await api.get("/cart");
     const items = normalizeCartItems(current.data);
     const exists = items.some((item: any) =>
@@ -334,12 +383,27 @@ export const cartAPI = {
   },
 
   get: async () => {
-    requireAuthToken();
+    const token = getBrowserToken();
+    if (!token) {
+      const localCartStr = localStorage.getItem("guest-cart");
+      const items = localCartStr ? JSON.parse(localCartStr) : [];
+      return { data: { items } };
+    }
     return api.get("/cart");
   },
 
   remove: async (productId: number) => {
-    requireAuthToken();
+    const token = getBrowserToken();
+    if (!token) {
+      const localCartStr = localStorage.getItem("guest-cart");
+      let localCart = localCartStr ? JSON.parse(localCartStr) : [];
+      localCart = localCart.filter((item: any) =>
+        item.product?.id !== productId && item.productId !== productId
+      );
+      localStorage.setItem("guest-cart", JSON.stringify(localCart));
+      emitCartUpdated();
+      return { data: { items: localCart } };
+    }
     const res = await api.delete("/cart/remove", {
       data: { productId },
     });
@@ -348,7 +412,25 @@ export const cartAPI = {
   },
 
   update: async (productId: number, quantity: number) => {
-    requireAuthToken();
+    const token = getBrowserToken();
+    if (!token) {
+      const localCartStr = localStorage.getItem("guest-cart");
+      const localCart = localCartStr ? JSON.parse(localCartStr) : [];
+      const item = localCart.find((item: any) =>
+        item.product?.id === productId || item.productId === productId
+      );
+      if (!item) throw new Error("Sản phẩm không có trong giỏ hàng.");
+      
+      const stock = item.product?.stock ?? 999;
+      if (stock < quantity) {
+        throw new Error(`Sản phẩm này chỉ còn ${stock} sản phẩm trong kho.`);
+      }
+
+      item.quantity = quantity;
+      localStorage.setItem("guest-cart", JSON.stringify(localCart));
+      emitCartUpdated();
+      return { data: { items: localCart } };
+    }
     const res = await api.patch("/cart/update", {
       productId,
       quantity,
@@ -509,7 +591,6 @@ export const orderAPI = {
 
 export const paymentAPI = {
   getStatus: async (paymentId: number): Promise<PaymentStatusResponse> => {
-    requireAuthToken();
     const res = await api.get(`/payment/${paymentId}/status`);
     return res.data;
   },
@@ -524,7 +605,6 @@ export const paymentAPI = {
       amount: number;
     }
   > => {
-    requireAuthToken();
     const res = await api.post(`/payment/${paymentId}/regenerate-qr`, {
       machineId,
     });
@@ -637,6 +717,50 @@ export const adminAPI = {
     const res = await api.get(`/admin/users/${id}/orders`);
     return res.data;
   },
+
+  // ADMIN PROMOTIONS
+  listCoupons: async (): Promise<Coupon[]> => {
+    requireAuthToken();
+    const res = await api.get<Coupon[]>("/coupons");
+    return res.data;
+  },
+  createCoupon: async (payload: Partial<Coupon>): Promise<Coupon> => {
+    requireAuthToken();
+    const res = await api.post<Coupon>("/coupons", payload);
+    return res.data;
+  },
+  deleteCoupon: async (id: number): Promise<{ success: boolean }> => {
+    requireAuthToken();
+    const res = await api.delete<{ success: boolean }>(`/coupons/${id}`);
+    return res.data;
+  },
+  listDeals: async (): Promise<{ id: number; name: string; description?: string; startsAt: string; expiresAt: string; isActive: boolean; dealProducts: DealProduct[]; featuredCoupons: Coupon[] }[]> => {
+    requireAuthToken();
+    const res = await api.get<{ id: number; name: string; description?: string; startsAt: string; expiresAt: string; isActive: boolean; dealProducts: DealProduct[]; featuredCoupons: Coupon[] }[]>("/deals");
+    return res.data;
+  },
+  createDeal: async (payload: {
+    name: string;
+    description?: string;
+    startsAt: string;
+    expiresAt: string;
+    isActive?: boolean;
+    featuredCouponIds?: number[];
+    products: {
+      productId: number;
+      dealPrice: number;
+      dealStock: number;
+    }[];
+  }) => {
+    requireAuthToken();
+    const res = await api.post("/deals", payload);
+    return res.data;
+  },
+  deleteDeal: async (id: number): Promise<{ success: boolean }> => {
+    requireAuthToken();
+    const res = await api.delete<{ success: boolean }>(`/deals/${id}`);
+    return res.data;
+  },
 };
 
 export interface CouponInfo {
@@ -713,6 +837,79 @@ export interface Category {
 export const categoryAPI = {
   getAll: async (): Promise<Category[]> => {
     const res = await api.get<Category[]>("/categories");
+    return res.data;
+  },
+};
+
+export interface ProvinceOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface WardOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
+let provincesCache: ProvinceOption[] | null = null;
+const wardsCache = new Map<number, WardOption[]>();
+
+export const locationAPI = {
+  getProvinces: async (): Promise<ProvinceOption[]> => {
+    if (provincesCache) return provincesCache;
+    const res = await api.get<ProvinceOption[]>("/locations/provinces");
+    provincesCache = res.data;
+    return provincesCache;
+  },
+  getWards: async (provinceId: number): Promise<WardOption[]> => {
+    if (wardsCache.has(provinceId)) return wardsCache.get(provinceId)!;
+    const res = await api.get<WardOption[]>(`/locations/provinces/${provinceId}/wards`);
+    wardsCache.set(provinceId, res.data);
+    return res.data;
+  },
+};
+
+export interface Coupon {
+  id: number;
+  code: string;
+  name?: string;
+  type: "shipping" | "shop" | "platform";
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  minOrder?: number | null;
+  maxDiscount?: number | null;
+  categoryId?: number | null;
+  startsAt?: string | null;
+  expiresAt?: string | null;
+  isActive: boolean;
+}
+
+export interface Deal {
+  id: number;
+  name: string;
+  description?: string;
+  startsAt: string;
+  expiresAt: string;
+  isActive: boolean;
+}
+
+export interface DealProduct {
+  id: number;
+  dealPrice: number;
+  dealStock: number;
+  soldCount: number;
+  product: Product;
+}
+
+export const dealAPI = {
+  getActiveDeal: async (): Promise<{ deal: Deal; featuredCoupons: Coupon[] } | null> => {
+    const res = await api.get<{ deal: Deal; featuredCoupons: Coupon[] } | null>("/deals/active");
+    return res.data;
+  },
+  getDealProducts: async (dealId: number): Promise<DealProduct[]> => {
+    const res = await api.get<DealProduct[]>(`/deals/${dealId}/products`);
     return res.data;
   },
 };

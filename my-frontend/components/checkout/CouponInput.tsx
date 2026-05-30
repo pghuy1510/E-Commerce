@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { couponAPI, type CouponInfo, type CouponProgress } from "@/lib/api";
 import { Percent, Ticket, Trash2, Truck, Check } from "lucide-react";
 import { usePreferences } from "@/lib/i18n";
+import { getBrowserToken } from "@/lib/api";
 
 type CouponInputProps = {
   value: string;
@@ -13,6 +14,7 @@ type CouponInputProps = {
   onApplyCoupon: (discount: number, code: string) => void;
   onRemoveCoupon: () => void;
   appliedCode: string | null;
+  cartItems?: { productId: number; quantity: number }[];
 };
 
 export default function CouponInput({
@@ -23,6 +25,7 @@ export default function CouponInput({
   onApplyCoupon,
   onRemoveCoupon,
   appliedCode,
+  cartItems = [],
 }: CouponInputProps) {
   const { formatPrice } = usePreferences();
   const [coupons, setCoupons] = useState<CouponInfo[]>([]);
@@ -32,8 +35,22 @@ export default function CouponInput({
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  const isLoggedIn = typeof window !== "undefined" && !!getBrowserToken();
+
   // Tải danh sách coupon của user và progress freeship
   useEffect(() => {
+    if (!isLoggedIn) {
+      // Mock progress freeship cho guest
+      setProgress({
+        freeShippingThreshold: 500000,
+        neededForFreeShipping: Math.max(0, 500000 - subtotal),
+        currentBestSaving: 0,
+        nextCoupon: null,
+      });
+      setCoupons([]);
+      return;
+    }
+
     const loadCouponData = async () => {
       try {
         setLoading(true);
@@ -50,7 +67,7 @@ export default function CouponInput({
       }
     };
     void loadCouponData();
-  }, [subtotal]);
+  }, [subtotal, isLoggedIn]);
 
   // Áp dụng coupon
   const handleApply = async (codeToApply: string) => {
@@ -59,7 +76,23 @@ export default function CouponInput({
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const res = await couponAPI.validate(codeToApply.trim(), subtotal, shippingFee);
+      let res;
+      if (isLoggedIn) {
+        res = await couponAPI.validate(codeToApply.trim(), subtotal, shippingFee);
+      } else {
+        // Validate coupon cho guest
+        const itemsPayload = cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        }));
+        res = await couponAPI.validateGuest(
+          codeToApply.trim(),
+          subtotal,
+          itemsPayload,
+          shippingFee
+        );
+      }
+
       if (res.valid) {
         onApplyCoupon(res.discountTotal, res.couponCode);
         setSuccessMsg(`Áp dụng thành công! Bạn được giảm ${formatPrice(res.discountTotal)}.`);
@@ -83,7 +116,54 @@ export default function CouponInput({
     onChange("");
   };
 
-  // Tính phần trăm Freeship progress (ngưỡng 500k)
+  // 1. Auto-apply coupon from localStorage when cart items and subtotal are loaded
+  useEffect(() => {
+    if (loading || subtotal <= 0) return;
+
+    const autoCoupon = localStorage.getItem("selectedCouponCode");
+    if (autoCoupon && !appliedCode) {
+      localStorage.removeItem("selectedCouponCode");
+      void handleApply(autoCoupon);
+    }
+  }, [loading, subtotal, appliedCode]);
+
+  // 2. Re-validate coupon when subtotal or shippingFee changes
+  useEffect(() => {
+    if (appliedCode) {
+      const revalidate = async () => {
+        try {
+          let res;
+          if (isLoggedIn) {
+            res = await couponAPI.validate(appliedCode, subtotal, shippingFee);
+          } else {
+            const itemsPayload = cartItems.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            }));
+            res = await couponAPI.validateGuest(
+              appliedCode,
+              subtotal,
+              itemsPayload,
+              shippingFee
+            );
+          }
+          if (res.valid) {
+            onApplyCoupon(res.discountTotal, res.couponCode);
+          }
+        } catch (err: any) {
+          console.error("Re-validation coupon failed:", err);
+          onRemoveCoupon();
+          setErrorMsg(
+            err?.response?.data?.message || "Mã giảm giá không còn hợp lệ cho đơn hàng của bạn."
+          );
+          setSuccessMsg("");
+          onChange("");
+        }
+      };
+      void revalidate();
+    }
+  }, [subtotal, shippingFee, appliedCode]);
+
   const freeShipPct = progress 
     ? Math.min(100, Math.round((subtotal / progress.freeShippingThreshold) * 100))
     : 0;
@@ -176,78 +256,80 @@ export default function CouponInput({
       </div>
 
       {/* AVAILABLE USER COUPONS LIST */}
-      <div>
-        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Mã giảm giá có sẵn của bạn</h4>
-        {loading ? (
-          <p className="text-xs text-gray-400 italic">Đang tìm mã giảm giá khả dụng...</p>
-        ) : coupons.length === 0 ? (
-          <p className="text-xs text-gray-500 italic bg-gray-50 rounded-2xl p-4 text-center">
-            Bạn chưa sở hữu mã giảm giá nào. Hãy hoàn thành các thử thách hoặc đặt thêm đơn hàng để được tặng mã!
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-1">
-            {coupons.map((item) => {
-              const isSelected = appliedCode === item.code;
-              const formattedMinOrder = item.coupon.minOrder 
-                ? formatPrice(item.coupon.minOrder) 
-                : "Không giới hạn";
-              const discountText = item.coupon.discountType === "percentage"
-                ? `Giảm ${item.coupon.discountValue}%`
-                : `Giảm ${formatPrice(item.coupon.discountValue)}`;
-              const labelText = item.coupon.type === "shipping" 
-                ? "Vận chuyển" 
-                : item.coupon.type === "shop" 
-                ? "Danh mục" 
-                : "Cửa hàng";
+      {isLoggedIn && (
+        <div>
+          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Mã giảm giá có sẵn của bạn</h4>
+          {loading ? (
+            <p className="text-xs text-gray-400 italic">Đang tìm mã giảm giá khả dụng...</p>
+          ) : coupons.length === 0 ? (
+            <p className="text-xs text-gray-500 italic bg-gray-50 rounded-2xl p-4 text-center">
+              Bạn chưa sở hữu mã giảm giá nào. Hãy hoàn thành các thử thách hoặc đặt thêm đơn hàng để được tặng mã!
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-1">
+              {coupons.map((item) => {
+                const isSelected = appliedCode === item.code;
+                const formattedMinOrder = item.coupon.minOrder 
+                  ? formatPrice(item.coupon.minOrder) 
+                  : "Không giới hạn";
+                const discountText = item.coupon.discountType === "percentage"
+                  ? `Giảm ${item.coupon.discountValue}%`
+                  : `Giảm ${formatPrice(item.coupon.discountValue)}`;
+                const labelText = item.coupon.type === "shipping" 
+                  ? "Vận chuyển" 
+                  : item.coupon.type === "shop" 
+                  ? "Danh mục" 
+                  : "Cửa hàng";
 
-              return (
-                <div 
-                  key={item.code} 
-                  className={`border rounded-2xl p-3 flex flex-col justify-between transition-all duration-200 bg-white ${
-                    isSelected 
-                      ? "border-amber-500 bg-amber-50/10 shadow-sm" 
-                      : "border-gray-200 hover:border-amber-300"
-                  }`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 font-mono font-bold text-[10px] px-2 py-0.5 rounded-md border border-amber-100 uppercase">
-                        {item.code}
-                      </span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase">{labelText}</span>
+                return (
+                  <div 
+                    key={item.code} 
+                    className={`border rounded-2xl p-3 flex flex-col justify-between transition-all duration-200 bg-white ${
+                      isSelected 
+                        ? "border-amber-500 bg-amber-50/10 shadow-sm" 
+                        : "border-gray-200 hover:border-amber-300"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 font-mono font-bold text-[10px] px-2 py-0.5 rounded-md border border-amber-100 uppercase">
+                          {item.code}
+                        </span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase">{labelText}</span>
+                      </div>
+                      
+                      <h5 className="font-bold text-sm text-gray-900 mt-1">{discountText}</h5>
+                      <p className="text-[10px] text-gray-500">Đơn tối thiểu: {formattedMinOrder}</p>
+                      
+                      <p className="text-[9px] text-gray-400 italic">
+                        Hạn dùng: {new Date(item.expiresAt).toLocaleDateString("vi-VN")}
+                      </p>
                     </div>
-                    
-                    <h5 className="font-bold text-sm text-gray-900 mt-1">{discountText}</h5>
-                    <p className="text-[10px] text-gray-500">Đơn tối thiểu: {formattedMinOrder}</p>
-                    
-                    <p className="text-[9px] text-gray-400 italic">
-                      Hạn dùng: {new Date(item.expiresAt).toLocaleDateString("vi-VN")}
-                    </p>
-                  </div>
 
-                  <div className="mt-3.5 pt-2 border-t border-dashed border-gray-100 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-gray-400">Tồn: {item.remainingUses} lượt</span>
-                    {isSelected ? (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 font-bold bg-amber-100/50 px-2 py-1 rounded-xl">
-                        <Check className="w-3.5 h-3.5" /> Đã dùng
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleApply(item.code)}
-                        disabled={!!appliedCode || validating}
-                        className="text-xs font-semibold text-amber-600 hover:text-amber-700 transition"
-                      >
-                        Áp dụng
-                      </button>
-                    )}
+                    <div className="mt-3.5 pt-2 border-t border-dashed border-gray-100 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-gray-400">Tồn: {item.remainingUses} lượt</span>
+                      {isSelected ? (
+                        <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 font-bold bg-amber-100/50 px-2 py-1 rounded-xl">
+                          <Check className="w-3.5 h-3.5" /> Đã dùng
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleApply(item.code)}
+                          disabled={!!appliedCode || validating}
+                          className="text-xs font-semibold text-amber-600 hover:text-amber-700 transition"
+                        >
+                          Áp dụng
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
