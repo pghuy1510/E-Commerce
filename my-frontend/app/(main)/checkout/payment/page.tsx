@@ -7,16 +7,18 @@ import { usePreferences } from "@/lib/i18n";
 import QRPaymentBox from "@/components/checkout/QRPaymentBox";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import PaymentStatus from "@/components/checkout/PaymentStatus";
+import { Loader2 } from "lucide-react";
 
 function CheckoutPaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { formatPrice } = usePreferences();
+  const { formatPrice, language } = usePreferences();
   const paymentId = Number(searchParams.get("paymentId"));
-  const guestEmail = searchParams.get("email");
+  const token = searchParams.get("token") || undefined;
 
   const [status, setStatus] = useState<PaymentStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingRegen, setLoadingRegen] = useState(false);
   const [error, setError] = useState("");
 
   const machineId = useMemo(() => {
@@ -27,16 +29,14 @@ function CheckoutPaymentContent() {
   const loadStatus = async () => {
     if (!paymentId) return;
     try {
-      const res = await paymentAPI.getStatus(paymentId);
+      const res = await paymentAPI.getStatus(paymentId, token);
       setStatus(res);
       setError("");
       if (res.paymentStatus === "paid") {
-        const emailParam = guestEmail ? `&email=${guestEmail}` : "";
-        router.replace(`/order-success?orderId=${res.orderId}${emailParam}`);
+        router.replace(`/order-success?orderId=${res.orderId}`);
       }
       if (res.paymentStatus === "failed") {
-        const emailParam = guestEmail ? `&email=${guestEmail}` : "";
-        router.replace(`/order-failed?orderId=${res.orderId}${emailParam}`);
+        router.replace(`/order-failed?orderId=${res.orderId}`);
       }
     } catch (err: any) {
       setError(
@@ -56,12 +56,13 @@ function CheckoutPaymentContent() {
     void loadStatus();
     const timer = setInterval(() => void loadStatus(), 5000);
     return () => clearInterval(timer);
-  }, [paymentId]);
+  }, [paymentId, token]);
 
   const handleRegenerate = async () => {
     if (!paymentId) return;
     try {
-      const qr = await paymentAPI.regenerateQr(paymentId, machineId);
+      setLoadingRegen(true);
+      const qr = await paymentAPI.regenerateQr(paymentId, machineId, token);
       setStatus((prev) =>
         prev
           ? {
@@ -82,6 +83,8 @@ function CheckoutPaymentContent() {
       setError(
         err?.response?.data?.message ?? "Unable to regenerate QR payment.",
       );
+    } finally {
+      setLoadingRegen(false);
     }
   };
 
@@ -198,8 +201,10 @@ function CheckoutPaymentContent() {
             </p>
             <button
               onClick={handleRegenerate}
-              className="rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition">
-              Regenerate QR
+              disabled={loadingRegen}
+              className="rounded-2xl bg-amber-500 disabled:opacity-60 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition flex items-center gap-2">
+              {loadingRegen && <Loader2 className="w-4 h-4 animate-spin" />}
+              {language === "vi" ? "Tạo lại mã QR" : "Regenerate QR"}
             </button>
           </div>
         )}

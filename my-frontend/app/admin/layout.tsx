@@ -52,9 +52,9 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
+          <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
           <p className="text-gray-500 font-semibold">Đang xác thực quyền Admin...</p>
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function AdminLayout({
 
   const menuItems = [
     { label: "Tổng Quan", href: "/admin/dashboard", icon: LayoutDashboard },
-    { label: "Sản Phẩm (Sách)", href: "/admin/products", icon: BookOpen },
+    { label: "Sản Phẩm", href: "/admin/products", icon: BookOpen },
     { label: "Đơn Hàng", href: "/admin/orders", icon: ShoppingBag },
     { label: "Khách Hàng", href: "/admin/users", icon: Users },
     { label: "Yêu Cầu Trả Hàng", href: "/admin/returns", icon: Undo2 },
@@ -73,18 +73,18 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex text-gray-800 font-sans">
+    <div className="min-h-screen bg-[#f8f9fa] flex text-gray-800" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
       {/* SIDEBAR FOR DESKTOP */}
       <aside className="w-64 border-r border-gray-200 bg-white hidden lg:flex flex-col justify-between shrink-0 h-screen sticky top-0">
         <div>
           {/* LOGO AREA */}
           <div className="p-6 border-b border-gray-150 flex items-center gap-2.5">
-            <div className="bg-amber-500 text-white p-2 rounded-xl">
+            <div className="bg-orange-500 text-white p-2 rounded-xl">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-extrabold text-lg text-gray-950 block leading-tight">ANTIGRAVITY</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-600 block">Dashboard</span>
+              <span className="font-extrabold text-lg text-gray-950 block leading-tight">E-Commerce</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-orange-500 block">Dashboard</span>
             </div>
           </div>
 
@@ -99,7 +99,7 @@ export default function AdminLayout({
                   href={item.href}
                   className={`flex items-center justify-between px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 group ${
                     isActive
-                      ? "bg-amber-500 text-white shadow-md shadow-amber-100"
+                      ? "bg-orange-500 text-white shadow-md shadow-orange-100"
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
@@ -118,7 +118,7 @@ export default function AdminLayout({
         <div className="p-4 border-t border-gray-150 space-y-2">
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold text-sm text-gray-600 hover:bg-amber-50 hover:text-amber-700 transition"
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition"
           >
             <Home className="w-5 h-5 text-gray-400" />
             <span>Về Trang Chủ Shop</span>
@@ -133,8 +133,8 @@ export default function AdminLayout({
             <div>
               <div className="p-6 border-b flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-6 h-6 text-amber-500" />
-                  <span className="font-extrabold text-base text-gray-900">Admin Panel</span>
+                  <ShieldCheck className="w-6 h-6 text-orange-500" />
+                  <span className="font-extrabold text-base text-gray-900">E-Commerce Admin</span>
                 </div>
                 <button onClick={() => setIsSidebarOpen(false)} className="p-1 rounded-full hover:bg-gray-100">
                   <X className="w-5 h-5 text-gray-500" />
@@ -151,7 +151,7 @@ export default function AdminLayout({
                       href={item.href}
                       onClick={() => setIsSidebarOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition ${
-                        isActive ? "bg-amber-500 text-white" : "text-gray-600 hover:bg-gray-50"
+                        isActive ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-50"
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -165,7 +165,7 @@ export default function AdminLayout({
             <div className="p-4 border-t">
               <Link
                 href="/"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm text-gray-600 hover:bg-amber-50 hover:text-amber-700 transition"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition"
               >
                 <Home className="w-5 h-5" />
                 <span>Về Trang Chủ Shop</span>
@@ -199,10 +199,10 @@ export default function AdminLayout({
 
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex flex-col text-right">
-              <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Quản trị viên</span>
+              <span className="text-xs font-semibold text-orange-500 uppercase tracking-wider">Quản trị viên</span>
               <span className="text-sm font-bold text-gray-800">Admin Account</span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center font-bold text-amber-700">
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600">
               AD
             </div>
           </div>

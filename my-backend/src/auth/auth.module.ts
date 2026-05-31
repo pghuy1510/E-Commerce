@@ -6,6 +6,7 @@ import { UsersModule } from '../users/users.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
+import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 import type { StringValue } from 'ms';
 import { CouponModule } from '../coupons/coupon.module';
 
@@ -27,8 +28,9 @@ import { CouponModule } from '../coupons/coupon.module';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, OptionalJwtAuthGuard],
   controllers: [AuthController],
-  exports: [JwtModule], //
+  exports: [JwtModule, OptionalJwtAuthGuard], //
 })
 export class AuthModule {}
+

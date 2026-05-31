@@ -1,5 +1,6 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import CookieConsent from "@/components/layout/CookieConsent";
 
 export default function MainLayout({ children }: any) {
   return (
@@ -7,6 +8,7 @@ export default function MainLayout({ children }: any) {
       <Header />
       {children}
       <Footer />
+      <CookieConsent />
     </>
   );
 }

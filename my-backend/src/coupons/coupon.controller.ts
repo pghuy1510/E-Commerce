@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Query, Param, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Query, Param, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { CouponService } from './coupon.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -8,6 +8,8 @@ import { CouponType, DiscountType } from './coupon.entity';
 type AuthenticatedRequest = Request & {
   user: {
     id: string;
+    username: string;
+    role: string;
   };
 };
 
@@ -72,9 +74,16 @@ export class CouponController {
     return this.couponService.listAllCoupons();
   }
 
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  findOneCoupon(@Param('id', ParseIntPipe) id: number) {
+    return this.couponService.findOneCoupon(id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, AdminGuard)
   createCoupon(
+    @Req() req: AuthenticatedRequest,
     @Body()
     body: {
       code: string;
@@ -88,14 +97,62 @@ export class CouponController {
       startsAt?: string | null;
       expiresAt?: string | null;
       isActive?: boolean;
+      reason?: string;
     },
   ) {
-    return this.couponService.createCoupon(body);
+    return this.couponService.createCoupon(
+      body,
+      Number(req.user.id),
+      req.user.username,
+      req.ip,
+      body.reason,
+    );
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  updateCoupon(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body()
+    body: {
+      code: string;
+      name?: string;
+      type: CouponType;
+      discountType: DiscountType;
+      discountValue: number;
+      minOrder?: number | null;
+      maxDiscount?: number | null;
+      categoryId?: number | null;
+      startsAt?: string | null;
+      expiresAt?: string | null;
+      isActive?: boolean;
+      reason?: string;
+    },
+  ) {
+    return this.couponService.updateCoupon(
+      id,
+      body,
+      Number(req.user.id),
+      req.user.username,
+      req.ip,
+      body.reason,
+    );
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  deleteCoupon(@Param('id', ParseIntPipe) id: number) {
-    return this.couponService.deleteCoupon(id);
+  deleteCoupon(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body?: { reason?: string },
+  ) {
+    return this.couponService.deleteCoupon(
+      id,
+      Number(req.user.id),
+      req.user.username,
+      req.ip,
+      body?.reason,
+    );
   }
 }

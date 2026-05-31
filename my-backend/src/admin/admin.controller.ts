@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../auth/admin-auth.guard';
@@ -45,6 +45,24 @@ export class AdminController {
     },
   ) {
     return this.service.handleReturn(Number(id), dto);
+  }
+
+  @Post('returns/:id/received')
+  markReceived(@Param('id') id: string) {
+    return this.service.markReceived(Number(id));
+  }
+
+  @Post('returns/:id/refund')
+  startRefund(@Param('id') id: string) {
+    return this.service.startRefund(Number(id));
+  }
+
+  @Post('returns/:id/complete')
+  completeRefund(
+    @Param('id') id: string,
+    @Body() dto: { refundTransactionId: string; refundMethod: string },
+  ) {
+    return this.service.completeRefund(Number(id), dto);
   }
 
   // PRODUCT CRUD
@@ -106,5 +124,20 @@ export class AdminController {
   @Get('users/:id/orders')
   getUserOrders(@Param('id') id: string) {
     return this.service.getUserOrders(Number(id));
+  }
+
+  @Get('promotion-logs')
+  getPromotionLogs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('entityType') entityType?: 'coupon' | 'deal',
+    @Query('action') action?: string,
+  ) {
+    return this.service.getPromotionLogs(
+      Number(page || 1),
+      Number(limit || 20),
+      entityType,
+      action,
+    );
   }
 }

@@ -11,6 +11,7 @@ import { User } from '../users/entities/user.entity';
 import { CouponModule } from '../coupons/coupon.module';
 import { PaymentService } from './payment.service';
 import { PaymentController } from './payment.controller';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PaymentController } from './payment.controller';
       User,
     ]),
     CouponModule,
+    AuthModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService],

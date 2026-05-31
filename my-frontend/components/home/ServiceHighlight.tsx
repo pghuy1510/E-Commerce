@@ -17,7 +17,7 @@ export default function ServiceHighlight() {
       icon: <ShieldCheck className="w-7 h-7 text-white" />,
       title: t("service.securePaymentTitle"),
       desc: t("service.securePaymentDesc"),
-      href: "/secure-payment",
+      href: "/payment-billing",
     },
     {
       icon: <Headphones className="w-7 h-7 text-white" />,

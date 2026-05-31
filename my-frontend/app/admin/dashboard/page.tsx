@@ -43,7 +43,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="flex items-center justify-center py-40">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
           <p className="text-gray-500 font-medium">Đang tải số liệu...</p>
         </div>
       </div>
@@ -82,7 +82,7 @@ export default function AdminDashboardPage() {
               <TrendingUp size={12} /> Đơn giao thành công
             </p>
           </div>
-          <div className="bg-amber-500 text-white p-3 rounded-2xl shadow-md shadow-amber-100 shrink-0">
+          <div className="bg-orange-500 text-white p-3 rounded-2xl shadow-md shadow-orange-100 shrink-0">
             <DollarSign className="w-6 h-6" />
           </div>
         </div>
@@ -145,13 +145,13 @@ export default function AdminDashboardPage() {
                 {/* Tooltip on Hover */}
                 <div className="absolute bottom-full mb-2 bg-gray-900 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-15 whitespace-nowrap shadow-lg">
                   <p className="text-gray-400">{new Date(c.date).toLocaleDateString("vi-VN")}</p>
-                  <p className="text-amber-400 text-xs font-extrabold mt-0.5">{formatPrice(c.revenue)}</p>
+                  <p className="text-orange-400 text-xs font-extrabold mt-0.5">{formatPrice(c.revenue)}</p>
                   <p className="text-blue-400">{c.ordersCount} đơn hàng</p>
                 </div>
                 
                 {/* Bar */}
                 <div
-                  className="w-full bg-amber-500/80 hover:bg-amber-500 rounded-t-md transition-all duration-300 shadow-sm"
+                  className="w-full bg-orange-500/80 hover:bg-orange-500 rounded-t-md transition-all duration-300 shadow-sm"
                   style={{ height: heightPercent }}
                 />
               </div>
@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-sm lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between border-b pb-3">
             <h3 className="font-bold text-gray-900">Đơn hàng mới nhận</h3>
-            <Link href="/admin/orders" className="text-xs font-bold text-amber-600 hover:text-amber-700 transition flex items-center gap-1">
+            <Link href="/admin/orders" className="text-xs font-bold text-orange-500 hover:text-orange-600 transition flex items-center gap-1">
               Xem tất cả <ArrowRight size={14} />
             </Link>
           </div>
@@ -193,7 +193,7 @@ export default function AdminDashboardPage() {
                   <tr key={o.id} className="hover:bg-gray-50/50">
                     <td className="py-3.5 font-bold text-gray-900">#ORD-{o.id}</td>
                     <td className="py-3.5 text-gray-600 font-medium">{o.fullName}</td>
-                    <td className="py-3.5 text-right font-bold text-amber-600">{formatPrice(o.totalAmount)}</td>
+                    <td className="py-3.5 text-right font-bold text-orange-500">{formatPrice(o.totalAmount)}</td>
                     <td className="py-3.5 text-center">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
                         o.status === "delivered" ? "bg-green-50 text-green-700 border border-green-100" :
@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b pb-3">
             <h3 className="font-bold text-gray-900">Sách sắp hết kho</h3>
-            <Link href="/admin/products" className="text-xs font-bold text-amber-600 hover:text-amber-700 transition flex items-center gap-1">
+            <Link href="/admin/products" className="text-xs font-bold text-orange-500 hover:text-orange-600 transition flex items-center gap-1">
               Xem kho <ArrowRight size={14} />
             </Link>
           </div>

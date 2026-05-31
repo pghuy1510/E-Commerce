@@ -15,4 +15,8 @@ export class CreateContactDto {
   @IsString()
   @IsNotEmpty()
   message!: string;
+
+  @IsOptional()
+  @IsString()
+  imageProof?: string;
 }

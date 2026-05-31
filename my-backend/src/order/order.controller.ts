@@ -16,6 +16,7 @@ import { CheckoutDto, GuestCheckoutDto } from './dto/checkout.dto';
 type AuthenticatedRequest = Request & {
   user: {
     id: string;
+    role?: string;
   };
 };
 
@@ -77,7 +78,16 @@ export class OrderController {
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string
   ) {
-    return this.service.getReturnDetails(req.user.id, Number(id));
+    return this.service.getReturnDetails(req.user.id, Number(id), req.user.role);
+  }
+
+  @Post(':id/return/cancel')
+  @UseGuards(JwtAuthGuard)
+  cancelReturn(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string
+  ) {
+    return this.service.cancelReturn(req.user.id, Number(id));
   }
 
   @Post(':id/change-to-cod')

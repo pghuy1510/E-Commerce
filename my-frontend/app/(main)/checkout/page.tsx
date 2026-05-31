@@ -13,7 +13,7 @@ import {
   ProvinceOption,
 } from "@/lib/api";
 import { normalizeCartItems } from "@/lib/cart";
-import { toLegacyAddressPayload } from "@/lib/address";
+import { toLegacyAddressPayload, isAddressValid } from "@/lib/address";
 import { calculateCheckoutTotals, toMoneyNumber } from "@/lib/money";
 import { validateCheckoutPayload } from "@/lib/validation";
 import AddressSelector, {
@@ -59,6 +59,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
 
   const isLoggedIn = typeof window !== "undefined" && !!getBrowserToken();
 
@@ -84,6 +86,8 @@ export default function CheckoutPage() {
           ]);
 
           setProvinces(provincesData);
+          setProfileName(profileRes.fullName || "");
+          setProfilePhone(profileRes.phone || "");
           const items = normalizeCartItems(cartRes.data);
           setCartItems(items);
           
@@ -202,7 +206,7 @@ export default function CheckoutPage() {
       if (isLoggedIn) {
         const res = await checkoutAPI.create(payload);
         if (paymentMethod === "qr") {
-          router.push(`/checkout/payment?paymentId=${res.paymentId}`);
+          router.push(`/checkout/payment?paymentId=${res.paymentId}&token=${res.paymentToken}`);
         } else {
           router.push(`/order-success?orderId=${res.orderId}`);
         }
@@ -221,9 +225,9 @@ export default function CheckoutPage() {
           window.dispatchEvent(new Event("cart-updated"));
         }
         if (paymentMethod === "qr") {
-          router.push(`/checkout/payment?paymentId=${res.paymentId}&email=${guestEmail}`);
+          router.push(`/checkout/payment?paymentId=${res.paymentId}&token=${res.paymentToken}`);
         } else {
-          router.push(`/order-success?orderId=${res.orderId}&email=${guestEmail}`);
+          router.push(`/order-success?orderId=${res.orderId}`);
         }
       }
     } catch (err: any) {
@@ -267,7 +271,13 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          <AddressSelector value={address} onChange={setAddress} provinces={provinces} />
+          <AddressSelector
+            value={address}
+            onChange={setAddress}
+            provinces={provinces}
+            profileName={profileName}
+            profilePhone={profilePhone}
+          />
           <PaymentMethods value={paymentMethod} onChange={setPaymentMethod} />
           
           <CouponInput
@@ -313,6 +323,12 @@ export default function CheckoutPage() {
             formatPrice={formatPrice}
           />
 
+          {!isAddressValid(address) && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-850 font-bold">
+              ⚠️ Vui lòng cập nhật địa chỉ giao hàng trước khi thanh toán
+            </div>
+          )}
+
           {error && (
             <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-medium">
               ⚠️ {error}
@@ -321,8 +337,8 @@ export default function CheckoutPage() {
 
           <button
             onClick={handleSubmit}
-            disabled={loading}
-            className="w-full rounded-3xl bg-amber-500 hover:bg-amber-600 px-6 py-4 text-white font-semibold shadow-md transition disabled:opacity-60 cursor-pointer">
+            disabled={loading || !isAddressValid(address)}
+            className="w-full rounded-3xl bg-amber-500 hover:bg-amber-600 px-6 py-4 text-white font-semibold shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
             {loading ? "Đang xử lý..." : t("action.placeOrder")}
           </button>
         </div>

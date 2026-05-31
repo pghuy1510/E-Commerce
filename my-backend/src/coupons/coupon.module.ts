@@ -11,6 +11,7 @@ import { WishlistItem } from '../wishlist/entities/wishlist.entity';
 import { CategoryView } from '../tracking/entities/category-view.entity';
 import { Product } from '../products/products.entity';
 import { Category } from '../categories/categories.entity';
+import { PromotionLog } from '../promotions/entities/promotion-log.entity';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { Category } from '../categories/categories.entity';
       CategoryView,
       Product,
       Category,
+      PromotionLog,
     ]),
   ],
   controllers: [CouponController],

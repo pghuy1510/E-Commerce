@@ -238,6 +238,28 @@ export default function OrdersPage() {
                         Hủy đơn hàng
                       </button>
                     )}
+
+                    {order.status === "delivered" && (
+                      (() => {
+                        const deliveredAt = order.deliveredAt;
+                        let isEligible = true;
+                        if (deliveredAt) {
+                          const diffTime = Math.abs(new Date().getTime() - new Date(deliveredAt).getTime());
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          if (diffDays > 7) {
+                            isEligible = false;
+                          }
+                        }
+                        return isEligible ? (
+                          <Link
+                            href={`/orders/${order.id}/return`}
+                            className="px-5 py-2.5 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 transition font-semibold text-sm"
+                          >
+                            Trả hàng / Hoàn tiền
+                          </Link>
+                        ) : null;
+                      })()
+                    )}
                   </div>
                 </div>
               </div>
@@ -267,6 +289,12 @@ function StatusBadge({ status }: { status: string }) {
     delivered: "bg-emerald-100 text-emerald-700 border-emerald-200",
     cancelled: "bg-red-100 text-red-700 border-red-200",
     refunded: "bg-purple-100 text-purple-700 border-purple-200",
+    return_requested: "bg-orange-100 text-orange-700 border-orange-200",
+    return_approved: "bg-amber-100 text-amber-700 border-amber-200",
+    product_received: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    refund_processing: "bg-cyan-100 text-cyan-700 border-cyan-200",
+    return_rejected: "bg-rose-100 text-rose-700 border-rose-200",
+    return_cancelled: "bg-slate-100 text-slate-700 border-slate-200",
   };
 
   const labels: Record<string, string> = {
@@ -276,6 +304,12 @@ function StatusBadge({ status }: { status: string }) {
     delivered: "Đã giao hàng",
     cancelled: "Đã hủy",
     refunded: "Đã hoàn tiền",
+    return_requested: "Yêu cầu trả hàng",
+    return_approved: "Đã duyệt trả hàng",
+    product_received: "Đã nhận sản phẩm",
+    refund_processing: "Đang hoàn tiền",
+    return_rejected: "Từ chối trả hàng",
+    return_cancelled: "Đã hủy trả hàng",
   };
 
   return (

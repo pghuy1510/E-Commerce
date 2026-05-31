@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
@@ -55,6 +57,10 @@ export class OrderService {
     const cart = await this.cartService.getCart(userIdNumber);
     if (!cart.items.length) {
       throw new BadRequestException('Cart is empty');
+    }
+
+    if (!dto.provinceId || !dto.wardId || !dto.addressDetail?.trim() || !dto.receiverName?.trim() || !dto.receiverPhone?.trim()) {
+      throw new BadRequestException('Thông tin địa chỉ nhận hàng không đầy đủ.');
     }
 
     const { provinceName, wardName } = this.locationService.validateAddress(dto.provinceId, dto.wardId);
@@ -206,12 +212,16 @@ export class OrderService {
         note: dto.note ?? null,
       });
 
+      const paymentToken = `pay_tok_${randomUUID().replace(/-/g, '')}`;
+      const tokenHash = createHash('sha256').update(paymentToken).digest('hex');
+
       const payment = paymentRepo.create({
         order_id: savedOrder.id,
         method: dto.paymentMethod,
         amount: totalForPayment,
         status: 'pending',
-      });
+        tokenHash,
+      } as any) as unknown as Payment;
 
       const savedPayment = await paymentRepo.save(payment);
 
@@ -277,6 +287,7 @@ export class OrderService {
         order: savedOrder,
         payment: savedPayment,
         qr: qrPayload,
+        paymentToken,
       };
     });
 
@@ -301,6 +312,7 @@ export class OrderService {
     return {
       orderId: result.order.id,
       paymentId: result.payment.id,
+      paymentToken: result.paymentToken,
       orderStatus: result.order.status,
       paymentStatus: result.payment.status,
       amount: result.payment.amount,
@@ -333,6 +345,10 @@ export class OrderService {
         quantity: item.quantity,
         price: finalPrice,
       });
+    }
+
+    if (!dto.provinceId || !dto.wardId || !dto.addressDetail?.trim() || !dto.receiverName?.trim() || !dto.receiverPhone?.trim()) {
+      throw new BadRequestException('Thông tin địa chỉ nhận hàng không đầy đủ.');
     }
 
     const { provinceName, wardName } = this.locationService.validateAddress(dto.provinceId, dto.wardId);
@@ -466,12 +482,16 @@ export class OrderService {
         note: dto.note ?? null,
       });
 
+      const paymentToken = `pay_tok_${randomUUID().replace(/-/g, '')}`;
+      const tokenHash = createHash('sha256').update(paymentToken).digest('hex');
+
       const payment = paymentRepo.create({
         order_id: savedOrder.id,
         method: dto.paymentMethod,
         amount: totalForPayment,
         status: 'pending',
-      });
+        tokenHash,
+      } as any) as unknown as Payment;
 
       const savedPayment = await paymentRepo.save(payment);
 
@@ -525,6 +545,7 @@ export class OrderService {
         order: savedOrder,
         payment: savedPayment,
         qr: qrPayload,
+        paymentToken,
       };
     });
 
@@ -542,6 +563,7 @@ export class OrderService {
     return {
       orderId: result.order.id,
       paymentId: result.payment.id,
+      paymentToken: result.paymentToken,
       orderStatus: result.order.status,
       paymentStatus: result.payment.status,
       amount: result.payment.amount,
@@ -643,6 +665,47 @@ export class OrderService {
     return { success: true };
   }
 
+  private async saveImageProof(base64Data: string): Promise<string> {
+    if (!base64Data.startsWith('data:')) {
+      throw new BadRequestException('Ảnh minh chứng không hợp lệ.');
+    }
+
+    const parts = base64Data.split(';base64,');
+    if (parts.length !== 2) {
+      throw new BadRequestException('Ảnh minh chứng không hợp lệ.');
+    }
+
+    const mimeType = parts[0].replace('data:', '');
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedMimeTypes.includes(mimeType)) {
+      throw new BadRequestException('Định dạng ảnh không được hỗ trợ. Chỉ hỗ trợ JPEG, PNG, WEBP.');
+    }
+
+    const base64Content = parts[1];
+    const approximateSize = (base64Content.length * 3) / 4;
+    const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+    if (approximateSize > maxSizeBytes) {
+      throw new BadRequestException('Kích thước ảnh minh chứng không được vượt quá 5MB.');
+    }
+
+    const extension = mimeType.split('/')[1] === 'jpeg' ? 'jpg' : mimeType.split('/')[1];
+    const fileName = `${randomUUID()}.${extension}`;
+    const uploadDir = path.join(process.cwd(), 'uploads', 'returns');
+
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      const buffer = Buffer.from(base64Content, 'base64');
+      fs.writeFileSync(path.join(uploadDir, fileName), buffer);
+      
+      return `/uploads/returns/${fileName}`;
+    } catch (error) {
+      throw new BadRequestException('Không thể lưu ảnh minh chứng. Vui lòng thử lại.');
+    }
+  }
+
   async requestReturn(
     userId: string,
     orderId: number,
@@ -660,8 +723,34 @@ export class OrderService {
       throw new BadRequestException('Only delivered orders can be returned');
     }
 
+    // deliveredAt verification (7 days limit)
+    if (!order.deliveredAt) {
+      // Fallback
+      const deliveryLog = await this.dataSource.getRepository(OrderStatusLog).findOne({
+        where: { order: { id: orderId }, newStatus: 'delivered' },
+        order: { id: 'DESC' }
+      });
+      if (deliveryLog) {
+        order.deliveredAt = deliveryLog.createdAt;
+      }
+    }
+
+    if (order.deliveredAt) {
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - order.deliveredAt.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays > 7) {
+        throw new BadRequestException('Đơn hàng đã quá thời hạn 7 ngày đổi trả kể từ ngày nhận hàng thành công.');
+      }
+    }
+
     const oldStatus = order.status;
-    order.status = 'refund_pending';
+    order.status = 'return_requested';
+
+    let imagePath: string | null = null;
+    if (dto.imageProof) {
+      imagePath = await this.saveImageProof(dto.imageProof);
+    }
 
     await this.dataSource.transaction(async (manager) => {
       const orderRepo = manager.getRepository(Order);
@@ -671,8 +760,8 @@ export class OrderService {
       const returnRequest = returnRepo.create({
         order,
         reason: dto.reason,
-        imageProof: dto.imageProof ?? null,
-        status: 'pending',
+        imageProof: imagePath,
+        status: 'return_requested',
         refundAmount: order.totalAmount,
       });
       await returnRepo.save(returnRequest);
@@ -682,7 +771,7 @@ export class OrderService {
       await statusLogRepo.save({
         order,
         oldStatus,
-        newStatus: 'refund_pending',
+        newStatus: 'return_requested',
         note: `Yêu cầu trả hàng: ${dto.reason}`,
       });
     });
@@ -690,9 +779,60 @@ export class OrderService {
     return { success: true };
   }
 
-  async getReturnDetails(userId: string, orderId: number) {
+  async cancelReturn(userId: string, orderId: number) {
     const order = await this.orderRepo.findOne({
       where: { id: orderId, user: { id: Number(userId) } },
+    });
+
+    if (!order) {
+      throw new BadRequestException('Không tìm thấy đơn hàng.');
+    }
+
+    const returnRepo = this.dataSource.getRepository(OrderReturn);
+    const activeReturn = await returnRepo.findOne({
+      where: { order: { id: orderId } },
+      order: { id: 'DESC' }
+    });
+
+    if (!activeReturn) {
+      throw new BadRequestException('Không tìm thấy yêu cầu đổi trả.');
+    }
+
+    if (activeReturn.status !== 'return_requested') {
+      throw new BadRequestException('Chỉ có thể hủy yêu cầu đổi trả khi đang chờ duyệt.');
+    }
+
+    const oldStatus = order.status;
+    order.status = 'delivered';
+    activeReturn.status = 'return_cancelled';
+
+    await this.dataSource.transaction(async (manager) => {
+      const orderRepo = manager.getRepository(Order);
+      const returnRepo = manager.getRepository(OrderReturn);
+      const statusLogRepo = manager.getRepository(OrderStatusLog);
+
+      await returnRepo.save(activeReturn);
+      await orderRepo.save(order);
+
+      await statusLogRepo.save({
+        order,
+        oldStatus,
+        newStatus: 'delivered',
+        note: 'Khách hàng tự hủy yêu cầu đổi trả',
+      });
+    });
+
+    return { success: true };
+  }
+
+  async getReturnDetails(userId: string, orderId: number, role?: string) {
+    const whereCondition: any = { id: orderId };
+    if (role !== 'admin') {
+      whereCondition.user = { id: Number(userId) };
+    }
+    
+    const order = await this.orderRepo.findOne({
+      where: whereCondition,
     });
 
     if (!order) {
@@ -701,6 +841,7 @@ export class OrderService {
 
     const returnRequest = await this.dataSource.getRepository(OrderReturn).findOne({
       where: { order: { id: orderId } },
+      order: { id: 'DESC' },
     });
 
     return returnRequest || null;

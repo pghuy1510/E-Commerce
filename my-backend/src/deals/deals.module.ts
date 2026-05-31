@@ -6,6 +6,7 @@ import { Product } from '../products/products.entity';
 import { Coupon } from '../coupons/coupon.entity';
 import { DealsService } from './deals.service';
 import { DealsController } from './deals.controller';
+import { PromotionLog } from '../promotions/entities/promotion-log.entity';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { DealsController } from './deals.controller';
       DealProduct,
       Product,
       Coupon,
+      PromotionLog,
     ]),
   ],
   controllers: [DealsController],

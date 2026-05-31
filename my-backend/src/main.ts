@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +13,11 @@ async function bootstrap() {
     origin: '*',
   });
 
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
   app.setGlobalPrefix('api');
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Set up Swagger API Documentation
   const swaggerConfig = new DocumentBuilder()

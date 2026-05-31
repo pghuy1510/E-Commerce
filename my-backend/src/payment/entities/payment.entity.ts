@@ -25,6 +25,9 @@ export class Payment {
   @Column({ nullable: true })
   transaction_id!: string;
 
+  @Column({ name: 'token_hash', nullable: true })
+  tokenHash?: string;
+
   @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
   paid_at?: Date | null;
 

@@ -8,6 +8,8 @@ export type AddressSelectorValue = {
   provinceId?: number;
   wardId?: number;
   addressDetail?: string;
+  provinceName?: string;
+  wardName?: string;
 };
 
 type AddressSelectorProps = {
@@ -31,6 +33,19 @@ export default function AddressSelector({
   const [loadingWards, setLoadingWards] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Resolve initial provinceName if missing
+  useEffect(() => {
+    if (value.provinceId && !value.provinceName && provinces.length > 0) {
+      const matchedProv = provinces.find((p) => p.id === value.provinceId);
+      if (matchedProv) {
+        onChange({
+          ...value,
+          provinceName: matchedProv.name,
+        });
+      }
+    }
+  }, [value.provinceId, value.provinceName, provinces]);
+
   // Load wards whenever provinceId changes
   useEffect(() => {
     if (!value.provinceId) {
@@ -44,6 +59,18 @@ export default function AddressSelector({
         setErrorMsg("");
         const data = await locationAPI.getWards(value.provinceId!);
         setWards(data);
+
+        // Find ward name for the initial wardId if wardName is not set
+        if (value.wardId && !value.wardName) {
+          const matchedWard = data.find((w) => w.id === value.wardId);
+          if (matchedWard) {
+            onChange({
+              ...value,
+              provinceName: value.provinceName || provinces.find((p) => p.id === value.provinceId)?.name || "",
+              wardName: matchedWard.name,
+            });
+          }
+        }
       } catch (err) {
         console.error("Lỗi khi tải xã/phường:", err);
         setErrorMsg("Không thể tải dữ liệu địa chỉ");
@@ -57,18 +84,23 @@ export default function AddressSelector({
 
   const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pId = e.target.value ? Number(e.target.value) : undefined;
+    const matchedProv = provinces.find((p) => p.id === pId);
     onChange({
       ...value,
       provinceId: pId,
+      provinceName: matchedProv?.name || "",
       wardId: undefined, // Reset ward when province changes
+      wardName: "",
     });
   };
 
   const handleWardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const wId = e.target.value ? Number(e.target.value) : undefined;
+    const matchedWard = wards.find((w) => w.id === wId);
     onChange({
       ...value,
       wardId: wId,
+      wardName: matchedWard?.name || "",
     });
   };
 

@@ -5,6 +5,7 @@ import { In, Repository } from 'typeorm';
 import { Coupon } from './coupon.entity';
 import type { CouponType, DiscountType } from './coupon.entity';
 import { UserCoupon } from './user-coupon.entity';
+import { PromotionLog } from '../promotions/entities/promotion-log.entity';
 import { User } from '../users/entities/user.entity';
 import { Order } from '../order/order.entity';
 import { Cart } from '../cart/cart.entity';
@@ -79,6 +80,9 @@ export class CouponService {
 
     @InjectRepository(Category)
     private categoryRepo: Repository<Category>,
+
+    @InjectRepository(PromotionLog)
+    private promotionLogRepo: Repository<PromotionLog>,
   ) {}
 
   async issueWelcomeCoupon(userId: number, createdAt?: Date) {
@@ -848,23 +852,59 @@ export class CouponService {
   }
 
   /**
+   * Find a coupon template with metadata (Admin Controlled)
+   */
+  async findOneCoupon(id: number) {
+    const coupon = await this.couponRepo.findOne({ where: { id } });
+    if (!coupon) {
+      throw new NotFoundException(`Coupon với ID ${id} không tồn tại.`);
+    }
+
+    const claimedCount = await this.userCouponRepo.count({
+      where: { coupon: { id } },
+    });
+
+    return {
+      ...coupon,
+      claimedCount,
+      canEditCode: claimedCount === 0,
+    };
+  }
+
+  /**
    * Create a new coupon template (Admin Controlled)
    */
-  async createCoupon(dto: {
-    code: string;
-    name?: string;
-    type: CouponType;
-    discountType: DiscountType;
-    discountValue: number;
-    minOrder?: number | null;
-    maxDiscount?: number | null;
-    categoryId?: number | null;
-    startsAt?: string | null;
-    expiresAt?: string | null;
-    isActive?: boolean;
-  }): Promise<Coupon> {
+  async createCoupon(
+    dto: {
+      code: string;
+      name?: string;
+      type: CouponType;
+      discountType: DiscountType;
+      discountValue: number;
+      minOrder?: number | null;
+      maxDiscount?: number | null;
+      categoryId?: number | null;
+      startsAt?: string | null;
+      expiresAt?: string | null;
+      isActive?: boolean;
+    },
+    adminId?: number,
+    performedBy?: string,
+    ipAddress?: string,
+    reason?: string,
+  ): Promise<Coupon> {
+    const codeUpper = dto.code.trim().toUpperCase();
+
+    // Case-insensitive uniqueness check
+    const existing = await this.couponRepo.findOne({
+      where: { code: codeUpper },
+    });
+    if (existing) {
+      throw new BadRequestException(`Mã coupon "${codeUpper}" đã tồn tại.`);
+    }
+
     const coupon = this.couponRepo.create({
-      code: dto.code.trim().toUpperCase(),
+      code: codeUpper,
       name: dto.name,
       type: dto.type,
       discountType: dto.discountType,
@@ -876,7 +916,23 @@ export class CouponService {
       expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
       isActive: dto.isActive !== undefined ? dto.isActive : true,
     });
-    return this.couponRepo.save(coupon);
+
+    const saved = await this.couponRepo.save(coupon);
+
+    // Save Audit Log
+    const log = this.promotionLogRepo.create({
+      adminId,
+      performedBy,
+      ipAddress,
+      entityType: 'coupon',
+      entityId: saved.id,
+      action: 'create',
+      reason: reason || 'Tạo coupon mới',
+      newValue: saved,
+    });
+    await this.promotionLogRepo.save(log);
+
+    return saved;
   }
 
   /**
@@ -897,13 +953,41 @@ export class CouponService {
       expiresAt?: string | null;
       isActive?: boolean;
     },
+    adminId?: number,
+    performedBy?: string,
+    ipAddress?: string,
+    reason?: string,
   ): Promise<Coupon> {
     const coupon = await this.couponRepo.findOne({ where: { id } });
     if (!coupon) {
       throw new NotFoundException(`Coupon với ID ${id} không tồn tại.`);
     }
 
-    coupon.code = dto.code.trim().toUpperCase();
+    const oldValue = { ...coupon };
+    const codeUpper = dto.code.trim().toUpperCase();
+
+    // Check code lock if coupon has already been claimed (claimedCount > 0)
+    const claimedCount = await this.userCouponRepo.count({
+      where: { coupon: { id } },
+    });
+
+    if (claimedCount > 0 && codeUpper !== coupon.code) {
+      throw new BadRequestException(
+        'Không thể chỉnh sửa mã coupon của coupon đã được phát hành cho người dùng.',
+      );
+    }
+
+    // Case-insensitive uniqueness check if code changed
+    if (codeUpper !== coupon.code) {
+      const existing = await this.couponRepo.findOne({
+        where: { code: codeUpper },
+      });
+      if (existing) {
+        throw new BadRequestException(`Mã coupon "${codeUpper}" đã tồn tại.`);
+      }
+    }
+
+    coupon.code = codeUpper;
     coupon.name = dto.name;
     coupon.type = dto.type;
     coupon.discountType = dto.discountType;
@@ -917,18 +1001,58 @@ export class CouponService {
       coupon.isActive = dto.isActive;
     }
 
-    return this.couponRepo.save(coupon);
+    const saved = await this.couponRepo.save(coupon);
+
+    // Save Audit Log
+    const log = this.promotionLogRepo.create({
+      adminId,
+      performedBy,
+      ipAddress,
+      entityType: 'coupon',
+      entityId: saved.id,
+      action: 'update',
+      reason: reason || 'Cập nhật thông tin coupon',
+      oldValue,
+      newValue: saved,
+    });
+    await this.promotionLogRepo.save(log);
+
+    return saved;
   }
 
   /**
-   * Delete a coupon template
+   * Delete (deactivate) a coupon template
    */
-  async deleteCoupon(id: number): Promise<{ success: boolean }> {
+  async deleteCoupon(
+    id: number,
+    adminId?: number,
+    performedBy?: string,
+    ipAddress?: string,
+    reason?: string,
+  ): Promise<{ success: boolean }> {
     const coupon = await this.couponRepo.findOne({ where: { id } });
     if (!coupon) {
       throw new NotFoundException(`Coupon với ID ${id} không tồn tại.`);
     }
-    await this.couponRepo.remove(coupon);
+
+    const oldValue = { ...coupon };
+    coupon.isActive = false;
+    const saved = await this.couponRepo.save(coupon);
+
+    // Save Audit Log
+    const log = this.promotionLogRepo.create({
+      adminId,
+      performedBy,
+      ipAddress,
+      entityType: 'coupon',
+      entityId: saved.id,
+      action: 'deactivate',
+      reason: reason || 'Vô hiệu hóa coupon (Xóa)',
+      oldValue,
+      newValue: saved,
+    });
+    await this.promotionLogRepo.save(log);
+
     return { success: true };
   }
 }

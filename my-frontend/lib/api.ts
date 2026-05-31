@@ -211,6 +211,7 @@ export interface CheckoutPayload {
 export interface CheckoutResponse {
   orderId: number;
   paymentId: number;
+  paymentToken?: string;
   orderStatus: OrderStatus;
   paymentStatus: PaymentStatus;
   amount: number;
@@ -254,6 +255,7 @@ export interface ContactPayload {
   email: string;
   phone?: string;
   message: string;
+  imageProof?: string;
 }
 
 export const productAPI = {
@@ -582,6 +584,16 @@ export const orderAPI = {
     const res = await api.get(`/orders/${id}/return`);
     return res.data;
   },
+  getOrderReturn: async (id: number) => {
+    requireAuthToken();
+    const res = await api.get(`/orders/${id}/return`);
+    return res.data;
+  },
+  cancelReturnRequest: async (id: number) => {
+    requireAuthToken();
+    const res = await api.post(`/orders/${id}/return/cancel`);
+    return res.data;
+  },
   changeToCod: async (id: number) => {
     requireAuthToken();
     const res = await api.post(`/orders/${id}/change-to-cod`);
@@ -590,13 +602,16 @@ export const orderAPI = {
 };
 
 export const paymentAPI = {
-  getStatus: async (paymentId: number): Promise<PaymentStatusResponse> => {
-    const res = await api.get(`/payment/${paymentId}/status`);
+  getStatus: async (paymentId: number, token?: string): Promise<PaymentStatusResponse> => {
+    const res = await api.get(`/payment/${paymentId}/status`, {
+      params: token ? { token } : undefined,
+    });
     return res.data;
   },
   regenerateQr: async (
     paymentId: number,
     machineId: string,
+    token?: string,
   ): Promise<
     CheckoutResponse["qr"] & {
       bankName: string;
@@ -605,9 +620,11 @@ export const paymentAPI = {
       amount: number;
     }
   > => {
-    const res = await api.post(`/payment/${paymentId}/regenerate-qr`, {
-      machineId,
-    });
+    const res = await api.post(
+      `/payment/${paymentId}/regenerate-qr`,
+      { machineId },
+      { params: token ? { token } : undefined },
+    );
     return res.data;
   },
 };
@@ -666,6 +683,31 @@ export const adminAPI = {
   }) => {
     requireAuthToken();
     const res = await api.post(`/admin/returns/${id}/action`, payload);
+    return res.data;
+  },
+  approveReturn: async (id: number) => {
+    requireAuthToken();
+    const res = await api.post(`/admin/returns/${id}/action`, { action: "approve" });
+    return res.data;
+  },
+  rejectReturn: async (id: number, note: string) => {
+    requireAuthToken();
+    const res = await api.post(`/admin/returns/${id}/action`, { action: "reject", note });
+    return res.data;
+  },
+  markReturnReceived: async (id: number) => {
+    requireAuthToken();
+    const res = await api.post(`/admin/returns/${id}/received`);
+    return res.data;
+  },
+  startReturnRefund: async (id: number) => {
+    requireAuthToken();
+    const res = await api.post(`/admin/returns/${id}/refund`);
+    return res.data;
+  },
+  completeReturnRefund: async (id: number, payload: { refundTransactionId: string; refundMethod: string }) => {
+    requireAuthToken();
+    const res = await api.post(`/admin/returns/${id}/complete`, payload);
     return res.data;
   },
   createProduct: async (payload: {
@@ -729,9 +771,14 @@ export const adminAPI = {
     const res = await api.post<Coupon>("/coupons", payload);
     return res.data;
   },
-  deleteCoupon: async (id: number): Promise<{ success: boolean }> => {
+  deleteCoupon: async (id: number, reason?: string): Promise<{ success: boolean }> => {
     requireAuthToken();
-    const res = await api.delete<{ success: boolean }>(`/coupons/${id}`);
+    const res = await api.delete<{ success: boolean }>(`/coupons/${id}`, { data: { reason } });
+    return res.data;
+  },
+  updateCoupon: async (id: number, payload: Partial<Coupon>): Promise<Coupon> => {
+    requireAuthToken();
+    const res = await api.patch<Coupon>(`/coupons/${id}`, payload);
     return res.data;
   },
   listDeals: async (): Promise<{ id: number; name: string; description?: string; startsAt: string; expiresAt: string; isActive: boolean; dealProducts: DealProduct[]; featuredCoupons: Coupon[] }[]> => {
@@ -756,9 +803,41 @@ export const adminAPI = {
     const res = await api.post("/deals", payload);
     return res.data;
   },
-  deleteDeal: async (id: number): Promise<{ success: boolean }> => {
+  deleteDeal: async (id: number, reason?: string): Promise<{ success: boolean }> => {
     requireAuthToken();
-    const res = await api.delete<{ success: boolean }>(`/deals/${id}`);
+    const res = await api.delete<{ success: boolean }>(`/deals/${id}`, { data: { reason } });
+    return res.data;
+  },
+  updateDeal: async (id: number, payload: {
+    name: string;
+    description?: string;
+    startsAt: string;
+    expiresAt: string;
+    isActive?: boolean;
+    featuredCouponIds?: number[];
+    products: {
+      productId: number;
+      dealPrice: number;
+      dealStock: number;
+    }[];
+  }) => {
+    requireAuthToken();
+    const res = await api.patch(`/deals/${id}`, payload);
+    return res.data;
+  },
+  getCoupon: async (id: number) => {
+    requireAuthToken();
+    const res = await api.get(`/coupons/${id}`);
+    return res.data;
+  },
+  getDeal: async (id: number) => {
+    requireAuthToken();
+    const res = await api.get(`/deals/${id}`);
+    return res.data;
+  },
+  getPromotionLogs: async (params?: { page?: number; limit?: number; entityType?: string; action?: string }) => {
+    requireAuthToken();
+    const res = await api.get("/admin/promotion-logs", { params });
     return res.data;
   },
 };

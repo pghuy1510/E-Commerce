@@ -7,6 +7,7 @@ import { OrderReturn } from '../order/order-return.entity';
 import { OrderStatusLog } from '../order/order-status-log.entity';
 import { User } from '../users/entities/user.entity';
 import { Category } from '../categories/categories.entity';
+import { PromotionLog } from '../promotions/entities/promotion-log.entity';
 
 @Injectable()
 export class AdminService {
@@ -25,6 +26,9 @@ export class AdminService {
 
     @InjectRepository(Category)
     private categoryRepo: Repository<Category>,
+
+    @InjectRepository(PromotionLog)
+    private promotionLogRepo: Repository<PromotionLog>,
 
     private dataSource: DataSource,
   ) {}
@@ -65,17 +69,24 @@ export class AdminService {
       order: { created_at: 'ASC' },
     });
 
+    const getLocalDateString = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     const salesMap = new Map<string, { revenue: number; count: number }>();
     // Pre-populate last 30 days with 0
     for (let i = 0; i < 30; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(d);
       salesMap.set(dateStr, { revenue: 0, count: 0 });
     }
 
     recentOrders.forEach((o) => {
-      const dateStr = new Date(o.created_at).toISOString().split('T')[0];
+      const dateStr = getLocalDateString(new Date(o.created_at));
       if (salesMap.has(dateStr)) {
         const current = salesMap.get(dateStr)!;
         if (o.status !== 'cancelled') {
@@ -121,7 +132,7 @@ export class AdminService {
 
   async getOrders() {
     return this.orderRepo.find({
-      relations: ['user', 'items'],
+      relations: ['user', 'items', 'statusLogs'],
       order: { id: 'DESC' },
     });
   }
@@ -146,6 +157,9 @@ export class AdminService {
 
     const oldStatus = order.status;
     order.status = dto.status;
+    if (dto.status === 'delivered') {
+      order.deliveredAt = new Date();
+    }
 
     if (dto.trackingNumber !== undefined) {
       order.trackingNumber = dto.trackingNumber;
@@ -172,7 +186,7 @@ export class AdminService {
 
   async getReturns() {
     return this.returnRepo.find({
-      relations: ['order', 'order.user'],
+      relations: ['order', 'order.user', 'order.statusLogs'],
       order: { id: 'DESC' },
     });
   }
@@ -193,48 +207,188 @@ export class AdminService {
       throw new NotFoundException('Yêu cầu đổi trả không tồn tại');
     }
 
-    if (returnReq.status !== 'pending') {
-      throw new BadRequestException('Yêu cầu đổi trả đã được xử lý từ trước');
+    if (returnReq.status !== 'return_requested') {
+      throw new BadRequestException('Yêu cầu đổi trả đã được xử lý hoặc đã bị hủy từ trước');
     }
 
+    const oldOrderStatus = returnReq.order.status;
+
     if (dto.action === 'approve') {
-      returnReq.status = 'approved';
-      returnReq.order.status = 'refunded';
+      returnReq.status = 'return_approved';
+      returnReq.order.status = 'return_approved';
       
-      // Save Status Log for order
       const logRepo = this.dataSource.getRepository(OrderStatusLog);
       const log = logRepo.create({
         order: returnReq.order,
-        oldStatus: returnReq.order.status,
-        newStatus: 'refunded',
-        note: dto.note || `Chấp nhận yêu cầu đổi trả và hoàn tiền: ${returnReq.reason}`,
+        oldStatus: oldOrderStatus,
+        newStatus: 'return_approved',
+        note: dto.note || `Chấp nhận yêu cầu đổi trả: ${returnReq.reason}`,
       });
-
-      // Restore stock on refund
-      for (const item of returnReq.order.items) {
-        const product = await this.productRepo.findOne({ where: { id: item.productId } });
-        if (product) {
-          product.stock += item.quantity;
-          await this.productRepo.save(product);
-        }
-      }
 
       await this.orderRepo.save(returnReq.order);
       await logRepo.save(log);
     } else {
-      returnReq.status = 'rejected';
+      returnReq.status = 'return_rejected';
+      returnReq.order.status = 'delivered';
+      returnReq.rejectionReason = dto.note || 'Không có lý do chi tiết';
       
       const logRepo = this.dataSource.getRepository(OrderStatusLog);
       const log = logRepo.create({
         order: returnReq.order,
-        oldStatus: returnReq.order.status,
-        newStatus: returnReq.order.status,
-        note: dto.note || `Từ chối yêu cầu đổi trả: ${returnReq.reason}`,
+        oldStatus: oldOrderStatus,
+        newStatus: 'delivered',
+        note: `Từ chối yêu cầu đổi trả. Lý do: ${returnReq.rejectionReason}`,
       });
+      await this.orderRepo.save(returnReq.order);
       await logRepo.save(log);
     }
 
     return this.returnRepo.save(returnReq);
+  }
+
+  async markReceived(returnId: number) {
+    const returnReq = await this.returnRepo.findOne({
+      where: { id: returnId },
+      relations: ['order'],
+    });
+
+    if (!returnReq) {
+      throw new NotFoundException('Yêu cầu đổi trả không tồn tại');
+    }
+
+    if (returnReq.status !== 'return_approved') {
+      throw new BadRequestException('Chỉ có thể chuyển sang đã nhận hàng khi yêu cầu đã được duyệt');
+    }
+
+    const oldOrderStatus = returnReq.order.status;
+    returnReq.status = 'product_received';
+    returnReq.order.status = 'product_received';
+
+    const logRepo = this.dataSource.getRepository(OrderStatusLog);
+    const log = logRepo.create({
+      order: returnReq.order,
+      oldStatus: oldOrderStatus,
+      newStatus: 'product_received',
+      note: 'Kho đã nhận lại hàng từ khách hàng',
+    });
+
+    await this.orderRepo.save(returnReq.order);
+    await logRepo.save(log);
+    return this.returnRepo.save(returnReq);
+  }
+
+  async startRefund(returnId: number) {
+    const returnReq = await this.returnRepo.findOne({
+      where: { id: returnId },
+      relations: ['order'],
+    });
+
+    if (!returnReq) {
+      throw new NotFoundException('Yêu cầu đổi trả không tồn tại');
+    }
+
+    if (returnReq.status !== 'product_received') {
+      throw new BadRequestException('Chỉ có thể tiến hành hoàn tiền khi kho đã nhận sản phẩm');
+    }
+
+    const oldOrderStatus = returnReq.order.status;
+    returnReq.status = 'refund_processing';
+    returnReq.order.status = 'refund_processing';
+
+    const logRepo = this.dataSource.getRepository(OrderStatusLog);
+    const log = logRepo.create({
+      order: returnReq.order,
+      oldStatus: oldOrderStatus,
+      newStatus: 'refund_processing',
+      note: 'Kế toán đang xử lý giao dịch hoàn tiền',
+    });
+
+    await this.orderRepo.save(returnReq.order);
+    await logRepo.save(log);
+    return this.returnRepo.save(returnReq);
+  }
+
+  async completeRefund(
+    returnId: number,
+    dto: { refundTransactionId: string; refundMethod: string },
+  ) {
+    if (!dto.refundTransactionId || dto.refundTransactionId.trim() === '') {
+      throw new BadRequestException('Vui lòng cung cấp mã giao dịch hoàn tiền');
+    }
+    if (!dto.refundMethod || dto.refundMethod.trim() === '') {
+      throw new BadRequestException('Vui lòng cung cấp phương thức hoàn tiền');
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const returnRepo = manager.getRepository(OrderReturn);
+      const orderRepo = manager.getRepository(Order);
+      const productRepo = manager.getRepository(Product);
+      const logRepo = manager.getRepository(OrderStatusLog);
+
+      const initialReq = await returnRepo.findOne({
+        where: { id: returnId },
+        relations: ['order'],
+      });
+
+      if (!initialReq) {
+        throw new NotFoundException('Yêu cầu đổi trả không tồn tại');
+      }
+
+      const returnReq = await returnRepo.findOne({
+        where: { id: returnId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!returnReq) {
+        throw new NotFoundException('Yêu cầu đổi trả không tồn tại');
+      }
+
+      const order = await orderRepo.findOne({
+        where: { id: initialReq.order.id },
+        relations: ['items'],
+      });
+
+      if (!order) {
+        throw new NotFoundException('Đơn hàng không tồn tại');
+      }
+
+      returnReq.order = order;
+
+      if (returnReq.status === 'refunded') {
+        throw new BadRequestException('Yêu cầu đổi trả này đã được hoàn tiền từ trước');
+      }
+
+      if (returnReq.status !== 'refund_processing') {
+        throw new BadRequestException('Chỉ có thể hoàn thành khi yêu cầu ở trạng thái đang xử lý hoàn tiền');
+      }
+
+      const oldOrderStatus = returnReq.order.status;
+      returnReq.status = 'refunded';
+      returnReq.order.status = 'refunded';
+      returnReq.refundTransactionId = dto.refundTransactionId;
+      returnReq.refundMethod = dto.refundMethod;
+      returnReq.refundedAt = new Date();
+
+      // Restore product stock
+      for (const item of returnReq.order.items) {
+        const product = await productRepo.findOne({ where: { id: item.productId } });
+        if (product) {
+          product.stock += item.quantity;
+          await productRepo.save(product);
+        }
+      }
+
+      const log = logRepo.create({
+        order: returnReq.order,
+        oldStatus: oldOrderStatus,
+        newStatus: 'refunded',
+        note: `Hoàn tiền thành công. Phương thức: ${dto.refundMethod}. Mã giao dịch: ${dto.refundTransactionId}`,
+      });
+
+      await orderRepo.save(returnReq.order);
+      await logRepo.save(log);
+      return returnRepo.save(returnReq);
+    });
   }
 
   // PRODUCT CRUD
@@ -336,5 +490,36 @@ export class AdminService {
       relations: ['items'],
       order: { id: 'DESC' },
     });
+  }
+
+  async getPromotionLogs(
+    page = 1,
+    limit = 20,
+    entityType?: 'coupon' | 'deal',
+    action?: string,
+  ) {
+    const query = this.promotionLogRepo.createQueryBuilder('log');
+
+    if (entityType) {
+      query.andWhere('log.entityType = :entityType', { entityType });
+    }
+
+    if (action) {
+      query.andWhere('log.action = :action', { action });
+    }
+
+    query.orderBy('log.id', 'DESC');
+    query.skip((page - 1) * limit);
+    query.take(limit);
+
+    const [logs, total] = await query.getManyAndCount();
+
+    return {
+      logs,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

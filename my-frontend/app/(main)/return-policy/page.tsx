@@ -1,58 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ChevronDown,
   Clock3,
   DollarSign,
-  ImageUp,
   ShieldCheck,
   Truck,
+  CheckCircle2,
   XCircle,
+  Phone,
+  Mail,
+  MessageSquare
 } from "lucide-react";
 
 import ReturnTimeline from "@/components/services/ReturnTimeline";
 import { usePreferences } from "@/lib/i18n";
 
-const orders = [
-  {
-    id: "ORD-1001",
-    label: "#ORD-1001 · Nike Air Max 270",
-    items: [
-      { id: "ITEM-1", name: "Nike Air Max 270" },
-      { id: "ITEM-2", name: "Nike Air Max 270 Gift Box" },
-    ],
-  },
-  {
-    id: "ORD-1002",
-    label: "#ORD-1002 · Logitech G Pro X",
-    items: [{ id: "ITEM-3", name: "Logitech G Pro X" }],
-  },
-  {
-    id: "ORD-1003",
-    label: "#ORD-1003 · MacBook Pro M3",
-    items: [{ id: "ITEM-4", name: "MacBook Pro M3" }],
-  },
-];
-
-const statusStyles: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  approved: "bg-green-100 text-green-700 border-green-200",
-  rejected: "bg-red-100 text-red-700 border-red-200",
-  refunded: "bg-blue-100 text-blue-700 border-blue-200",
-};
-
 export default function ReturnPolicyPage() {
   const { t } = usePreferences();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [submitStatus, setSubmitStatus] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    orderId: orders[0].id,
-    orderItemId: orders[0].items[0].id,
-    reason: "",
-    note: "",
-    images: null as FileList | null,
-  });
 
   const policyConditions = [
     {
@@ -91,52 +58,6 @@ export default function ReturnPolicyPage() {
       answer: t("returnPolicy.faq.a4"),
     },
   ];
-
-  const returnStatuses = [
-    {
-      label: t("returnPolicy.status.pending"),
-      value: "pending",
-      description: t("returnPolicy.status.pendingDesc"),
-    },
-    {
-      label: t("returnPolicy.status.approved"),
-      value: "approved",
-      description: t("returnPolicy.status.approvedDesc"),
-    },
-    {
-      label: t("returnPolicy.status.rejected"),
-      value: "rejected",
-      description: t("returnPolicy.status.rejectedDesc"),
-    },
-    {
-      label: t("returnPolicy.status.refunded"),
-      value: "refunded",
-      description: t("returnPolicy.status.refundedDesc"),
-    },
-  ];
-
-  const selectedOrder = useMemo(
-    () => orders.find((order) => order.id === form.orderId),
-    [form.orderId],
-  );
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    setSubmitStatus(null);
-
-    if (!form.orderId || !form.orderItemId || !form.reason.trim()) {
-      setSubmitStatus(t("returnPolicy.request.validation"));
-      return;
-    }
-
-    setSubmitStatus(t("returnPolicy.request.success"));
-    setForm((prev) => ({
-      ...prev,
-      reason: "",
-      note: "",
-      images: null,
-    }));
-  };
 
   return (
     <div className="w-full bg-gray-50">
@@ -228,6 +149,100 @@ export default function ReturnPolicyPage() {
           </div>
         </section>
 
+        {/* ELIGIBLE & NON-RETURNABLE PRODUCTS */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-green-50 rounded-2xl text-green-600">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Sản phẩm đủ điều kiện đổi trả
+              </h2>
+            </div>
+            <ul className="space-y-4 text-sm text-gray-600">
+              <li className="flex gap-2">
+                <span className="text-green-500 font-bold">•</span>
+                <span>Sản phẩm bị lỗi kỹ thuật hoặc hư hỏng do lỗi từ nhà sản xuất.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-green-500 font-bold">•</span>
+                <span>Sản phẩm bị giao sai quy cách, sai màu sắc, kích thước so với đơn đặt hàng.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-green-500 font-bold">•</span>
+                <span>Sản phẩm còn nguyên mới, chưa qua sử dụng, còn đầy đủ tem nhãn và niêm phong của nhà sản xuất.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-green-500 font-bold">•</span>
+                <span>Hộp và bao bì sản phẩm phải còn nguyên vẹn, không có dấu hiệu móp méo nghiêm trọng.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-red-50 rounded-2xl text-red-600">
+                <XCircle className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Sản phẩm không hỗ trợ đổi trả
+              </h2>
+            </div>
+            <ul className="space-y-4 text-sm text-gray-600">
+              <li className="flex gap-2">
+                <span className="text-red-500 font-bold">•</span>
+                <span>Sản phẩm thuộc chương trình thanh lý hàng tồn kho, giảm giá sâu (được gắn nhãn Final Sale).</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-red-500 font-bold">•</span>
+                <span>Sản phẩm thuộc ngành hàng đồ lót, đồ mặc nhà, sản phẩm vệ sinh cá nhân khi đã tháo niêm phong.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-red-500 font-bold">•</span>
+                <span>Sản phẩm bị hư hỏng do tác động vật lý của khách hàng (làm rơi vỡ, trầy xước, giặt ủi sai quy cách).</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-red-500 font-bold">•</span>
+                <span>Yêu cầu đổi trả gửi trễ sau 7 ngày kể từ khi đơn hàng được đánh dấu giao thành công.</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* SUPPORT CONTACT INFORMATION */}
+        <section className="bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 rounded-3xl p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-gray-900">Bạn cần hỗ trợ thêm?</h2>
+            <p className="text-sm text-gray-600 max-w-xl">
+              Đội ngũ chăm sóc khách hàng của chúng tôi sẵn sàng hỗ trợ giải đáp mọi thắc mắc về quy trình đổi trả hàng và hoàn tiền 24/7.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-shrink-0">
+            <div className="bg-white border border-gray-150 rounded-2xl p-4 flex items-center gap-3">
+              <Phone className="w-5 h-5 text-amber-500" />
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase">Hotline</p>
+                <p className="text-xs font-bold text-gray-800">1900 636 999</p>
+              </div>
+            </div>
+            <div className="bg-white border border-gray-150 rounded-2xl p-4 flex items-center gap-3">
+              <Mail className="w-5 h-5 text-amber-500" />
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase">Email hỗ trợ</p>
+                <p className="text-xs font-bold text-gray-800 font-mono">support@ecommerce.com</p>
+              </div>
+            </div>
+            <div className="bg-white border border-gray-150 rounded-2xl p-4 flex items-center gap-3">
+              <MessageSquare className="w-5 h-5 text-amber-500" />
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase">Trực tuyến</p>
+                <p className="text-xs font-bold text-gray-800">Live chat 24/7</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* FAQ */}
         <section className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">
@@ -263,248 +278,6 @@ export default function ReturnPolicyPage() {
           </div>
         </section>
 
-        {/* REQUEST RETURN */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <form
-            onSubmit={handleSubmit}
-            className="lg:col-span-2 bg-white border border-gray-200 rounded-3xl p-8 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {t("returnPolicy.request.title")}
-              </h2>
-              <p className="text-sm text-gray-600 mt-2">
-                {t("returnPolicy.request.subtitle")}
-              </p>
-            </div>
-
-            {submitStatus && (
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {submitStatus}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  {t("returnPolicy.form.orderLabel")}
-                </label>
-                <select
-                  value={form.orderId}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      orderId: event.target.value,
-                      orderItemId:
-                        orders.find((order) => order.id === event.target.value)
-                          ?.items[0].id ?? "",
-                    }))
-                  }
-                  className="mt-2 w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-yellow-600">
-                  {orders.map((order) => (
-                    <option key={order.id} value={order.id}>
-                      {order.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  {t("returnPolicy.form.productLabel")}
-                </label>
-                <select
-                  value={form.orderItemId}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      orderItemId: event.target.value,
-                    }))
-                  }
-                  className="mt-2 w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-yellow-600">
-                  {(selectedOrder?.items ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-                <label className="text-sm font-medium text-gray-700">
-                  {t("returnPolicy.form.reasonLabel")}
-                </label>
-                <input
-                  value={form.reason}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, reason: event.target.value }))
-                  }
-                  placeholder={t("returnPolicy.form.reasonPlaceholder")}
-                  className="mt-2 w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-yellow-600"
-                />
-              </div>
-
-            <div>
-                <label className="text-sm font-medium text-gray-700">
-                  {t("returnPolicy.form.noteLabel")}
-                </label>
-                <textarea
-                  rows={4}
-                  value={form.note}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, note: event.target.value }))
-                  }
-                  placeholder={t("returnPolicy.form.notePlaceholder")}
-                  className="mt-2 w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-yellow-600"
-                />
-              </div>
-
-            <div>
-                <label className="text-sm font-medium text-gray-700">
-                  {t("returnPolicy.form.uploadLabel")}
-                </label>
-                <label className="mt-2 flex items-center gap-3 border border-dashed border-gray-300 rounded-2xl px-4 py-4 cursor-pointer hover:border-yellow-600 transition">
-                  <ImageUp className="w-5 h-5 text-yellow-600" />
-                  <span className="text-sm text-gray-600">
-                    {form.images?.length
-                      ? t("returnPolicy.form.uploadSelected", {
-                          count: form.images.length,
-                        })
-                      : t("returnPolicy.form.uploadPrompt")}
-                  </span>
-                <input
-                  type="file"
-                  multiple
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      images: event.target.files,
-                    }))
-                  }
-                  className="hidden"
-                />
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white rounded-full py-3 font-semibold transition">
-              {t("returnPolicy.form.submit")}
-            </button>
-          </form>
-
-          <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {t("returnPolicy.status.title")}
-              </h3>
-              <p className="text-sm text-gray-600 mt-2">
-                {t("returnPolicy.status.subtitle")}
-              </p>
-
-              <div className="mt-4 space-y-3">
-                {returnStatuses.map((status) => (
-                  <div
-                    key={status.value}
-                    className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {status.label}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {status.description}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold border rounded-full px-3 py-1 ${statusStyles[status.value]}`}>
-                      {status.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {t("returnPolicy.refund.title")}
-              </h3>
-              <p className="text-sm text-gray-600 mt-2">
-                {t("returnPolicy.refund.subtitle")}
-              </p>
-              <div className="mt-4 flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-4">
-                <div>
-                  <p className="text-sm text-gray-500">
-                    {t("returnPolicy.refund.estimatedLabel")}
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">$120.00</p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Clock3 className="w-4 h-4" />
-                  {t("returnPolicy.refund.eta")}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {t("returnPolicy.latest.title")}
-              </h3>
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">
-                    {t("returnPolicy.latest.requestId")}
-                  </span>
-                  <span className="font-medium text-gray-900">RR-2026-058</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">
-                    {t("returnPolicy.latest.order")}
-                  </span>
-                  <span className="font-medium text-gray-900">#ORD-1001</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">
-                    {t("returnPolicy.latest.status")}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 text-yellow-700 px-3 py-1 text-xs font-semibold">
-                    <Clock3 className="w-3 h-3" />
-                    {t("returnPolicy.latest.pendingReview")}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">
-                    {t("returnPolicy.latest.updated")}
-                  </span>
-                  <span className="font-medium text-gray-900">
-                    {t("returnPolicy.latest.today")}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="mt-2 w-full border border-gray-300 rounded-full py-2 text-sm font-semibold text-gray-700 hover:border-yellow-600 hover:text-yellow-600 transition">
-                  {t("returnPolicy.latest.viewHistory")}
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {t("returnPolicy.help.title")}
-              </h3>
-              <p className="text-sm text-gray-600 mt-2">
-                {t("returnPolicy.help.subtitle")}
-              </p>
-              <div className="mt-4 flex items-center gap-3 text-sm text-gray-700">
-                <Truck className="w-4 h-4 text-yellow-600" />
-                {t("returnPolicy.help.shipping")}
-              </div>
-              <div className="mt-2 flex items-center gap-3 text-sm text-gray-700">
-                <XCircle className="w-4 h-4 text-yellow-600" />
-                {t("returnPolicy.help.escalation")}
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

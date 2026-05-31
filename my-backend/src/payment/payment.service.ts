@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
 import { DataSource, LessThan, Repository } from 'typeorm';
 import axios from 'axios';
+import { randomUUID, createHash } from 'crypto';
 
 import { Payment } from './entities/payment.entity';
 import { QrPayment } from './entities/qr-payment.entity';
@@ -77,6 +78,23 @@ export class PaymentService {
     private mailService: MailService,
   ) {}
 
+  private webhookFailureCounter = 0;
+  private lastWebhookFailureTime = 0;
+
+  private trackWebhookFailure(paymentId: number, error: any) {
+    const now = Date.now();
+    if (now - this.lastWebhookFailureTime > 60000) {
+      this.webhookFailureCounter = 0;
+    }
+    this.webhookFailureCounter++;
+    this.lastWebhookFailureTime = now;
+
+    console.error(`[ALERT] Webhook processing failed for payment ${paymentId}. Error: ${error.message || error}`);
+    if (this.webhookFailureCounter >= 5) {
+      console.warn(`[CRITICAL ALERT] Webhook failure threshold exceeded! ${this.webhookFailureCounter} failures in the last minute. Redis/Sentry Alert should be triggered here in production.`);
+    }
+  }
+
   async create(dto: CreatePaymentDto) {
     const payment = this.paymentRepo.create({
       ...dto,
@@ -106,7 +124,7 @@ export class PaymentService {
     });
   }
 
-  async getPaymentStatus(paymentId: number) {
+  async getPaymentStatus(paymentId: number, token?: string, userId?: number) {
     const payment = await this.paymentRepo.findOne({
       where: { id: paymentId },
     });
@@ -115,18 +133,57 @@ export class PaymentService {
       throw new NotFoundException('Payment not found');
     }
 
+    const order = await this.orderRepo.findOne({
+      where: { id: payment.order_id },
+      relations: ['user'],
+    });
+
+    // Check ownership
+    let isAuthorized = false;
+
+    // 1. If user is logged in and is the owner
+    if (userId && order?.user?.id === userId) {
+      isAuthorized = true;
+    }
+
+    // 2. If token is provided and matches tokenHash in DB (or matches guest email for fallback)
+    if (token) {
+      if (payment.tokenHash) {
+        const providedHash = createHash('sha256').update(token).digest('hex');
+        if (payment.tokenHash === providedHash) {
+          isAuthorized = true;
+        }
+      } else if (order?.guestEmail && order.guestEmail === token) {
+        // Fallback for legacy payments: authorize and auto-generate tokenHash for future visits
+        isAuthorized = true;
+        const newToken = `pay_tok_${randomUUID().replace(/-/g, '')}`;
+        payment.tokenHash = createHash('sha256').update(newToken).digest('hex');
+        await this.paymentRepo.save(payment);
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new BadRequestException('Bạn không có quyền truy cập thông tin thanh toán này.');
+    }
+
     if (payment.method !== 'qr') {
       throw new BadRequestException('Webhook only supports QR payments');
     }
-
-    const order = await this.orderRepo.findOne({
-      where: { id: payment.order_id },
-    });
 
     const qrPayment = await this.qrPaymentRepo.findOne({
       where: { payment: { id: payment.id } },
       order: { createdAt: 'DESC' },
     });
+
+    // Mask accountNumber if status is not pending
+    let maskedAccountNumber = qrPayment?.accountNumber ?? '';
+    if (payment.status !== 'pending' && maskedAccountNumber) {
+      if (maskedAccountNumber.length > 3) {
+        maskedAccountNumber = '*'.repeat(maskedAccountNumber.length - 3) + maskedAccountNumber.slice(-3);
+      } else {
+        maskedAccountNumber = '***';
+      }
+    }
 
     return {
       paymentId: payment.id,
@@ -143,13 +200,13 @@ export class PaymentService {
             status: qrPayment.status,
             bankName: qrPayment.bankName,
             accountName: qrPayment.accountName,
-            accountNumber: qrPayment.accountNumber,
+            accountNumber: maskedAccountNumber,
           }
         : null,
     };
   }
 
-  async regenerateQr(paymentId: number, machineId: string) {
+  async regenerateQr(paymentId: number, machineId: string, token?: string, userId?: number) {
     const payment = await this.paymentRepo.findOne({
       where: { id: paymentId },
     });
@@ -158,20 +215,41 @@ export class PaymentService {
       throw new NotFoundException('Payment not found');
     }
 
+    const order = await this.orderRepo.findOne({
+      where: { id: payment.order_id },
+      relations: ['user'],
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Check ownership
+    let isAuthorized = false;
+    if (userId && order.user?.id === userId) {
+      isAuthorized = true;
+    }
+    if (token) {
+      if (payment.tokenHash) {
+        const providedHash = createHash('sha256').update(token).digest('hex');
+        if (payment.tokenHash === providedHash) {
+          isAuthorized = true;
+        }
+      } else if (order.guestEmail && order.guestEmail === token) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new BadRequestException('Bạn không có quyền truy cập thông tin thanh toán này.');
+    }
+
     if (payment.method !== 'qr') {
       throw new BadRequestException('Payment method does not support QR.');
     }
 
     if (payment.status === 'paid') {
       throw new BadRequestException('Payment already completed.');
-    }
-
-    const order = await this.orderRepo.findOne({
-      where: { id: payment.order_id },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
     }
 
     const addInfoBase = `ORD${order.id}-PAY${payment.id}`;
@@ -237,9 +315,10 @@ export class PaymentService {
   }
 
   async handleWebhook(dto: PaymentWebhookDto, raw: Record<string, unknown>) {
-    const payment = await this.paymentRepo.findOne({
-      where: { id: dto.paymentId },
-    });
+    try {
+      const payment = await this.paymentRepo.findOne({
+        where: { id: dto.paymentId },
+      });
 
     if (!payment) {
       throw new NotFoundException('Payment not found');
@@ -425,6 +504,10 @@ export class PaymentService {
 
       return { status: 'ok' };
     });
+    } catch (error) {
+      this.trackWebhookFailure(dto.paymentId, error);
+      throw error;
+    }
   }
 
   async generateVietQr(dto: GenerateVietQrDto) {
@@ -463,13 +546,31 @@ export class PaymentService {
       headers['x-api-key'] = apiKey;
     }
 
-    try {
-      const response = await axios.post(
-        'https://api.vietqr.io/v2/generate',
-        payload,
-        { headers, timeout: 10000 },
-      );
+    let attempts = 0;
+    const maxAttempts = 3;
+    let delay = 1000;
+    let response: any;
 
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        response = await axios.post(
+          'https://api.vietqr.io/v2/generate',
+          payload,
+          { headers, timeout: 10000 },
+        );
+        break;
+      } catch (error: any) {
+        console.error(`[VietQR API] Attempt ${attempts} failed:`, error.message || error);
+        if (attempts >= maxAttempts) {
+          throw new ServiceUnavailableException(`VietQR service unavailable after ${maxAttempts} attempts. Error: ${error.message}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2;
+      }
+    }
+
+    try {
       const body = response.data;
       if (!body || body.code !== '00') {
         throw new BadRequestException(
@@ -491,7 +592,7 @@ export class PaymentService {
         expiredAt: expiredAt.toISOString(),
       };
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof BadRequestException || error instanceof ServiceUnavailableException) {
         throw error;
       }
       throw new ServiceUnavailableException('VietQR service unavailable.');

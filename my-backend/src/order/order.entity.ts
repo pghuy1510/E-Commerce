@@ -78,6 +78,9 @@ export class Order {
   @Column({ default: 'pending' })
   status!: string;
 
+  @Column({ name: 'delivered_at', type: 'timestamptz', nullable: true })
+  deliveredAt?: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   created_at!: Date;
 

@@ -42,3 +42,24 @@ export function toLegacyAddressPayload<T extends VietnamAddressInput>(
     detail: address.addressDetail || address.detail || "",
   };
 }
+
+export function isAddressValid(addr: any): boolean {
+  return Boolean(
+    addr?.provinceId &&
+    addr?.wardId &&
+    addr?.addressDetail?.trim() &&
+    addr?.receiverName?.trim() &&
+    addr?.receiverPhone?.trim()
+  );
+}
+
+export function getAddressMissingFields(addr: any): string[] {
+  const missing: string[] = [];
+  if (!addr?.provinceId) missing.push("Tỉnh/Thành");
+  if (!addr?.wardId) missing.push("Xã/Phường");
+  if (!addr?.addressDetail?.trim()) missing.push("Địa chỉ chi tiết");
+  if (!addr?.receiverName?.trim()) missing.push("Tên người nhận");
+  if (!addr?.receiverPhone?.trim()) missing.push("Số điện thoại");
+  return missing;
+}
+

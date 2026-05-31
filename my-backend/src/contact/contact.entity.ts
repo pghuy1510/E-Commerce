@@ -22,6 +22,9 @@ export class ContactMessage {
   @Column('text')
   message!: string;
 
+  @Column({ name: 'image_proof', type: 'text', nullable: true })
+  imageProof?: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

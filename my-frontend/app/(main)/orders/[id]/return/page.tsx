@@ -2,17 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Image as ImageIcon, ShieldAlert, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { ArrowLeft, Loader2, ImageUp, AlertCircle, CheckCircle } from "lucide-react";
 import { orderAPI } from "@/lib/api";
-import { usePreferences } from "@/lib/i18n";
 
-const reasons = [
-  "Sách bị rách, nát hoặc ướt",
-  "Nội dung sách in sai/thiếu trang",
-  "Sách giao sai tựa đề hoặc sai số lượng",
-  "Không giống với mô tả hình ảnh trên web",
-  "Không còn nhu cầu mua nữa (Đổi ý)",
+const REASONS = [
+  "Sản phẩm bị lỗi kỹ thuật / không hoạt động",
+  "Sản phẩm bị bể vỡ / móp méo khi vận chuyển",
+  "Gửi sai sản phẩm / thiếu phụ kiện",
+  "Sản phẩm không đúng mô tả trên website",
+  "Tôi không còn nhu cầu sử dụng (Sản phẩm chưa mở seal)",
 ];
 
 export default function OrderReturnPage() {
@@ -20,75 +19,92 @@ export default function OrderReturnPage() {
   const router = useRouter();
   const orderId = Number(params.id);
 
-  const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [reason, setReason] = useState("");
-  const [customReason, setCustomReason] = useState("");
-  const [imageLink, setImageLink] = useState("");
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [order, setOrder] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const { t, formatPrice } = usePreferences();
+  const [reason, setReason] = useState(REASONS[0]);
+  const [note, setNote] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
+    async function loadOrder() {
+      try {
+        setLoading(true);
+        const data = await orderAPI.getById(orderId);
+        setOrder(data);
+
+        // Verify status
+        if (data.status !== "delivered") {
+          setError("Chỉ đơn hàng đã giao thành công mới có thể yêu cầu trả hàng.");
+        } else {
+          // Check 7 days limit
+          const deliveredAt = data.deliveredAt;
+          if (deliveredAt) {
+            const diffTime = Math.abs(new Date().getTime() - new Date(deliveredAt).getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays > 7) {
+              setError("Đơn hàng đã giao thành công quá 7 ngày, quá thời hạn yêu cầu đổi trả.");
+            }
+          }
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Không thể tải thông tin đơn hàng.");
+      } finally {
+        setLoading(false);
+      }
+    }
     if (orderId) {
-      fetchOrder();
+      loadOrder();
     }
   }, [orderId]);
 
-  const fetchOrder = async () => {
-    try {
-      setLoading(true);
-      const data = await orderAPI.getById(orderId);
-      setOrder(data);
-      if (data.status !== "delivered") {
-        setMessage({
-          text: "Chỉ đơn hàng đã giao thành công mới có thể yêu cầu trả hàng.",
-          type: "error",
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage({ text: "Lỗi tải thông tin đơn hàng.", type: "error" });
-    } finally {
-      setLoading(false);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Kích thước ảnh không được vượt quá 5MB.");
+      return;
     }
+
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedMimeTypes.includes(file.type)) {
+      alert("Chỉ chấp nhận ảnh định dạng JPG, PNG hoặc WEBP.");
+      return;
+    }
+
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason) {
-      setMessage({ text: "Vui lòng chọn lý do trả hàng.", type: "error" });
-      return;
-    }
-
-    const finalReason = reason === "Khác" ? customReason : reason;
-    if (!finalReason.trim()) {
-      setMessage({ text: "Vui lòng nhập lý do cụ thể.", type: "error" });
+      alert("Vui lòng chọn lý do trả hàng.");
       return;
     }
 
     try {
       setSubmitting(true);
-      setMessage(null);
       await orderAPI.requestReturn(orderId, {
-        reason: finalReason,
-        imageProof: imageLink || "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=800", // Fallback mock image proof
+        reason: `${reason}${note ? ` - Chi tiết: ${note}` : ""}`,
+        imageProof: imagePreview || undefined,
       });
-
-      setMessage({
-        text: "Gửi yêu cầu trả hàng thành công! Đang chuyển hướng về chi tiết đơn hàng...",
-        type: "success",
-      });
+      setSuccess(true);
       setTimeout(() => {
         router.push(`/orders/${orderId}`);
-      }, 2500);
+      }, 2000);
     } catch (err: any) {
-      console.error(err);
-      setMessage({
-        text: err?.response?.data?.message || "Không thể gửi yêu cầu trả hàng lúc này.",
-        type: "error",
-      });
+      alert(err.response?.data?.message || "Yêu cầu trả hàng thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -97,123 +113,149 @@ export default function OrderReturnPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-10 h-10 text-yellow-600 animate-spin" />
-          <p className="text-gray-500 font-medium">Đang tải thông tin đơn hàng...</p>
+        <div className="text-center space-y-2">
+          <Loader2 className="w-8 h-8 animate-spin text-yellow-600 mx-auto" />
+          <p className="text-gray-500 text-sm">Đang tải thông tin đơn hàng...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="max-w-md mx-auto bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+          <h2 className="text-xl font-bold text-gray-900">Không thể yêu cầu trả hàng</h2>
+          <p className="text-sm text-gray-600">{error}</p>
+          <Link
+            href={`/orders/${orderId}`}
+            className="block w-full bg-yellow-600 hover:bg-yellow-700 text-white rounded-full py-2.5 font-semibold text-sm transition"
+          >
+            Quay lại chi tiết đơn hàng
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="max-w-md mx-auto bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center space-y-4">
+          <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+          <h2 className="text-xl font-bold text-gray-900">Gửi yêu cầu thành công</h2>
+          <p className="text-sm text-gray-600">
+            Yêu cầu đổi trả đã được gửi tới hệ thống. Bạn đang được chuyển hướng quay lại trang chi tiết đơn hàng...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#efefef] py-10 px-4">
-      <div className="max-w-2xl mx-auto bg-white rounded-3xl border border-gray-200 p-8 shadow-sm space-y-6">
-        
-        {/* HEADER */}
-        <div className="flex items-center gap-3">
-          <Link href={`/orders/${orderId}`} className="text-gray-400 hover:text-yellow-600 transition">
-            <ArrowLeft size={20} />
-          </Link>
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* BACK ACTION */}
+        <Link href={`/orders/${orderId}`} className="flex items-center gap-2 text-gray-600 hover:text-yellow-600 transition font-medium">
+          <ArrowLeft size={18} /> Quay lại đơn hàng
+        </Link>
+
+        <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Yêu cầu Trả hàng / Hoàn tiền</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Yêu cầu đổi trả sản phẩm</h1>
             <p className="text-sm text-gray-500 mt-1">Đơn hàng #ORD-{orderId}</p>
           </div>
-        </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-2xl text-sm flex gap-2.5 items-start border ${
-              message.type === "success"
-                ? "bg-green-50 border-green-200 text-green-700"
-                : "bg-red-50 border-red-200 text-red-700"
-            }`}
-          >
-            {message.type === "success" ? <CheckCircle size={18} className="shrink-0 mt-0.5" /> : <ShieldAlert size={18} className="shrink-0 mt-0.5" />}
-            <span>{message.text}</span>
+          {/* ITEM SUMMARY */}
+          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3">
+            <h3 className="text-xs font-semibold uppercase text-gray-400">Danh sách sản phẩm đổi trả</h3>
+            <div className="divide-y divide-gray-100">
+              {order.items?.map((item: any) => (
+                <div key={item.id} className="py-2.5 flex justify-between text-sm">
+                  <span className="text-gray-800 font-medium">{item.productName}</span>
+                  <span className="text-gray-500">x{item.quantity}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
 
-        {order && order.status === "delivered" && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* REASON SELECT */}
+            {/* REASON */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Lý do hoàn trả *</label>
+              <label className="text-sm font-semibold text-gray-700">Lý do đổi trả</label>
               <select
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-600 bg-white text-sm"
-                required
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-yellow-600 bg-white text-sm"
               >
-                <option value="">-- Chọn lý do --</option>
-                {reasons.map((r) => (
+                {REASONS.map((r) => (
                   <option key={r} value={r}>
                     {r}
                   </option>
                 ))}
-                <option value="Khác">Lý do khác...</option>
               </select>
             </div>
 
-            {/* CUSTOM REASON TEXTAREA */}
-            {reason === "Khác" && (
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700">Mô tả lý do chi tiết *</label>
-                <textarea
-                  rows={4}
-                  placeholder="Vui lòng cung cấp thêm chi tiết về vấn đề sản phẩm..."
-                  value={customReason}
-                  onChange={(e) => setCustomReason(e.target.value)}
-                  className="w-full p-4 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-600 text-sm"
-                  required
-                />
-              </div>
-            )}
-
-            {/* IMAGE PROOF URL */}
+            {/* DETAIL NOTES */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Ảnh minh chứng (Link ảnh hoặc URL) - Không bắt buộc</label>
-              <div className="relative">
-                <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={imageLink}
-                  onChange={(e) => setImageLink(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-600 text-sm"
-                />
-              </div>
-              <p className="text-[10px] text-gray-400 italic">Gợi ý: Bạn có thể copy bất kỳ link hình ảnh sản phẩm lỗi nào để làm ảnh minh chứng.</p>
+              <label className="text-sm font-semibold text-gray-700">Mô tả chi tiết lỗi / lý do</label>
+              <textarea
+                rows={4}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Vui lòng cung cấp thêm thông tin chi tiết về tình trạng sản phẩm để admin xử lý nhanh chóng hơn..."
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-yellow-600 text-sm"
+              />
             </div>
 
-            {/* REFUND SUMMARY */}
-            <div className="p-5 bg-yellow-50/50 border border-yellow-100 rounded-3xl space-y-2">
-              <span className="text-xs font-semibold text-yellow-800 uppercase tracking-wider block">Ước tính số tiền hoàn trả</span>
-              <p className="text-3xl font-extrabold text-yellow-600">{formatPrice(order.totalAmount)}</p>
-              <span className="text-[10px] text-gray-400 block">Dự kiến hoàn trả đầy đủ bao gồm giá trị đơn hàng thực thanh toán.</span>
-            </div>
-
-            {/* BUTTONS */}
-            <div className="flex gap-4 pt-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 h-12 bg-yellow-500 text-white rounded-2xl font-bold hover:bg-yellow-600 transition shadow-md disabled:opacity-50 text-sm"
-              >
-                {submitting ? "Đang gửi yêu cầu..." : "Gửi yêu cầu hoàn tiền"}
-              </button>
+            {/* IMAGE PROOF */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700">Ảnh minh chứng sản phẩm lỗi (Tối đa 5MB)</label>
               
-              <button
-                type="button"
-                onClick={() => router.push(`/orders/${orderId}`)}
-                className="px-6 h-12 border rounded-2xl font-semibold hover:bg-gray-50 transition text-sm bg-white text-gray-700"
-              >
-                Hủy bỏ
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-2xl p-6 cursor-pointer hover:border-yellow-600 transition">
+                  <ImageUp className="w-8 h-8 text-yellow-600 mb-2" />
+                  <span className="text-xs text-gray-600 font-medium text-center">
+                    {imageFile ? imageFile.name : "Nhấp để chọn ảnh chụp"}
+                  </span>
+                  <span className="text-[10px] text-gray-400 mt-1">Chấp nhận JPG, PNG, WEBP</span>
+                  <input type="file" onChange={handleImageChange} className="hidden" accept="image/*" />
+                </label>
+
+                {imagePreview && (
+                  <div className="relative border border-gray-200 rounded-2xl overflow-hidden flex items-center justify-center bg-gray-50 p-2">
+                    <img src={imagePreview} alt="Proof preview" className="max-h-32 object-contain rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFile(null);
+                        setImagePreview(null);
+                      }}
+                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white rounded-full py-3.5 font-bold transition flex items-center justify-center gap-2"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> Đang gửi yêu cầu...
+                </>
+              ) : (
+                "Gửi yêu cầu trả hàng"
+              )}
+            </button>
           </form>
-        )}
+        </div>
       </div>
     </div>
   );

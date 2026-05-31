@@ -6,6 +6,7 @@ import { Deal } from './entities/deal.entity';
 import { DealProduct } from './entities/deal-product.entity';
 import { Product } from '../products/products.entity';
 import { Coupon } from '../coupons/coupon.entity';
+import { PromotionLog } from '../promotions/entities/promotion-log.entity';
 
 describe('DealsService', () => {
   let service: DealsService;
@@ -73,6 +74,13 @@ describe('DealsService', () => {
         {
           provide: getRepositoryToken(Coupon),
           useValue: mockCouponRepository,
+        },
+        {
+          provide: getRepositoryToken(PromotionLog),
+          useValue: {
+            create: jest.fn().mockImplementation((dto) => dto),
+            save: jest.fn().mockImplementation((log) => Promise.resolve(log)),
+          },
         },
       ],
     }).compile();
