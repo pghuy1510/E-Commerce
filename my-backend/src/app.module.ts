@@ -36,17 +36,26 @@ import { DealsModule } from './deals/deals.module';
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get('DB_HOST') || 'localhost',
-        port: Number(config.get('DB_PORT')) || 5432,
-        username: config.get('DB_USERNAME') || 'postgres',
-        password: config.get('DB_PASSWORD') || '123456',
-        database: config.get('DB_NAME') || 'ecommerce',
-        autoLoadEntities: true,
-        synchronize: true,
-        logging: true,
-      }),
+      useFactory: (config: ConfigService) => {
+        console.log('========== DB CONFIG ==========');
+        console.log('DB_HOST:', config.get('DB_HOST'));
+        console.log('DB_PORT:', config.get('DB_PORT'));
+        console.log('DB_NAME:', config.get('DB_NAME'));
+        console.log('DB_USERNAME:', config.get('DB_USERNAME'));
+        console.log('================================');
+
+        return {
+          type: 'postgres',
+          host: config.get('DB_HOST') || 'localhost',
+          port: Number(config.get('DB_PORT')) || 5432,
+          username: config.get('DB_USERNAME') || 'postgres',
+          password: config.get('DB_PASSWORD'),
+          database: config.get('DB_NAME'),
+          autoLoadEntities: true,
+          synchronize: true,
+          logging: true,
+        };
+      },
     }),
 
     ProductsModule,
