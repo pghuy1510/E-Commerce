@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { adminAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import RevenueAreaChart from "@/components/admin/dashboard/RevenueAreaChart";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -65,9 +66,6 @@ export default function AdminDashboardPage() {
       </div>
     );
   }
-
-  // Find max sales for chart normalization
-  const maxRevenue = Math.max(...stats.revenueChart.map((c: any) => c.revenue), 100000);
 
   return (
     <div className="space-y-8">
@@ -136,35 +134,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Custom Visual Bar Chart */}
-        <div className="h-64 flex items-end justify-between gap-1 sm:gap-2.5 pt-6 border-b border-gray-100">
-          {stats.revenueChart.map((c: any, i: number) => {
-            const heightPercent = `${Math.max((c.revenue / maxRevenue) * 100, 2)}%`;
-            return (
-              <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                {/* Tooltip on Hover */}
-                <div className="absolute bottom-full mb-2 bg-gray-900 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-15 whitespace-nowrap shadow-lg">
-                  <p className="text-gray-400">{new Date(c.date).toLocaleDateString("vi-VN")}</p>
-                  <p className="text-orange-400 text-xs font-extrabold mt-0.5">{formatPrice(c.revenue)}</p>
-                  <p className="text-blue-400">{c.ordersCount} đơn hàng</p>
-                </div>
-                
-                {/* Bar */}
-                <div
-                  className="w-full bg-orange-500/80 hover:bg-orange-500 rounded-t-md transition-all duration-300 shadow-sm"
-                  style={{ height: heightPercent }}
-                />
-              </div>
-            );
-          })}
-        </div>
-        
-        {/* Chart X Axis Labels */}
-        <div className="flex justify-between text-[10px] text-gray-400 mt-2 font-bold px-1">
-          <span>{new Date(stats.revenueChart[0]?.date).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}</span>
-          <span>{new Date(stats.revenueChart[14]?.date).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}</span>
-          <span>{new Date(stats.revenueChart[stats.revenueChart.length - 1]?.date).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}</span>
-        </div>
+        {/* Premium SVG Area Chart Component */}
+        <RevenueAreaChart data={stats.revenueChart} />
       </div>
 
       {/* RECENT ORDERS & LOW STOCK PRODUCTS ROW */}
