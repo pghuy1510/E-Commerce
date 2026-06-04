@@ -19,7 +19,6 @@ import * as crypto from 'crypto';
 
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { GenerateVietQrDto } from './dto/generate-vietqr.dto';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
 import { RegenerateQrDto } from './dto/regenerate-qr.dto';
 import { PaymentStatusQueryDto } from './dto/payment-status-query.dto';
@@ -66,18 +65,12 @@ export class PaymentController {
     return this.paymentService.create(dto);
   }
 
-  // generate VietQR
-  @Post('vietqr')
-  generateVietQr(@Body() dto: GenerateVietQrDto) {
-    return this.paymentService.generateVietQr(dto);
-  }
+
 
   @Post('webhook')
-  webhook(
+  async webhook(
     @Body() dto: PaymentWebhookDto,
     @Req() req: Request,
-    @Headers('x-webhook-signature') signature?: string,
-    @Headers('x-webhook-secret') secretHeader?: string,
   ) {
     const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip || 'unknown';
     const limitKey = `webhook-${clientIp}`;
@@ -85,14 +78,12 @@ export class PaymentController {
       throw new HttpException('Too many requests. Please try again later.', HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    const webhookSecret = this.configService.get<string>('PAYMENT_WEBHOOK_SECRET') || 'webhook_secret_key_123';
+    const authHeader = req.headers['authorization'];
+    const webhookSecret = this.configService.get<string>('SEPAY_WEBHOOK_SECRET') || 'webhook_secret_key_123';
     let isAuthorized = false;
 
-    if (secretHeader && secretHeader === webhookSecret) {
-      isAuthorized = true;
-    } else if (signature) {
-      const computedSignature = crypto.createHmac('sha256', webhookSecret).update(JSON.stringify(dto)).digest('hex');
-      if (signature === computedSignature) {
+    if (authHeader) {
+      if (authHeader === `Apikey ${webhookSecret}` || authHeader === webhookSecret) {
         isAuthorized = true;
       }
     }
@@ -101,7 +92,8 @@ export class PaymentController {
       throw new UnauthorizedException('Mã xác thực webhook không hợp lệ.');
     }
 
-    return this.paymentService.handleWebhook(dto, dto as any);
+    const result = await this.paymentService.handleWebhook(dto, dto as any);
+    return { success: true, ...result };
   }
 
   @Get(':id/status')

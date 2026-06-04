@@ -21,7 +21,7 @@ export default function PaymentMethods({
   }> = [
     {
       id: "qr",
-      title: "VietQR instant transfer",
+      title: "Instant QR Transfer",
       subtitle: "Scan & pay securely in seconds.",
       icon: QrCode,
     },

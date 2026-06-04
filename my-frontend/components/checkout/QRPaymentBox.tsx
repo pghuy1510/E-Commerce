@@ -38,7 +38,7 @@ export default function QRPaymentBox({
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-900">
-            Thanh toán chuyển khoản VietQR
+            Thanh toán chuyển khoản qua QR
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">
             Quét mã QR hoặc chuyển khoản thủ công qua thông tin bên dưới để hoàn tất đơn hàng.
@@ -51,7 +51,7 @@ export default function QRPaymentBox({
         <div className="flex flex-col items-center justify-center rounded-3xl border border-amber-100 bg-amber-50/20 p-6 shrink-0 lg:w-72">
           <img
             src={qrDataURL}
-            alt="VietQR"
+            alt="QR Code"
             className="h-52 w-52 object-contain rounded-xl shadow-inner bg-white p-2"
           />
           <div className="mt-4 flex items-center gap-2 text-xs text-gray-500 font-semibold">

@@ -1,22 +1,47 @@
-import { IsIn, IsNumber, IsString, MaxLength, Min } from 'class-validator';
+import { IsNumber, IsString, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class PaymentWebhookDto {
   @IsNumber()
-  @Min(1)
-  paymentId!: number;
+  @Type(() => Number)
+  id!: number; // SePay transaction ID
+
+  @IsString()
+  gateway!: string;
+
+  @IsString()
+  transactionDate!: string;
+
+  @IsString()
+  accountNumber!: string;
+
+  @IsString()
+  @IsOptional()
+  subAccount?: string;
+
+  @IsString()
+  @IsOptional()
+  code?: string; // paymentCode
+
+  @IsString()
+  content!: string;
+
+  @IsString()
+  transferType!: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 
   @IsNumber()
-  @Min(1)
-  amount!: number;
+  @Type(() => Number)
+  transferAmount!: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  accumulated?: number;
 
   @IsString()
-  @MaxLength(200)
-  addInfo!: string;
-
-  @IsString()
-  @MaxLength(100)
-  providerTransactionId!: string;
-
-  @IsIn(['paid', 'failed', 'expired', 'refunded'])
-  status!: 'paid' | 'failed' | 'expired' | 'refunded';
+  referenceCode!: string;
 }

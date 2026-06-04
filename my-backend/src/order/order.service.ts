@@ -215,12 +215,14 @@ export class OrderService {
       const paymentToken = `pay_tok_${randomUUID().replace(/-/g, '')}`;
       const tokenHash = createHash('sha256').update(paymentToken).digest('hex');
 
+      const paymentCode = randomUUID().toUpperCase();
       const payment = paymentRepo.create({
         order_id: savedOrder.id,
         method: dto.paymentMethod,
         amount: totalForPayment,
         status: 'pending',
         tokenHash,
+        paymentCode,
       } as any) as unknown as Payment;
 
       const savedPayment = await paymentRepo.save(payment);
@@ -238,11 +240,9 @@ export class OrderService {
           throw new BadRequestException('machineId is required for QR payment');
         }
 
-        const addInfoBase = `ORD${savedOrder.id}-PAY${savedPayment.id}`;
-        const qrResponse = await this.paymentService.generateVietQr({
+        const qrResponse = await this.paymentService.generateSePayQr({
           amount: totalForPayment,
-          addInfo: addInfoBase,
-          machineId: dto.machineId,
+          paymentCode,
         });
 
         const qrToken = randomUUID().replace(/-/g, '');
@@ -251,15 +251,13 @@ export class OrderService {
         savedPayment.expired_at = expiredAt;
         await paymentRepo.save(savedPayment);
 
-        const bankInfo = this.paymentService.getVietQrBankInfo();
-
         const qrPayment = qrPaymentRepo.create({
           order: savedOrder,
           payment: savedPayment,
           qrToken,
-          bankName: bankInfo.bankName,
-          accountName: bankInfo.accountName,
-          accountNumber: bankInfo.accountNumber,
+          bankName: qrResponse.bankName,
+          accountName: qrResponse.accountName,
+          accountNumber: qrResponse.accountNumber,
           amount: totalForPayment,
           addInfo: qrResponse.addInfo,
           qrDataUrl: qrResponse.qrDataURL,
@@ -485,12 +483,14 @@ export class OrderService {
       const paymentToken = `pay_tok_${randomUUID().replace(/-/g, '')}`;
       const tokenHash = createHash('sha256').update(paymentToken).digest('hex');
 
+      const paymentCode = randomUUID().toUpperCase();
       const payment = paymentRepo.create({
         order_id: savedOrder.id,
         method: dto.paymentMethod,
         amount: totalForPayment,
         status: 'pending',
         tokenHash,
+        paymentCode,
       } as any) as unknown as Payment;
 
       const savedPayment = await paymentRepo.save(payment);
@@ -502,11 +502,9 @@ export class OrderService {
           throw new BadRequestException('machineId is required for QR payment');
         }
 
-        const addInfoBase = `ORD${savedOrder.id}-PAY${savedPayment.id}`;
-        const qrResponse = await this.paymentService.generateVietQr({
+        const qrResponse = await this.paymentService.generateSePayQr({
           amount: totalForPayment,
-          addInfo: addInfoBase,
-          machineId: dto.machineId,
+          paymentCode,
         });
 
         const qrToken = randomUUID().replace(/-/g, '');
@@ -515,15 +513,13 @@ export class OrderService {
         savedPayment.expired_at = expiredAt;
         await paymentRepo.save(savedPayment);
 
-        const bankInfo = this.paymentService.getVietQrBankInfo();
-
         const qrPayment = qrPaymentRepo.create({
           order: savedOrder,
           payment: savedPayment,
           qrToken,
-          bankName: bankInfo.bankName,
-          accountName: bankInfo.accountName,
-          accountNumber: bankInfo.accountNumber,
+          bankName: qrResponse.bankName,
+          accountName: qrResponse.accountName,
+          accountNumber: qrResponse.accountNumber,
           amount: totalForPayment,
           addInfo: qrResponse.addInfo,
           qrDataUrl: qrResponse.qrDataURL,
