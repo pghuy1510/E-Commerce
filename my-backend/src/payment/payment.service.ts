@@ -19,6 +19,7 @@ import { CartItem } from '../cart/cart-item.entity';
 import { User } from '../users/entities/user.entity';
 import { CouponService } from '../coupons/coupon.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { Product } from '../products/products.entity';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
 import { calculateCartSubtotal, calculateOrderTotals, toMoneyNumber } from '../order/order-totals';
 import { MailService } from '../common/mail.service';
@@ -537,47 +538,104 @@ export class PaymentService {
     if (!expiredPayments.length) return;
 
     for (const payment of expiredPayments) {
-      await this.paymentRepo.update(payment.id, {
-        status: 'expired',
-        expired_at: now,
-      });
-
-      await this.qrPaymentRepo
-        .createQueryBuilder()
-        .update(QrPayment)
-        .set({ status: 'expired', expiredAt: now })
-        .where('payment_id = :paymentId', { paymentId: payment.id })
-        .andWhere('status = :status', { status: 'pending' })
-        .execute();
-
       const order = await this.orderRepo.findOne({
         where: { id: payment.order_id },
         relations: ['user'],
       });
       if (!order) continue;
 
-      if (order.status === 'pending') {
-        await this.orderRepo.update(order.id, { status: 'cancelled' });
-        await this.orderStatusRepo.save({
-          order,
-          oldStatus: 'pending',
-          newStatus: 'cancelled',
-          note: 'Payment expired',
+      let shouldSendEmail = false;
+      let userEmail: string | null = null;
+      let orderId: number | null = null;
+      let paymentMethod: string | null = null;
+
+      try {
+        await this.dataSource.transaction(async (manager) => {
+          const paymentRepo = manager.getRepository(Payment);
+          const qrPaymentRepo = manager.getRepository(QrPayment);
+          const orderRepo = manager.getRepository(Order);
+          const orderStatusRepo = manager.getRepository(OrderStatusLog);
+          const productRepo = manager.getRepository(Product);
+
+          // 1. Lock and check Payment status
+          const currentPayment = await paymentRepo.findOne({
+            where: { id: payment.id },
+            lock: { mode: 'pessimistic_write' },
+          });
+
+          if (!currentPayment || currentPayment.status !== 'pending') {
+            return; // Already processed
+          }
+
+          currentPayment.status = 'expired';
+          currentPayment.expired_at = now;
+          await paymentRepo.save(currentPayment);
+
+          // 2. Update QrPayment status
+          await qrPaymentRepo
+            .createQueryBuilder()
+            .update(QrPayment)
+            .set({ status: 'expired', expiredAt: now })
+            .where('payment_id = :paymentId', { paymentId: payment.id })
+            .andWhere('status = :status', { status: 'pending' })
+            .execute();
+
+          // 3. Lock Order, check status and restore stock
+          const currentOrder = await orderRepo.findOne({
+            where: { id: order.id },
+            relations: ['items'],
+            lock: { mode: 'pessimistic_write' },
+          });
+
+          if (currentOrder && currentOrder.status === 'pending') {
+            // Restore inventory stock
+            if (currentOrder.items) {
+              for (const item of currentOrder.items) {
+                const product = await productRepo.findOne({
+                  where: { id: item.productId },
+                  lock: { mode: 'pessimistic_write' },
+                });
+                if (product) {
+                  product.stock += item.quantity;
+                  await productRepo.save(product);
+                }
+              }
+            }
+
+            const oldStatus = currentOrder.status;
+            currentOrder.status = 'cancelled';
+            await orderRepo.save(currentOrder);
+
+            await orderStatusRepo.save({
+              order: currentOrder,
+              oldStatus,
+              newStatus: 'cancelled',
+              note: 'Payment expired',
+            });
+
+            // Set variables to send email outside transaction
+            shouldSendEmail = true;
+            userEmail = currentOrder.user?.email || (currentOrder as any).guestEmail;
+            orderId = currentOrder.id;
+            paymentMethod = currentOrder.paymentMethod || 'qr';
+          }
         });
 
-        const userEmail = order.user?.email || (order as any).guestEmail;
-        if (userEmail) {
+        // 4. Send email side-effect outside the transaction
+        if (shouldSendEmail && userEmail && orderId) {
           try {
             this.mailService.sendPaymentStatus(
               userEmail,
-              order.id,
+              orderId,
               false,
-              order.paymentMethod || 'qr',
+              paymentMethod || 'qr',
             );
           } catch (e) {
             console.error('Lỗi khi gửi email thanh toán thất bại (hết hạn):', e);
           }
         }
+      } catch (err) {
+        console.error(`Error during cleanup of expired payment ${payment.id}:`, err);
       }
     }
   }
