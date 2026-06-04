@@ -88,6 +88,15 @@ export class PaymentController {
       }
     }
 
+    console.log('========== WEBHOOK DEBUG ==========');
+    console.log('AUTH HEADER:', req.headers['authorization']);
+    console.log('ENV SECRET:', process.env.SEPAY_WEBHOOK_SECRET);
+    console.log(
+      'CONFIG SECRET:',
+      this.configService.get<string>('SEPAY_WEBHOOK_SECRET'),
+    );
+    console.log('===================================');
+
     if (!isAuthorized) {
       throw new UnauthorizedException('Mã xác thực webhook không hợp lệ.');
     }

@@ -672,6 +672,11 @@ export const adminAPI = {
     const res = await api.patch(`/admin/orders/${id}/status`, payload);
     return res.data;
   },
+  deleteOrder: async (id: number) => {
+    requireAuthToken();
+    const res = await api.delete(`/admin/orders/${id}`);
+    return res.data;
+  },
   getReturns: async () => {
     requireAuthToken();
     const res = await api.get("/admin/returns");
@@ -757,6 +762,23 @@ export const adminAPI = {
   getUserOrders: async (id: number) => {
     requireAuthToken();
     const res = await api.get(`/admin/users/${id}/orders`);
+    return res.data;
+  },
+  updateUser: async (id: number, payload: {
+    username?: string;
+    email?: string;
+    fullName?: string;
+    phone?: string;
+    role?: string;
+    isActive?: boolean;
+  }) => {
+    requireAuthToken();
+    const res = await api.patch(`/admin/users/${id}`, payload);
+    return res.data;
+  },
+  deleteUser: async (id: number) => {
+    requireAuthToken();
+    const res = await api.delete(`/admin/users/${id}`);
     return res.data;
   },
 

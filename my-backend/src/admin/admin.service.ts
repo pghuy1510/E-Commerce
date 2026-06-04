@@ -8,6 +8,9 @@ import { OrderStatusLog } from '../order/order-status-log.entity';
 import { User } from '../users/entities/user.entity';
 import { Category } from '../categories/categories.entity';
 import { PromotionLog } from '../promotions/entities/promotion-log.entity';
+import { Cart } from '../cart/cart.entity';
+import { CartItem } from '../cart/cart-item.entity';
+import { Payment } from '../payment/entities/payment.entity';
 
 @Injectable()
 export class AdminService {
@@ -146,6 +149,62 @@ export class AdminService {
       note?: string;
     },
   ) {
+    return this.dataSource.transaction(async (manager) => {
+      const orderRepo = manager.getRepository(Order);
+      const productRepo = manager.getRepository(Product);
+      const logRepo = manager.getRepository(OrderStatusLog);
+
+      const order = await orderRepo.findOne({
+        where: { id: orderId },
+        relations: ['items'],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!order) {
+        throw new NotFoundException('Không tìm thấy đơn hàng');
+      }
+
+      const oldStatus = order.status;
+      order.status = dto.status;
+      if (dto.status === 'delivered') {
+        order.deliveredAt = new Date();
+      }
+
+      if (dto.trackingNumber !== undefined) {
+        order.trackingNumber = dto.trackingNumber;
+      }
+
+      if (dto.estimatedDeliveryDate !== undefined) {
+        order.estimatedDeliveryDate = dto.estimatedDeliveryDate ? new Date(dto.estimatedDeliveryDate) : null;
+      }
+
+      // Restore inventory if status changed to cancelled and it wasn't cancelled before
+      if (dto.status === 'cancelled' && oldStatus !== 'cancelled') {
+        for (const item of order.items) {
+          const product = await productRepo.findOne({ where: { id: item.productId } });
+          if (product) {
+            product.stock += item.quantity;
+            await productRepo.save(product);
+          }
+        }
+      }
+
+      // Save Status Log
+      const log = logRepo.create({
+        order,
+        oldStatus,
+        newStatus: dto.status,
+        note: dto.note || `Trạng thái được cập nhật bởi Admin`,
+      });
+
+      await orderRepo.save(order);
+      await logRepo.save(log);
+
+      return order;
+    });
+  }
+
+  async deleteOrder(orderId: number) {
     const order = await this.orderRepo.findOne({
       where: { id: orderId },
       relations: ['items'],
@@ -155,33 +214,22 @@ export class AdminService {
       throw new NotFoundException('Không tìm thấy đơn hàng');
     }
 
-    const oldStatus = order.status;
-    order.status = dto.status;
-    if (dto.status === 'delivered') {
-      order.deliveredAt = new Date();
+    if (order.status !== 'cancelled') {
+      throw new BadRequestException('Chỉ có thể xóa đơn hàng đã bị hủy');
     }
 
-    if (dto.trackingNumber !== undefined) {
-      order.trackingNumber = dto.trackingNumber;
-    }
+    await this.dataSource.transaction(async (manager) => {
+      const orderRepo = manager.getRepository(Order);
+      const paymentRepo = manager.getRepository(Payment);
 
-    if (dto.estimatedDeliveryDate !== undefined) {
-      order.estimatedDeliveryDate = dto.estimatedDeliveryDate ? new Date(dto.estimatedDeliveryDate) : null;
-    }
+      // Delete associated payments first (no cascade on payment.order_id column)
+      await paymentRepo.delete({ order_id: orderId });
 
-    // Save Status Log
-    const logRepo = this.dataSource.getRepository(OrderStatusLog);
-    const log = logRepo.create({
-      order,
-      oldStatus,
-      newStatus: dto.status,
-      note: dto.note || `Trạng thái được cập nhật bởi Admin`,
+      // Delete order (order_items, order_status_logs, order_shipping_addresses, qr_payments CASCADE delete)
+      await orderRepo.remove(order);
     });
 
-    await this.orderRepo.save(order);
-    await logRepo.save(log);
-
-    return order;
+    return { success: true };
   }
 
   async getReturns() {
@@ -462,8 +510,74 @@ export class AdminService {
   async listUsers() {
     return this.userRepo.find({
       order: { id: 'ASC' },
-      select: ['id', 'username', 'email', 'role', 'isActive', 'created_at', 'totalSpent'],
+      select: ['id', 'username', 'email', 'role', 'isActive', 'created_at', 'totalSpent', 'fullName', 'phone'],
     });
+  }
+
+  async updateUser(
+    userId: number,
+    dto: {
+      username?: string;
+      email?: string;
+      fullName?: string;
+      phone?: string;
+      role?: string;
+      isActive?: boolean;
+    },
+  ) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    if (dto.username !== undefined) {
+      const existingUser = await this.userRepo.findOne({ where: { username: dto.username } });
+      if (existingUser && existingUser.id !== userId) {
+        throw new BadRequestException('Tên đăng nhập đã tồn tại');
+      }
+      user.username = dto.username;
+    }
+
+    if (dto.email !== undefined) {
+      const existingUser = await this.userRepo.findOne({ where: { email: dto.email } });
+      if (existingUser && existingUser.id !== userId) {
+        throw new BadRequestException('Email đã tồn tại');
+      }
+      user.email = dto.email;
+    }
+
+    if (dto.fullName !== undefined) user.fullName = dto.fullName;
+    if (dto.phone !== undefined) user.phone = dto.phone;
+    if (dto.role !== undefined) user.role = dto.role;
+    if (dto.isActive !== undefined) user.isActive = dto.isActive;
+
+    return this.userRepo.save(user);
+  }
+
+  async deleteUser(userId: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      // 1. Set orders user_id = null
+      await manager.getRepository(Order).update({ user: { id: userId } }, { user: null });
+
+      // 2. Delete Carts & Cart Items
+      const cartRepo = manager.getRepository(Cart);
+      const cartItemRepo = manager.getRepository(CartItem);
+      const carts = await cartRepo.find({ where: { user: { id: userId } } });
+      for (const cart of carts) {
+        await cartItemRepo.delete({ cart: { id: cart.id } });
+        await cartRepo.remove(cart);
+      }
+
+      // 3. Delete User (Other tables will CASCADE delete automatically)
+      await manager.getRepository(User).remove(user);
+    });
+
+    return { success: true };
   }
 
   async updateUserRole(userId: number, role: string) {

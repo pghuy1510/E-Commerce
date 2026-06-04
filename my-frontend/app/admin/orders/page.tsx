@@ -17,7 +17,8 @@ import {
   DollarSign,
   History,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Trash2
 } from "lucide-react";
 import { adminAPI, orderAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
@@ -250,6 +251,21 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const handleDeleteOrder = async (orderId: number) => {
+    if (!confirm(`Xác nhận xóa vĩnh viễn đơn hàng #ORD-${orderId}? Hành động này sẽ loại bỏ đơn hàng khỏi hệ thống và không thể hoàn tác.`)) return;
+    try {
+      setLoading(true);
+      await adminAPI.deleteOrder(orderId);
+      alert("Xóa đơn hàng thành công!");
+      fetchOrdersList();
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.response?.data?.message || "Không thể xóa đơn hàng.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredOrders = orders.filter((o) => {
     const orderIdStr = `#ORD-${o.id}`;
     const buyerName = o.user?.fullName || o.user?.username || "";
@@ -369,12 +385,22 @@ export default function AdminOrdersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleOpenStatusModal(o)}
-                        className="px-4 py-2 bg-gray-50 hover:bg-amber-500 hover:text-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 transition flex items-center gap-1 mx-auto"
-                      >
-                        <ClipboardList size={13} /> Cập nhật
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenStatusModal(o)}
+                          className="px-3 py-1.5 bg-gray-50 hover:bg-amber-500 hover:text-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 transition flex items-center gap-1"
+                        >
+                          <ClipboardList size={13} /> Cập nhật
+                        </button>
+                        {o.status === "cancelled" && (
+                          <button
+                            onClick={() => handleDeleteOrder(o.id)}
+                            className="px-3 py-1.5 bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 rounded-xl text-xs font-bold text-red-600 transition flex items-center gap-1"
+                          >
+                            <Trash2 size={13} /> Xóa
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -12,6 +12,7 @@ import {
   Unlock,
   UserCog,
   X,
+  Trash2,
 } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
@@ -64,6 +65,79 @@ export default function AdminUsersPage() {
   const [userOrders, setUserOrders] = useState<UserOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editUsername, setEditUsername] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editFullName, setEditFullName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRole, setEditRole] = useState("user");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const handleOpenEditModal = (user: AdminUser) => {
+    setEditingUser(user);
+    setEditUsername(user.username || "");
+    setEditEmail(user.email || "");
+    setEditFullName((user as any).fullName || "");
+    setEditPhone((user as any).phone || "");
+    setEditRole(user.role);
+    setEditIsActive(user.isActive);
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    try {
+      setEditSubmitting(true);
+      setEditError(null);
+      await adminAPI.updateUser(editingUser.id, {
+        username: editUsername.trim(),
+        email: editEmail.trim() || undefined,
+        fullName: editFullName.trim() || undefined,
+        phone: editPhone.trim() || undefined,
+        role: editRole,
+        isActive: editIsActive,
+      });
+      alert("Cập nhật thông tin người dùng thành công!");
+      setIsEditModalOpen(false);
+      fetchUsers();
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      console.error(err);
+      setEditError(
+        apiError?.response?.data?.message ||
+          apiError?.message ||
+          "Không thể cập nhật thông tin người dùng.",
+      );
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này? Hành động này sẽ gỡ bỏ tài khoản và dọn dẹp các dữ liệu giỏ hàng liên quan, giữ lại lịch sử đơn hàng ở trạng thái vô danh. Không thể hoàn tác.")) return;
+    try {
+      setActionUserId(userId);
+      await adminAPI.deleteUser(userId);
+      alert("Xóa tài khoản người dùng thành công!");
+      fetchUsers();
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      console.error(err);
+      alert(
+        apiError?.response?.data?.message ||
+          apiError?.message ||
+          "Không thể xóa tài khoản người dùng.",
+      );
+    } finally {
+      setActionUserId(null);
+    }
+  };
 
   const { formatPrice } = usePreferences();
 
@@ -377,27 +451,28 @@ export default function AdminUsersPage() {
                           <button
                             type="button"
                             onClick={() => openOrdersDrawer(user)}
-                            className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-600 transition hover:bg-amber-500 hover:text-white">
-                            <Eye size={14} /> Đơn hàng
+                            className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-amber-500 hover:text-white">
+                            <Eye size={13} /> Đơn
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(user)}
+                            className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white">
+                            Sửa
                           </button>
 
                           <button
                             type="button"
                             disabled={isBusy}
-                            onClick={() => handleToggleBan(user)}
-                            className={`flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                              user.isActive
-                                ? "bg-red-50 text-red-600 hover:bg-red-600 hover:text-white"
-                                : "bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                            }`}>
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-600 hover:text-white disabled:opacity-50">
                             {isBusy ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : user.isActive ? (
-                              <Ban size={14} />
+                              <Loader2 size={13} className="animate-spin" />
                             ) : (
-                              <Unlock size={14} />
+                              <Trash2 size={13} />
                             )}
-                            {user.isActive ? "Khóa" : "Mở khóa"}
+                            Xóa
                           </button>
                         </div>
                       </td>
@@ -512,6 +587,121 @@ export default function AdminUsersPage() {
               )}
             </div>
           </aside>
+        </div>
+      )}
+
+      {/* EDIT USER MODAL */}
+      {isEditModalOpen && editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-amber-50/50">
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-base">Chỉnh Sửa Tài Khoản</h3>
+                <p className="text-xs text-gray-500 mt-0.5">ID Người dùng: #{editingUser.id}</p>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditUserSubmit} className="p-6 space-y-4">
+              {editError && (
+                <div className="p-3 text-xs bg-red-50 text-red-600 border border-red-100 rounded-xl flex items-center gap-2">
+                  <AlertTriangle size={14} />
+                  <span>{editError}</span>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tên đăng nhập *</label>
+                <input
+                  type="text"
+                  required
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Họ và tên</label>
+                <input
+                  type="text"
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Số điện thoại</label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Vai trò</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái</label>
+                  <select
+                    value={editIsActive ? "active" : "banned"}
+                    onChange={(e) => setEditIsActive(e.target.value === "active")}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+                  >
+                    <option value="active">Hoạt động</option>
+                    <option value="banned">Bị khóa</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={editSubmitting}
+                  className="px-5 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-600 transition"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white text-sm font-semibold transition flex items-center gap-1.5"
+                >
+                  {editSubmitting && <Loader2 size={16} className="animate-spin" />}
+                  Lưu
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -31,6 +31,11 @@ export class AdminController {
     return this.service.updateOrderStatus(Number(id), dto);
   }
 
+  @Delete('orders/:id')
+  deleteOrder(@Param('id') id: string) {
+    return this.service.deleteOrder(Number(id));
+  }
+
   @Get('returns')
   getReturns() {
     return this.service.getReturns();
@@ -124,6 +129,26 @@ export class AdminController {
   @Get('users/:id/orders')
   getUserOrders(@Param('id') id: string) {
     return this.service.getUserOrders(Number(id));
+  }
+
+  @Patch('users/:id')
+  updateUser(
+    @Param('id') id: string,
+    @Body() dto: {
+      username?: string;
+      email?: string;
+      fullName?: string;
+      phone?: string;
+      role?: string;
+      isActive?: boolean;
+    },
+  ) {
+    return this.service.updateUser(Number(id), dto);
+  }
+
+  @Delete('users/:id')
+  deleteUser(@Param('id') id: string) {
+    return this.service.deleteUser(Number(id));
   }
 
   @Get('promotion-logs')
