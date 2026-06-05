@@ -50,16 +50,19 @@ export default function ProductSection({
   }
 
   return (
-    <section className="w-full flex justify-center mt-16 animate-fadeIn">
-      <div className="w-full max-w-[1330px] px-6">
+    <section className="w-full flex justify-center mt-16 bg-brand-surface py-16 animate-fadeIn">
+      <div className="w-full max-w-[1370px] px-6 md:px-10">
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-8 border-b border-yellow-100 pb-4">
-          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+        <div className="flex justify-between items-end mb-8 border-b border-brand-primary-light pb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-brand-text">{title}</h2>
+            <div className="h-[3px] w-[80px] bg-brand-primary mt-2"></div>
+          </div>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="group flex items-center justify-center p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-300"
+              className="group flex items-center justify-center p-2 rounded-full text-brand-muted hover:text-red-500 hover:bg-red-50 transition-all duration-300"
               title={t("deals.coupon.close") || "Close"}>
               <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
             </button>

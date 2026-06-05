@@ -15,8 +15,8 @@ export class MailService {
   sendWelcome(to: string, username: string) {
     this.sendMail(
       to,
-      'Chào mừng bạn đến với ANTIGRAVITY BookStore!',
-      `Xin chào ${username},\n\nChúc mừng bạn đã đăng ký tài khoản thành công tại ANTIGRAVITY. Hãy bắt đầu khám phá kho sách khổng lồ của chúng tôi!\n\nTrân trọng,\nĐội ngũ ANTIGRAVITY.`,
+      'Chào mừng bạn đến với E-Commerce!',
+      `Xin chào ${username},\n\nChúc mừng bạn đã đăng ký tài khoản thành công tại E-Commerce. Hãy bắt đầu khám phá kho sách khổng lồ của chúng tôi!\n\nTrân trọng,\nĐội ngũ E-Commerce.`,
     );
   }
 

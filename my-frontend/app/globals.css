@@ -2,8 +2,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f3ec;
+  --foreground: #3b2f23;
 }
 
 @theme inline {
@@ -13,6 +13,17 @@
   --font-mono: var(--font-geist-mono);
   --font-serif: 'Playfair Display', serif;
   --font-montserrat: 'Montserrat', sans-serif;
+  --color-brand-primary: #a7794a;
+  --color-brand-primary-hover: #8b6338;
+  --color-brand-secondary: #f0a044;
+  --color-brand-primary-light: #eadfcc;
+  --color-brand-bg: #f7f3ec;
+  --color-brand-surface: #ffffff;
+  --color-brand-border: #eadfcc;
+  --color-brand-text: #3b2f23;
+  --color-brand-muted: #7b6a58;
+  --color-brand-stars: #f0a044;
+  --color-sale: #d97706;
 }
 
 @media (prefers-color-scheme: dark) {

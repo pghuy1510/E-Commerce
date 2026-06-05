@@ -166,7 +166,30 @@ export class AdminService {
 
       const oldStatus = order.status;
       order.status = dto.status;
-      if (dto.status === 'delivered') {
+      if (dto.status === 'delivered' && oldStatus !== 'delivered') {
+        order.deliveredAt = new Date();
+
+        if (order.paymentMethod === 'cod') {
+          // Subtract stock and release reservation now that COD payment is complete upon delivery
+          for (const item of order.items) {
+            const product = await productRepo.findOne({ where: { id: item.productId } });
+            if (product) {
+              product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+              product.stock -= item.quantity;
+              await productRepo.save(product);
+            }
+          }
+
+          // Mark payment as paid
+          const paymentRepo = manager.getRepository(Payment);
+          const payment = await paymentRepo.findOne({ where: { order_id: order.id } });
+          if (payment && payment.status !== 'paid') {
+            payment.status = 'paid';
+            payment.paid_at = new Date();
+            await paymentRepo.save(payment);
+          }
+        }
+      } else if (dto.status === 'delivered') {
         order.deliveredAt = new Date();
       }
 
@@ -178,12 +201,23 @@ export class AdminService {
         order.estimatedDeliveryDate = dto.estimatedDeliveryDate ? new Date(dto.estimatedDeliveryDate) : null;
       }
 
-      // Restore inventory if status changed to cancelled and it wasn't cancelled before
+      // Restore inventory or release reservation if status changed to cancelled and it wasn't cancelled before
       if (dto.status === 'cancelled' && oldStatus !== 'cancelled') {
+        const paymentRepo = manager.getRepository(Payment);
+        const payment = await paymentRepo.findOne({ where: { order_id: order.id } });
+        
+        // Stock was subtracted if QR payment was paid, or if COD order was delivered
+        const wasSubtracted = (order.paymentMethod === 'qr' && payment?.status === 'paid') ||
+                              (order.paymentMethod === 'cod' && oldStatus === 'delivered');
+
         for (const item of order.items) {
           const product = await productRepo.findOne({ where: { id: item.productId } });
           if (product) {
-            product.stock += item.quantity;
+            if (wasSubtracted) {
+              product.stock += item.quantity;
+            } else {
+              product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+            }
             await productRepo.save(product);
           }
         }

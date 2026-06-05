@@ -128,9 +128,10 @@ export class OrderService {
         if (!product) {
           throw new BadRequestException('Sản phẩm không tồn tại.');
         }
-        if (product.stock < item.quantity) {
+        const availableStock = product.stock - (product.reservedStock || 0);
+        if (availableStock < item.quantity) {
           throw new BadRequestException(
-            `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho (hiện chỉ còn ${product.stock} sản phẩm). Vui lòng quay lại giỏ hàng để cập nhật.`,
+            `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho (hiện chỉ còn ${availableStock} sản phẩm). Vui lòng quay lại giỏ hàng để cập nhật.`,
           );
         }
 
@@ -159,7 +160,7 @@ export class OrderService {
           purchasePrice = Number(dealProduct.dealPrice);
         }
 
-        product.stock -= item.quantity;
+        product.reservedStock = (product.reservedStock || 0) + item.quantity;
         await productRepo.save(product);
 
         const orderItem = orderItemRepo.create({
@@ -275,11 +276,9 @@ export class OrderService {
         };
       }
 
-      if (dto.paymentMethod === 'cod') {
-        await cartItemRepo.delete({
-          cart: { id: currentCart.id },
-        });
-      }
+      await cartItemRepo.delete({
+        cart: { id: currentCart.id },
+      });
 
       return {
         order: savedOrder,
@@ -330,8 +329,9 @@ export class OrderService {
       if (!product) {
         throw new BadRequestException(`Sản phẩm với ID ${item.productId} không tồn tại.`);
       }
-      if (product.stock < item.quantity) {
-        throw new BadRequestException(`Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng.`);
+      const availableStock = product.stock - (product.reservedStock || 0);
+      if (availableStock < item.quantity) {
+        throw new BadRequestException(`Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng (hiện chỉ còn ${availableStock} sản phẩm).`);
       }
       
       const dealPrice = await this.dealsService.getProductDealPrice(product.id);
@@ -395,9 +395,10 @@ export class OrderService {
         if (!product) {
           throw new BadRequestException('Sản phẩm không tồn tại.');
         }
-        if (product.stock < item.quantity) {
+        const availableStock = product.stock - (product.reservedStock || 0);
+        if (availableStock < item.quantity) {
           throw new BadRequestException(
-            `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho.`,
+            `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho (hiện chỉ còn ${availableStock} sản phẩm).`,
           );
         }
 
@@ -426,7 +427,7 @@ export class OrderService {
           purchasePrice = Number(dealProduct.dealPrice);
         }
 
-        product.stock -= item.quantity;
+        product.reservedStock = (product.reservedStock || 0) + item.quantity;
         await productRepo.save(product);
 
         const orderItem = orderItemRepo.create({
@@ -640,10 +641,18 @@ export class OrderService {
       const orderRepo = manager.getRepository(Order);
       const statusLogRepo = manager.getRepository(OrderStatusLog);
 
+      const paymentRepo = manager.getRepository(Payment);
+      const payment = await paymentRepo.findOne({ where: { order_id: order.id } });
+      const wasSubtracted = order.paymentMethod === 'qr' && payment?.status === 'paid';
+
       for (const item of order.items) {
         const product = await productRepo.findOne({ where: { id: item.productId } });
         if (product) {
-          product.stock += item.quantity;
+          if (wasSubtracted) {
+            product.stock += item.quantity;
+          } else {
+            product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+          }
           await productRepo.save(product);
         }
       }

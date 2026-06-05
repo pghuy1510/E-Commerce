@@ -28,7 +28,6 @@ type Props = {
 
 /* ===== DATA ===== */
 const categories: { name: Category; image: string }[] = [
-  { name: "Books", image: "/img/book.jpg" },
   { name: "Shoes", image: "/img/shoe.jpg" },
   { name: "Clothing", image: "/img/clothing.jpg" },
   { name: "Computers", image: "/img/computer.webp" },
@@ -96,7 +95,7 @@ export default function TopCategories({
       <div className="relative z-10 max-w-[1330px] mx-auto px-4 py-20 text-center">
         {/* ICON */}
         <div className="flex justify-center mb-4">
-          <Book className="text-orange-400 w-8 h-8" />
+          <Book className="text-brand-primary w-8 h-8" />
         </div>
 
         {/* TITLE */}
@@ -134,8 +133,8 @@ export default function TopCategories({
                     className={`rounded-xl p-4 flex flex-col items-center justify-between h-[180px] relative transition-all duration-300
                     ${
                       isActive
-                        ? "bg-yellow-600 shadow-xl scale-105"
-                        : "bg-white hover:bg-yellow-600 hover:scale-105"
+                        ? "bg-brand-primary text-white shadow-xl scale-105"
+                        : "bg-brand-primary-light text-brand-text hover:bg-brand-primary hover:scale-105 hover:text-white"
                     }`}>
                     {/* IMAGE */}
                     <div className="w-[100px] h-[110px] flex items-center justify-center">
@@ -153,8 +152,8 @@ export default function TopCategories({
                       className={`absolute bottom-3 text-xs px-3 py-1 rounded
                       ${
                         isActive
-                          ? "bg-white text-black"
-                          : "bg-yellow-600 text-white"
+                          ? "bg-white text-brand-primary font-semibold"
+                          : "bg-brand-primary text-white"
                       }`}>
                       {t("topCategories.badge")}
                     </span>
@@ -165,8 +164,8 @@ export default function TopCategories({
                     className={`mt-3 text-sm font-medium text-center transition
                     ${
                       isActive
-                        ? "text-yellow-600 font-semibold"
-                        : "text-white group-hover:text-yellow-300"
+                        ? "text-brand-primary-light font-semibold"
+                        : "text-white group-hover:text-brand-primary-light"
                     }`}>
                     {translateCategory(item.name)}
                   </p>

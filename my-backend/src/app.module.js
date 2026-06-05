@@ -10,6 +10,8 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const config_1 = require("@nestjs/config");
+const schedule_1 = require("@nestjs/schedule");
+const path_1 = require("path");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const products_module_1 = require("./products/products.module");
@@ -21,6 +23,12 @@ const users_module_1 = require("./users/users.module");
 const payment_module_1 = require("./payment/payment.module");
 const tracking_module_1 = require("./tracking/tracking.module");
 const wishlist_module_1 = require("./wishlist/wishlist.module");
+const contact_module_1 = require("./contact/contact.module");
+const coupon_module_1 = require("./coupons/coupon.module");
+const admin_module_1 = require("./admin/admin.module");
+const mail_module_1 = require("./common/mail.module");
+const location_module_1 = require("./locations/location.module");
+const deals_module_1 = require("./deals/deals.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -29,20 +37,33 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
+                envFilePath: [
+                    (0, path_1.join)(process.cwd(), '.env'),
+                    (0, path_1.join)(process.cwd(), 'my-backend', '.env'),
+                ],
             }),
+            schedule_1.ScheduleModule.forRoot(),
             typeorm_1.TypeOrmModule.forRootAsync({
                 inject: [config_1.ConfigService],
-                useFactory: (config) => ({
-                    type: 'postgres',
-                    host: config.get('DB_HOST') || 'localhost',
-                    port: Number(config.get('DB_PORT')) || 5432,
-                    username: config.get('DB_USERNAME') || 'postgres',
-                    password: config.get('DB_PASSWORD') || '123456',
-                    database: config.get('DB_NAME') || 'ecommerce',
-                    autoLoadEntities: true,
-                    synchronize: false,
-                    logging: true,
-                }),
+                useFactory: (config) => {
+                    console.log('========== DB CONFIG ==========');
+                    console.log('DB_HOST:', config.get('DB_HOST'));
+                    console.log('DB_PORT:', config.get('DB_PORT'));
+                    console.log('DB_NAME:', config.get('DB_NAME'));
+                    console.log('DB_USERNAME:', config.get('DB_USERNAME'));
+                    console.log('================================');
+                    return {
+                        type: 'postgres',
+                        host: config.get('DB_HOST') || 'localhost',
+                        port: Number(config.get('DB_PORT')) || 5432,
+                        username: config.get('DB_USERNAME') || 'postgres',
+                        password: config.get('DB_PASSWORD'),
+                        database: config.get('DB_NAME'),
+                        autoLoadEntities: true,
+                        synchronize: true,
+                        logging: true,
+                    };
+                },
             }),
             products_module_1.ProductsModule,
             categories_module_1.CategoriesModule,
@@ -53,6 +74,12 @@ exports.AppModule = AppModule = __decorate([
             payment_module_1.PaymentModule,
             tracking_module_1.TrackingModule,
             wishlist_module_1.WishlistModule,
+            contact_module_1.ContactModule,
+            coupon_module_1.CouponModule,
+            admin_module_1.AdminModule,
+            mail_module_1.MailModule,
+            location_module_1.LocationModule,
+            deals_module_1.DealsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

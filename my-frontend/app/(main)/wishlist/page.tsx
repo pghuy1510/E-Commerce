@@ -30,9 +30,8 @@ const FancyButton = ({ children, onClick, disabled }: FancyButtonProps) => (
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="relative overflow-hidden bg-[#eba07a] text-white px-4 py-2 rounded-full text-sm group disabled:cursor-not-allowed disabled:opacity-60">
-    <span className="absolute inset-0 bg-yellow-600 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></span>
-    <span className="relative z-10">{children}</span>
+    className="w-36 h-11 bg-brand-primary hover:bg-[#8d6338] text-white text-sm font-semibold rounded-[12px] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 border-none shadow-sm">
+    {children}
   </button>
 );
 
@@ -88,16 +87,16 @@ export default function WishlistPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-white">
       {/* BANNER */}
-      <div className="bg-gradient-to-r from-yellow-600 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">
+      <div className="bg-gradient-to-r from-brand-primary/95 via-brand-primary-light/35 to-brand-surface py-20 text-center">
+        <h1 className="text-4xl font-bold text-brand-text">
           {t("label.wishlist")}
         </h1>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-5 text-gray-700 font-semibold border-b pb-4">
+        <div className="grid grid-cols-5 text-brand-text font-semibold border-b border-brand-primary-light pb-4">
           <span>{t("label.product")}</span>
 
           <span className="text-center">{t("label.price")}</span>
@@ -109,16 +108,20 @@ export default function WishlistPage() {
           <span></span>
         </div>
 
+        {wishlist.length === 0 && (
+          <p className="py-10 text-brand-muted text-center col-span-5">{t("label.wishlistEmpty") || "Danh sách yêu thích trống."}</p>
+        )}
+
         {wishlist.map((item) => (
           <div
             key={item.id}
-            className="grid grid-cols-5 items-center py-6 border-b">
+            className="grid grid-cols-5 items-center py-6 border-b border-brand-primary-light">
             {/* PRODUCT */}
             <div className="flex items-center gap-4">
               <button
                 type="button"
                 onClick={() => handleRemove(item.product.id)}
-                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative z-10"
+                className="text-brand-muted hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative z-10"
                 aria-label="Xóa khỏi danh sách yêu thích">
                 <X size={18} />
               </button>
@@ -134,21 +137,21 @@ export default function WishlistPage() {
                   height={80}
                 />
 
-                <span className="font-medium group-hover:text-yellow-600 transition">
+                <span className="font-medium group-hover:text-brand-primary transition text-brand-text">
                   {item.product.name}
                 </span>
               </Link>
             </div>
 
             {/* PRICE */}
-            <span className="text-center text-yellow-600 font-medium">
+            <span className="text-center text-brand-primary font-medium">
               {formatPrice(item.product.price)}
             </span>
 
             {/* STOCK */}
             <span
               className={`text-center font-medium ${
-                item.product.stock > 0 ? "text-green-600" : "text-yellow-500"
+                item.product.stock > 0 ? "text-green-600" : "text-red-500"
               }`}>
               {item.product.stock > 0
                 ? t("label.inStock")
@@ -156,7 +159,7 @@ export default function WishlistPage() {
             </span>
 
             {/* SUBTOTAL */}
-            <span className="text-right text-yellow-600 font-medium">
+            <span className="text-right text-brand-primary font-medium">
               {formatPrice(item.product.price)}
             </span>
 

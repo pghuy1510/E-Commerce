@@ -39,6 +39,6 @@ __decorate([
     __metadata("design:type", Date)
 ], WishlistItem.prototype, "created_at", void 0);
 exports.WishlistItem = WishlistItem = __decorate([
-    (0, typeorm_1.Entity)('wishlist_items'),
-    (0, typeorm_1.Unique)(['user', 'product']) // 
+    (0, typeorm_1.Entity)('wishlist'),
+    (0, typeorm_1.Unique)(['user', 'product']) //
 ], WishlistItem);

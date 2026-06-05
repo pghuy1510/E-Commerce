@@ -21,20 +21,39 @@ let CartController = class CartController {
     constructor(service) {
         this.service = service;
     }
+    // 🛒 GET CART
     getCart(req) {
-        return this.service.getCart(req.user.id);
+        const userId = Number(req.user.id);
+        if (!userId)
+            throw new common_1.BadRequestException('Invalid userId');
+        return this.service.getCart(userId);
     }
+    // ➕ ADD TO CART
     addToCart(req, body) {
-        const { productId, quantity } = body;
-        return this.service.addToCart(req.user.id, productId, quantity);
+        const userId = Number(req.user.id);
+        const { productId, quantity = 1 } = body;
+        if (!productId) {
+            throw new common_1.BadRequestException('productId is required');
+        }
+        return this.service.addToCart(userId, productId, quantity);
     }
+    // 🔄 UPDATE
     update(req, body) {
+        const userId = Number(req.user.id);
         const { productId, quantity } = body;
-        return this.service.updateQuantity(req.user.id, productId, quantity);
+        if (!productId || !quantity) {
+            throw new common_1.BadRequestException('productId & quantity required');
+        }
+        return this.service.updateQuantity(userId, productId, quantity);
     }
+    // ❌ REMOVE
     remove(req, body) {
+        const userId = Number(req.user.id);
         const { productId } = body;
-        return this.service.removeItem(req.user.id, productId);
+        if (!productId) {
+            throw new common_1.BadRequestException('productId is required');
+        }
+        return this.service.removeItem(userId, productId);
     }
 };
 exports.CartController = CartController;

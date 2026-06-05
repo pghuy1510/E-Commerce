@@ -19,6 +19,8 @@ let Product = class Product {
     description;
     price;
     stock;
+    reservedStock;
+    image;
     category;
 };
 exports.Product = Product;
@@ -49,6 +51,14 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
 ], Product.prototype, "stock", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'reserved_stock', default: 0 }),
+    __metadata("design:type", Number)
+], Product.prototype, "reservedStock", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Product.prototype, "image", void 0);
 __decorate([
     (0, typeorm_2.ManyToOne)(() => categories_entity_1.Category, (category) => category.products),
     (0, typeorm_2.JoinColumn)({ name: 'category_id' }),

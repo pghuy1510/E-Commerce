@@ -26,11 +26,11 @@ __decorate([
     __metadata("design:type", Number)
 ], OrderItem.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'product_id' }),
     __metadata("design:type", Number)
 ], OrderItem.prototype, "productId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'product_name' }),
     __metadata("design:type", String)
 ], OrderItem.prototype, "productName", void 0);
 __decorate([

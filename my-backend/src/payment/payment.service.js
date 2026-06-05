@@ -383,7 +383,7 @@ let PaymentService = class PaymentService {
                 }
                 const currentOrder = await orderRepo.findOne({
                     where: { id: order.id },
-                    relations: ['user'],
+                    relations: ['user', 'items'],
                 });
                 if (!currentOrder) {
                     throw new common_1.NotFoundException('Order not found');
@@ -399,6 +399,16 @@ let PaymentService = class PaymentService {
                         newStatus: nextOrderStatus,
                         note: 'Payment webhook update',
                     });
+                    // Release reservation and subtract actual stock since payment is successful
+                    const productRepo = manager.getRepository(products_entity_1.Product);
+                    for (const item of currentOrder.items || []) {
+                        const product = await productRepo.findOne({ where: { id: item.productId } });
+                        if (product) {
+                            product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+                            product.stock -= item.quantity;
+                            await productRepo.save(product);
+                        }
+                    }
                 }
                 await logRepo.save({
                     payment: currentPayment,
@@ -516,7 +526,7 @@ let PaymentService = class PaymentService {
                         lock: { mode: 'pessimistic_write' },
                     });
                     if (currentOrder && currentOrder.status === 'pending') {
-                        // Restore inventory stock
+                        // Release reserved stock since payment has expired and was never paid
                         if (currentOrder.items) {
                             for (const item of currentOrder.items) {
                                 const product = await productRepo.findOne({
@@ -524,7 +534,7 @@ let PaymentService = class PaymentService {
                                     lock: { mode: 'pessimistic_write' },
                                 });
                                 if (product) {
-                                    product.stock += item.quantity;
+                                    product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
                                     await productRepo.save(product);
                                 }
                             }

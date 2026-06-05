@@ -452,7 +452,7 @@ export class PaymentService {
 
         const currentOrder = await orderRepo.findOne({
           where: { id: order.id },
-          relations: ['user'],
+          relations: ['user', 'items'],
         });
 
         if (!currentOrder) {
@@ -471,6 +471,17 @@ export class PaymentService {
             newStatus: nextOrderStatus,
             note: 'Payment webhook update',
           });
+
+          // Release reservation and subtract actual stock since payment is successful
+          const productRepo = manager.getRepository(Product);
+          for (const item of currentOrder.items || []) {
+            const product = await productRepo.findOne({ where: { id: item.productId } });
+            if (product) {
+              product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+              product.stock -= item.quantity;
+              await productRepo.save(product);
+            }
+          }
         }
 
         await logRepo.save({
@@ -623,7 +634,7 @@ export class PaymentService {
           });
 
           if (currentOrder && currentOrder.status === 'pending') {
-            // Restore inventory stock
+            // Release reserved stock since payment has expired and was never paid
             if (currentOrder.items) {
               for (const item of currentOrder.items) {
                 const product = await productRepo.findOne({
@@ -631,7 +642,7 @@ export class PaymentService {
                   lock: { mode: 'pessimistic_write' },
                 });
                 if (product) {
-                  product.stock += item.quantity;
+                  product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
                   await productRepo.save(product);
                 }
               }

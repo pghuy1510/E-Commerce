@@ -15,6 +15,8 @@ const users_module_1 = require("../users/users.module");
 const config_1 = require("@nestjs/config");
 const passport_1 = require("@nestjs/passport");
 const jwt_strategy_1 = require("./jwt.strategy");
+const optional_jwt_auth_guard_1 = require("./optional-jwt-auth.guard");
+const coupon_module_1 = require("../coupons/coupon.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -22,6 +24,7 @@ exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
             users_module_1.UsersModule,
+            coupon_module_1.CouponModule,
             config_1.ConfigModule,
             passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
             jwt_1.JwtModule.registerAsync({
@@ -35,8 +38,8 @@ exports.AuthModule = AuthModule = __decorate([
                 }),
             }),
         ],
-        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy],
+        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, optional_jwt_auth_guard_1.OptionalJwtAuthGuard],
         controllers: [auth_controller_1.AuthController],
-        exports: [jwt_1.JwtModule], //
+        exports: [jwt_1.JwtModule, optional_jwt_auth_guard_1.OptionalJwtAuthGuard], //
     })
 ], AuthModule);

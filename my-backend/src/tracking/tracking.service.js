@@ -16,11 +16,17 @@ exports.TrackingService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const user_behavior_entity_1 = require("./entities/user-behavior.entity");
+const category_view_entity_1 = require("./entities/category-view.entity");
 const typeorm_2 = require("typeorm");
+const products_entity_1 = require("../products/products.entity");
 let TrackingService = class TrackingService {
     repo;
-    constructor(repo) {
+    categoryViewRepo;
+    productRepo;
+    constructor(repo, categoryViewRepo, productRepo) {
         this.repo = repo;
+        this.categoryViewRepo = categoryViewRepo;
+        this.productRepo = productRepo;
     }
     getWeight(action) {
         switch (action) {
@@ -39,7 +45,22 @@ let TrackingService = class TrackingService {
             ...dto,
             weight: this.getWeight(dto.action),
         });
-        return this.repo.save(behavior);
+        const saved = await this.repo.save(behavior);
+        if (dto.product_id) {
+            const product = await this.productRepo.findOne({
+                where: { id: dto.product_id },
+                relations: ['category'],
+            });
+            if (product?.category?.id) {
+                const categoryView = this.categoryViewRepo.create({
+                    user_id: dto.user_id,
+                    category_id: product.category.id,
+                    weight: this.getWeight(dto.action),
+                });
+                await this.categoryViewRepo.save(categoryView);
+            }
+        }
+        return saved;
     }
     async getUser(userId) {
         return this.repo.find({
@@ -58,5 +79,9 @@ exports.TrackingService = TrackingService;
 exports.TrackingService = TrackingService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_behavior_entity_1.UserBehavior)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(category_view_entity_1.CategoryView)),
+    __param(2, (0, typeorm_1.InjectRepository)(products_entity_1.Product)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository])
 ], TrackingService);

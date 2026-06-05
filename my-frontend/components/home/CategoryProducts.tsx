@@ -88,15 +88,15 @@ export default function CategoryProducts({ category }: { category: string }) {
 
                     {/* ACTION */}
                     <div className="absolute right-1 top-3 flex flex-col gap-2 opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition">
-                      <button className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
+                      <button className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-brand-primary hover:text-white transition">
                         <Heart size={14} />
                       </button>
-                      <button className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
+                      <button className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-brand-primary hover:text-white transition">
                         <ShoppingCart size={14} />
                       </button>
                       <button
                         onClick={() => router.push(`/product/${item.id}`)}
-                        className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-yellow-500 hover:text-white transition">
+                        className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-brand-primary hover:text-white transition">
                         <Eye size={14} />
                       </button>
                     </div>
@@ -115,7 +115,7 @@ export default function CategoryProducts({ category }: { category: string }) {
                     {item.name}
                   </h3>
 
-                  <div className="font-semibold text-yellow-400">
+                  <div className="font-semibold text-brand-primary-light">
                     {formatPrice(item.price)}
                   </div>
 
@@ -124,14 +124,14 @@ export default function CategoryProducts({ category }: { category: string }) {
                       {t("label.stock", { count: item.stock })}
                     </span>
 
-                    <div className="flex text-orange-400">
+                    <div className="flex text-brand-stars">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} size={14} fill="currentColor" />
                       ))}
                     </div>
                   </div>
 
-                  <button className="w-full mt-2 bg-white/90 text-yellow-600 py-2 rounded-full hover:bg-yellow-600 hover:text-white transition">
+                  <button className="w-full mt-2 bg-white/90 text-brand-primary py-2 rounded-full hover:bg-brand-primary hover:text-white transition">
                     {t("action.addToCart")}
                   </button>
                 </div>

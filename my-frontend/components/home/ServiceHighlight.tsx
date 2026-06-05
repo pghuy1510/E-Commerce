@@ -35,20 +35,20 @@ export default function ServiceHighlight() {
 
   return (
     <section className="w-full flex justify-center mt-10">
-      <div className="w-full max-w-7xl bg-[#eee0d9] rounded-xl py-4 px-4 md:px-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 md:divide-x divide-gray-300">
+      <div className="w-full max-w-7xl bg-[#efe1c8] border border-[#eadfcc] rounded-[20px] py-4 px-4 md:px-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 md:divide-x divide-[#eadfcc]">
           {items.map((item, index) => {
             const content = (
               <>
                 {/* ICON */}
-                <div className="bg-yellow-600 p-5 rounded-lg shadow-sm group-hover:scale-105 transition">
+                <div className="bg-brand-primary p-5 rounded-lg shadow-sm group-hover:scale-105 transition">
                   {item.icon}
                 </div>
 
                 {/* TEXT */}
                 <div>
                   {/* title to + đậm */}
-                  <h4 className="font-semibold text-lg text-gray-900 group-hover:text-yellow-500 transition">
+                  <h4 className="font-semibold text-lg text-gray-900 group-hover:text-brand-primary transition">
                     {item.title}
                   </h4>
 

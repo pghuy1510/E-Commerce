@@ -22,13 +22,25 @@ let AuthController = class AuthController {
         this.authService = authService;
     }
     register(body) {
-        return this.authService.register(body.username, body.password);
+        return this.authService.register(body.username, body.password, body.email);
     }
     login(body) {
         return this.authService.login(body.username, body.password);
     }
     googleLogin(body) {
         return this.authService.loginWithGoogleIdToken(body.idToken);
+    }
+    forgotPassword(body) {
+        return this.authService.forgotPassword(body.email);
+    }
+    verifyResetToken(body) {
+        return this.authService.verifyResetToken(body.email, body.token);
+    }
+    resetPassword(body) {
+        return this.authService.resetPassword(body.email, body.token, body.newPassword);
+    }
+    registerGuestConvert(body) {
+        return this.authService.registerGuestConvert(body.email, body.password);
     }
 };
 exports.AuthController = AuthController;
@@ -53,6 +65,34 @@ __decorate([
     __metadata("design:paramtypes", [google_login_dto_1.GoogleLoginDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "googleLogin", null);
+__decorate([
+    (0, common_1.Post)('forgot-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('verify-reset-token'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "verifyResetToken", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.Post)('register-guest-convert'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "registerGuestConvert", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

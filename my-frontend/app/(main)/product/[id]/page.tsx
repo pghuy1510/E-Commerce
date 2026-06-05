@@ -9,6 +9,7 @@ import { Star, Heart, Minus, Plus, ShoppingCart, Eye, CheckCircle } from "lucide
 
 import { productAPI, type Product, wishlistAPI, cartAPI, reviewsAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import ProductCard from "@/components/ProductCard";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -61,7 +62,7 @@ export default function ProductDetailPage() {
             (item: Product) =>
               item.id !== data.id && item.category?.id === data.category?.id,
           )
-          .slice(0, 4);
+          .slice(0, 8);
 
         setRelatedProducts(related);
         setSummary(sumData);
@@ -133,11 +134,11 @@ export default function ProductDetailPage() {
   return (
     <div className="w-full">
       {/* BANNER */}
-      <div className="bg-gradient-to-r from-yellow-100 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">
+      <div className="bg-gradient-to-r from-brand-primary-light/40 to-brand-surface py-20 text-center">
+        <h1 className="text-4xl font-bold text-brand-text">
           {t("label.shopDetails")}
         </h1>
-        <p className="text-gray-500 mt-2">
+        <p className="text-brand-muted mt-2">
           {t("label.home")} &gt; {t("label.shopDetails")}
         </p>
       </div>
@@ -146,7 +147,7 @@ export default function ProductDetailPage() {
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
         {/* IMAGE */}
         <div>
-          <div className="bg-[#f5f1ee] rounded-3xl p-10 flex justify-center">
+          <div className="bg-brand-primary-light/40 rounded-3xl p-10 flex justify-center">
             <Image
               src={product.image || "/placeholder.png"}
               alt={product.name}
@@ -160,7 +161,7 @@ export default function ProductDetailPage() {
         {/* INFO */}
         <div>
           {/* CATEGORY */}
-          <p className="text-sm text-yellow-600 font-semibold uppercase mb-2">
+          <p className="text-sm text-brand-primary font-semibold uppercase mb-2">
             {product.category?.name
               ? translateCategory(product.category.name)
               : t("topRating.categoryFallback")}
@@ -172,27 +173,27 @@ export default function ProductDetailPage() {
           </h1>
 
           {/* RATING */}
-          <div className="flex items-center gap-1.5 text-orange-400 mt-4">
+          <div className="flex items-center gap-1.5 text-brand-secondary mt-4">
             <div className="flex items-center gap-0.5">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
                   size={18}
                   fill={star <= Math.round(summary.average) ? "currentColor" : "none"}
-                  className={star <= Math.round(summary.average) ? "text-amber-500" : "text-gray-300"}
+                  className={star <= Math.round(summary.average) ? "text-brand-secondary" : "text-brand-primary-light"}
                 />
               ))}
             </div>
-            <span className="text-sm font-bold text-gray-800 ml-1">
+            <span className="text-sm font-bold text-brand-text ml-1">
               {summary.average} / 5
             </span>
-            <span className="text-gray-400 text-sm">
+            <span className="text-brand-muted text-sm">
               ({summary.count} đánh giá)
             </span>
           </div>
 
           {/* PRICE */}
-          <p className="text-4xl font-bold text-yellow-600 mt-6">
+          <p className="text-4xl font-bold text-brand-primary mt-6">
             {formatPrice(product.price)}
           </p>
 
@@ -220,7 +221,7 @@ export default function ProductDetailPage() {
           <div className="mt-8">
             <p className="font-semibold mb-3">{t("label.quantity")}</p>
 
-            <div className="flex items-center border border-gray-300 rounded-full w-fit px-4 py-2 gap-5">
+            <div className="flex items-center border border-brand-primary-light rounded-[12px] w-fit px-4 py-2 bg-white gap-5">
               <button
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}>
                 <Minus size={16} />
@@ -243,7 +244,7 @@ export default function ProductDetailPage() {
                 product && handleAddToCartById(product.id, quantity)
               }
               disabled={product.stock <= 0}
-              className="flex items-center gap-2 bg-[#eba07a] hover:bg-yellow-600 transition text-white px-8 py-4 rounded-full disabled:opacity-50">
+              className="flex items-center gap-2 bg-brand-primary hover:bg-[#8d6338] transition-all duration-300 text-white h-11 px-8 rounded-[12px] text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 border-none shadow-md cursor-pointer">
               <ShoppingCart size={18} />
               {t("action.addToCart")}
             </button>
@@ -251,7 +252,7 @@ export default function ProductDetailPage() {
             {/* WISHLIST */}
             <button
               onClick={() => product && handleWishlistById(product.id)}
-              className="border border-gray-300 hover:border-yellow-600 hover:bg-yellow-600 hover:text-white transition px-5 py-4 rounded-full">
+              className="border border-brand-primary-light hover:border-brand-primary hover:bg-brand-surface transition px-5 py-3 rounded-[12px] text-brand-primary h-11 flex items-center justify-center cursor-pointer bg-white">
               <Heart size={18} />
             </button>
           </div>
@@ -263,20 +264,20 @@ export default function ProductDetailPage() {
         <h2 className="text-3xl font-bold text-gray-900 mb-8">Đánh giá từ khách hàng</h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Summary Breakdown */}
-          <div className="bg-amber-50/40 border border-amber-100 rounded-3xl p-8 space-y-6 self-start">
+          <div className="bg-brand-surface border border-brand-primary-light rounded-3xl p-8 space-y-6 self-start">
             <div className="text-center space-y-2">
-              <p className="text-5xl font-black text-amber-600">{summary.average}</p>
-              <div className="flex justify-center gap-1 text-amber-500">
+              <p className="text-5xl font-black text-brand-primary">{summary.average}</p>
+              <div className="flex justify-center gap-1 text-brand-secondary">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
                     size={22}
                     fill={star <= Math.round(summary.average) ? "currentColor" : "none"}
-                    className={star <= Math.round(summary.average) ? "text-amber-500" : "text-gray-300"}
+                    className={star <= Math.round(summary.average) ? "text-brand-secondary" : "text-brand-primary-light"}
                   />
                 ))}
               </div>
-              <p className="text-sm font-semibold text-gray-500">{summary.count} nhận xét từ người mua</p>
+              <p className="text-sm font-semibold text-brand-muted">{summary.count} nhận xét từ người mua</p>
             </div>
 
             {/* Distribution bars */}
@@ -286,15 +287,15 @@ export default function ProductDetailPage() {
                 const percent = summary.count > 0 ? (count / summary.count) * 100 : 0;
                 return (
                   <div key={star} className="flex items-center gap-3 text-sm">
-                    <span className="w-3 font-semibold text-gray-600">{star}</span>
-                    <Star size={14} className="text-amber-500 fill-amber-500 shrink-0" />
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <span className="w-3 font-semibold text-brand-muted">{star}</span>
+                    <Star size={14} className="text-brand-secondary fill-brand-secondary shrink-0" />
+                    <div className="flex-1 h-2 bg-brand-primary-light rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                        className="h-full bg-brand-secondary rounded-full transition-all duration-500"
                         style={{ width: `${percent}%` }}
                       />
                     </div>
-                    <span className="w-8 text-right font-medium text-gray-400">{count}</span>
+                    <span className="w-8 text-right font-medium text-brand-muted">{count}</span>
                   </div>
                 );
               })}
@@ -315,25 +316,25 @@ export default function ProductDetailPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-bold text-gray-900">{rev.user?.fullName || rev.user?.username}</p>
+                          <p className="font-bold text-brand-text">{rev.user?.fullName || rev.user?.username}</p>
                           {rev.isVerifiedPurchase && (
                             <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-green-100">
                               <CheckCircle size={10} className="fill-green-600 text-white" /> Đã mua hàng
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-amber-500 mt-1.5">
+                        <div className="flex items-center gap-1 text-brand-secondary mt-1.5">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
                               size={14}
                               fill={star <= rev.rating ? "currentColor" : "none"}
-                              className={star <= rev.rating ? "text-amber-500" : "text-gray-300"}
+                              className={star <= rev.rating ? "text-brand-secondary" : "text-brand-primary-light"}
                             />
                           ))}
                         </div>
                       </div>
-                      <span className="text-xs font-semibold text-gray-400">
+                      <span className="text-xs font-semibold text-brand-muted">
                         {new Date(rev.createdAt).toLocaleDateString("vi-VN", {
                           year: "numeric",
                           month: "short",
@@ -364,7 +365,7 @@ export default function ProductDetailPage() {
       <div className="max-w-7xl mx-auto px-6 pb-24">
         <div className="flex items-center justify-between mb-10">
           <div>
-            <p className="text-yellow-600 font-semibold uppercase tracking-wider">
+            <p className="text-brand-primary font-semibold uppercase tracking-wider">
               {t("label.recommendation")}
             </p>
             <h2 className="text-4xl font-bold text-gray-900 mt-2">
@@ -374,74 +375,11 @@ export default function ProductDetailPage() {
         </div>
 
         {relatedProducts.length === 0 ? (
-          <p className="text-gray-500">{t("productDetails.noRelated")}</p>
+          <p className="text-brand-muted">{t("productDetails.noRelated")}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {relatedProducts.map((item) => (
-              <div
-                key={item.id}
-                className="group border border-gray-200 rounded-3xl overflow-hidden hover:shadow-2xl transition duration-300 bg-white">
-                {/* IMAGE */}
-                <div className="relative bg-[#f8f5f2] p-6 h-[300px] flex items-center justify-center overflow-hidden">
-                  <Image
-                    src={item.image || "/placeholder.png"}
-                    alt={item.name}
-                    width={180}
-                    height={240}
-                    className="object-contain group-hover:scale-105 transition duration-300"
-                  />
-
-                  {/* ACTIONS */}
-                  <div className="absolute right-4 top-4 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition">
-                    <button
-                      onClick={() => handleWishlistById(item.id)}
-                      className="bg-white shadow-md p-3 rounded-full hover:bg-yellow-500 hover:text-white transition">
-                      <Heart size={18} />
-                    </button>
-
-                    <Link
-                      href={`/product/${item.id}`}
-                      className="bg-white shadow-md p-3 rounded-full hover:bg-yellow-500 hover:text-white transition">
-                      <Eye size={18} />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* INFO */}
-                <div className="p-6">
-                  <p className="text-sm text-yellow-600 font-medium uppercase">
-                    {item.category?.name
-                      ? translateCategory(item.category.name)
-                      : t("topRating.categoryFallback")}
-                  </p>
-
-                  <Link href={`/product/${item.id}`}>
-                    <h3 className="text-xl font-bold text-gray-900 mt-2 hover:text-yellow-600 transition line-clamp-1">
-                      {item.name}
-                    </h3>
-                  </Link>
-
-                  {/* RATING */}
-                  <div className="flex items-center gap-1 text-orange-400 mt-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={15} fill="currentColor" />
-                    ))}
-                  </div>
-
-                  {/* PRICE */}
-                  <div className="flex items-center justify-between mt-5">
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {formatPrice(item.price)}
-                    </p>
-
-                    <button
-                      onClick={() => handleAddToCartById(item.id, 1)}
-                      className="bg-[#eba07a] hover:bg-yellow-600 text-white p-3 rounded-full transition">
-                      <ShoppingCart size={18} />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={item.id} product={item} />
             ))}
           </div>
         )}

@@ -1,41 +1,26 @@
-'use strict';
-var __decorate =
-  (this && this.__decorate) ||
-  function (decorators, target, key, desc) {
-    var c = arguments.length,
-      r =
-        c < 3
-          ? target
-          : desc === null
-            ? (desc = Object.getOwnPropertyDescriptor(target, key))
-            : desc,
-      d;
-    if (typeof Reflect === 'object' && typeof Reflect.decorate === 'function')
-      r = Reflect.decorate(decorators, target, key, desc);
-    else
-      for (var i = decorators.length - 1; i >= 0; i--)
-        if ((d = decorators[i]))
-          r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return (c > 3 && r && Object.defineProperty(target, key, r), r);
-  };
-Object.defineProperty(exports, '__esModule', { value: true });
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.JwtAuthGuard = void 0;
-const common_1 = require('@nestjs/common');
-const passport_1 = require('@nestjs/passport');
+const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
 let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
-  handleRequest(err, user, info, _context, _status) {
-    var _a;
-    if (err) {
-      throw err;
+    handleRequest(err, user, info, _context, _status) {
+        if (err) {
+            throw err;
+        }
+        if (!user) {
+            throw new common_1.UnauthorizedException(info?.message || 'Unauthorized');
+        }
+        return user;
     }
-    if (!user) {
-      throw new common_1.UnauthorizedException(((_a = info) === null || _a === void 0 ? void 0 : _a.message) || 'Unauthorized');
-    }
-    return user;
-  }
 };
 exports.JwtAuthGuard = JwtAuthGuard;
-exports.JwtAuthGuard = JwtAuthGuard = __decorate(
-  [(0, common_1.Injectable)()],
-  JwtAuthGuard,
-);
+exports.JwtAuthGuard = JwtAuthGuard = __decorate([
+    (0, common_1.Injectable)()
+], JwtAuthGuard);

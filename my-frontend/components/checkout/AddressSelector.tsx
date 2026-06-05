@@ -262,14 +262,14 @@ export default function AddressSelector({
   const formattedAddress = formatVietnameseAddress(value);
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 space-y-5">
+    <div className="bg-brand-surface rounded-3xl shadow-sm border border-brand-border p-6 space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-amber-500" />
+          <h2 className="text-xl font-semibold text-brand-text flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-brand-primary" />
             Địa chỉ giao hàng
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-brand-muted mt-1">
             Chọn một địa chỉ từ sổ địa chỉ của bạn hoặc nhập thủ công địa chỉ nhận hàng.
           </p>
         </div>
@@ -277,7 +277,7 @@ export default function AddressSelector({
           <button
             type="button"
             onClick={handleStartAdd}
-            className="self-start sm:self-center flex items-center gap-1.5 px-4 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-2xl text-xs font-bold transition border border-yellow-200 shadow-xs cursor-pointer focus:outline-none"
+            className="self-start sm:self-center flex items-center gap-1.5 px-4 py-2 bg-brand-primary-light/40 hover:bg-brand-primary-light/60 text-brand-primary rounded-2xl text-xs font-bold transition border border-brand-border shadow-xs cursor-pointer focus:outline-none"
           >
             <Plus className="w-4 h-4" />
             Thêm địa chỉ mới
@@ -287,7 +287,7 @@ export default function AddressSelector({
 
       {loading && savedAddresses.length === 0 && (
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-6 h-6 text-yellow-600 animate-spin" />
+          <Loader2 className="w-6 h-6 text-brand-primary animate-spin" />
         </div>
       )}
 
@@ -316,26 +316,26 @@ export default function AddressSelector({
                 <div
                   key={addr.id}
                   onClick={() => handleSelectSaved(addr)}
-                  className={`border rounded-3xl p-5 cursor-pointer transition-all duration-200 bg-white relative flex flex-col justify-between ${
+                  className={`border rounded-3xl p-5 cursor-pointer transition-all duration-200 bg-brand-surface relative flex flex-col justify-between ${
                     isSelected
-                      ? "border-amber-500 bg-amber-50/10 shadow-md"
-                      : "border-gray-250 hover:border-amber-350 hover:shadow-sm"
+                      ? "border-brand-primary bg-brand-primary-light/20 shadow-md"
+                      : "border-brand-border hover:border-brand-primary hover:shadow-sm"
                   }`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-gray-900">
+                        <span className="font-bold text-sm text-brand-text">
                           {addr.receiverName || profileName || "Người nhận"}
                         </span>
-                        <span className="text-xs text-gray-500 font-mono">
+                        <span className="text-xs text-brand-muted font-mono">
                           ({addr.receiverPhone || profilePhone || "Không có SĐT"})
                         </span>
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-amber-600 shrink-0" />}
+                      {isSelected && <Check className="w-4 h-4 text-brand-primary shrink-0" />}
                     </div>
 
-                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                    <p className="text-xs text-brand-muted leading-relaxed line-clamp-3">
                       {formatted || "Chưa có địa chỉ chi tiết"}
                     </p>
 
@@ -346,7 +346,7 @@ export default function AddressSelector({
                     )}
 
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                      <span className="text-[10px] uppercase font-bold text-brand-primary bg-brand-primary-light/40 px-2 py-0.5 rounded-full border border-brand-border">
                         {addr.label === "work" ? "Công ty" : addr.label === "home" ? "Nhà riêng" : "Khác"}
                       </span>
                       {addr.isDefault && (
@@ -359,13 +359,13 @@ export default function AddressSelector({
 
                   {/* Actions Area */}
                   <div
-                    className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-100 text-xs font-bold"
+                    className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-brand-border text-xs font-bold"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"
                       onClick={() => handleStartEdit(addr)}
-                      className="text-yellow-600 hover:text-yellow-700 transition cursor-pointer"
+                      className="text-brand-primary hover:text-brand-primary-hover transition cursor-pointer"
                     >
                       Chỉnh sửa
                     </button>
@@ -376,7 +376,7 @@ export default function AddressSelector({
                         <button
                           type="button"
                           onClick={() => handleSetDefault(addr.id)}
-                          className="text-gray-500 hover:text-gray-700 transition cursor-pointer"
+                          className="text-brand-muted hover:text-brand-text transition cursor-pointer"
                         >
                           Đặt mặc định
                         </button>
@@ -400,16 +400,16 @@ export default function AddressSelector({
               onClick={handleSelectManualMode}
               className={`border border-dashed rounded-3xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 min-h-[140px] text-center ${
                 showManualForm && !selectedId
-                  ? "border-amber-500 bg-amber-50/10 shadow-sm"
-                  : "border-gray-250 hover:border-amber-300 bg-gray-50/30"
+                  ? "border-brand-primary bg-brand-primary-light/20 shadow-sm"
+                  : "border-brand-border hover:border-brand-primary bg-brand-bg/30"
               }`}
             >
-              <Plus className="w-6 h-6 text-amber-500" />
+              <Plus className="w-6 h-6 text-brand-primary" />
               <div>
-                <span className="block text-sm font-bold text-gray-700">
+                <span className="block text-sm font-bold text-brand-text">
                   Giao đến địa chỉ khác
                 </span>
-                <span className="block text-[10px] text-gray-400 mt-0.5">
+                <span className="block text-[10px] text-brand-muted mt-0.5">
                   Nhập địa chỉ nhận hàng tạm thời cho đơn này
                 </span>
               </div>
@@ -420,7 +420,7 @@ export default function AddressSelector({
 
       {/* MANUAL FORM FOR GUESTS OR OTHER TEMPORARY ADDRESSES */}
       {showManualForm && (
-        <div className="space-y-4 pt-4 border-t border-gray-100">
+        <div className="space-y-4 pt-4 border-t border-brand-border">
           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
             Chi tiết địa chỉ nhận hàng
           </h4>
@@ -430,13 +430,13 @@ export default function AddressSelector({
               value={value.receiverName}
               onChange={(e) => handleChange("receiverName", e.target.value)}
               placeholder="Họ và tên người nhận"
-              className="rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300 text-gray-800"
+              className="rounded-2xl border border-brand-border bg-brand-bg/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-text"
             />
             <input
               value={value.receiverPhone}
               onChange={(e) => handleChange("receiverPhone", e.target.value)}
               placeholder="Số điện thoại liên hệ"
-              className="rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300 text-gray-800"
+              className="rounded-2xl border border-brand-border bg-brand-bg/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-text"
             />
           </div>
 
@@ -465,12 +465,12 @@ export default function AddressSelector({
       )}
 
       {formattedAddress && (
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/30 px-4 py-3 text-sm text-gray-700 flex items-start gap-2">
-          <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        <div className="rounded-2xl border border-brand-border bg-brand-primary-light/20 px-4 py-3 text-sm text-brand-text flex items-start gap-2">
+          <MapPin className="w-4 h-4 text-brand-primary shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold text-gray-900">Thông tin giao hàng:</span>{" "}
-            <span className="font-semibold text-gray-800">{value.receiverName} ({value.receiverPhone})</span>
-            <span className="block text-xs text-gray-500 mt-0.5">{formattedAddress}</span>
+            <span className="font-bold text-brand-text">Thông tin giao hàng:</span>{" "}
+            <span className="font-semibold text-brand-text">{value.receiverName} ({value.receiverPhone})</span>
+            <span className="block text-xs text-brand-muted mt-0.5">{formattedAddress}</span>
           </div>
         </div>
       )}
@@ -511,15 +511,15 @@ export default function AddressSelector({
       {/* NEW ADDRESS MODAL POPUP */}
       {showFormModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-lg border overflow-hidden shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center border-b pb-3 border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">
+          <div className="bg-brand-surface rounded-3xl w-full max-w-lg border border-brand-border overflow-hidden shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center border-b pb-3 border-brand-border">
+              <h3 className="text-lg font-bold text-brand-text">
                 {modalForm.id ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ giao hàng mới"}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowFormModal(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold transition text-lg"
+                className="text-brand-muted hover:text-brand-text font-bold transition text-lg"
               >
                 ✕
               </button>
@@ -528,32 +528,32 @@ export default function AddressSelector({
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Họ và tên người nhận</label>
+                  <label className="text-xs font-bold text-brand-text">Họ và tên người nhận</label>
                   <input
                     type="text"
                     required
                     placeholder="Nguyễn Văn A"
                     value={modalForm.receiverName}
                     onChange={(e) => setModalForm((prev) => ({ ...prev, receiverName: e.target.value }))}
-                    className="w-full border border-gray-250 rounded-2xl px-4 py-3 text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 bg-gray-50/50"
+                    className="w-full border border-brand-border bg-brand-surface text-brand-text rounded-2xl px-4 py-3 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Số điện thoại liên hệ</label>
+                  <label className="text-xs font-bold text-brand-text">Số điện thoại liên hệ</label>
                   <input
                     type="text"
                     required
                     placeholder="0901234567"
                     value={modalForm.receiverPhone}
                     onChange={(e) => setModalForm((prev) => ({ ...prev, receiverPhone: e.target.value }))}
-                    className="w-full border border-gray-250 rounded-2xl px-4 py-3 text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 bg-gray-50/50"
+                    className="w-full border border-brand-border bg-brand-surface text-brand-text rounded-2xl px-4 py-3 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
                   />
                 </div>
               </div>
 
               {/* Location Selector */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-700">Địa chỉ giao hàng</label>
+                <label className="text-xs font-bold text-brand-text">Địa chỉ giao hàng</label>
                 <AddressSelectorDropdown
                   value={{
                     provinceId: modalForm.provinceId,
@@ -579,11 +579,11 @@ export default function AddressSelector({
               {/* Address label & default toggle */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Nhãn địa chỉ</label>
+                  <label className="text-xs font-bold text-brand-text">Nhãn địa chỉ</label>
                   <select
                     value={modalForm.label}
                     onChange={(e) => setModalForm((prev) => ({ ...prev, label: e.target.value }))}
-                    className="w-full border border-gray-250 bg-white rounded-2xl px-3 py-3 text-sm outline-none focus:border-yellow-500"
+                    className="w-full border border-brand-border bg-brand-surface text-brand-text rounded-2xl px-3 py-3 text-sm outline-none focus:border-brand-primary"
                   >
                     <option value="home">Nhà riêng / Căn hộ</option>
                     <option value="work">Văn phòng / Công ty</option>
@@ -597,27 +597,27 @@ export default function AddressSelector({
                     id="isDefaultCheckbox"
                     checked={modalForm.isDefault}
                     onChange={(e) => setModalForm((prev) => ({ ...prev, isDefault: e.target.checked }))}
-                    className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4 cursor-pointer"
+                    className="rounded text-brand-primary focus:ring-brand-primary h-4 w-4 cursor-pointer"
                   />
-                  <label htmlFor="isDefaultCheckbox" className="text-xs font-bold text-gray-700 cursor-pointer select-none">
+                  <label htmlFor="isDefaultCheckbox" className="text-xs font-bold text-brand-text cursor-pointer select-none">
                     Đặt làm địa chỉ mặc định
                   </label>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+            <div className="flex justify-end gap-3 border-t border-brand-border pt-4">
               <button
                 type="button"
                 onClick={() => setShowFormModal(false)}
-                className="px-5 py-2.5 border rounded-full text-xs font-bold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                className="px-5 py-2.5 border border-brand-border rounded-full text-xs font-bold text-brand-muted hover:bg-brand-bg transition cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 type="button"
                 onClick={handleSaveModalForm}
-                className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full text-xs font-bold shadow-md hover:shadow-lg transition cursor-pointer"
+                className="px-6 py-2.5 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-full text-xs font-bold shadow-md hover:shadow-lg transition cursor-pointer"
               >
                 Lưu địa chỉ
               </button>

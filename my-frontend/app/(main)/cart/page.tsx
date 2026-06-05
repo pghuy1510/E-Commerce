@@ -105,16 +105,16 @@ export default function CartPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-white">
       {/* BANNER */}
-      <div className="bg-gradient-to-r from-yellow-600 to-white py-20 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">{t("nav.cart")}</h1>
+      <div className="bg-gradient-to-r from-brand-primary/95 via-brand-primary-light/35 to-brand-surface py-20 text-center">
+        <h1 className="text-4xl font-bold text-brand-text">{t("nav.cart")}</h1>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* LEFT */}
         <div className="lg:col-span-2">
-          <div className="grid grid-cols-4 text-gray-700 font-semibold border-b pb-4">
+          <div className="grid grid-cols-4 text-brand-text font-semibold border-b border-brand-primary-light pb-4">
             <span>{t("label.product")}</span>
             <span className="text-center">{t("label.price")}</span>
             <span className="text-center">{t("label.quantity")}</span>
@@ -122,19 +122,19 @@ export default function CartPage() {
           </div>
 
           {cart.length === 0 && (
-            <p className="py-10 text-gray-500">{t("label.cartEmpty")}</p>
+            <p className="py-10 text-brand-muted">{t("label.cartEmpty")}</p>
           )}
 
           {cart.map((item) => (
             <div
               key={item.product?.id || item.id}
-              className="grid grid-cols-4 items-center py-6 border-b">
+              className="grid grid-cols-4 items-center py-6 border-b border-brand-primary-light">
               {/* PRODUCT */}
               <div className="flex items-center gap-4">
                 <button
                   type="button"
                   onClick={() => item.product && removeItem(item.product.id)}
-                  className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative z-10"
+                  className="text-brand-muted hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative z-10"
                   aria-label="Xóa sản phẩm">
                   <X size={18} />
                 </button>
@@ -152,7 +152,7 @@ export default function CartPage() {
                     />
 
                     <div className="flex flex-col">
-                      <span className="font-medium group-hover:text-yellow-600 transition">
+                      <span className="font-medium group-hover:text-brand-primary transition text-brand-text">
                         {item.product.name}
                       </span>
                       {item.product.stock === 0 ? (
@@ -173,7 +173,7 @@ export default function CartPage() {
                       height={80}
                     />
 
-                    <span className="font-medium text-gray-500">
+                    <span className="font-medium text-brand-muted">
                       {t("label.product")}
                     </span>
                   </div>
@@ -181,24 +181,24 @@ export default function CartPage() {
               </div>
 
               {/* PRICE */}
-              <span className="text-center text-yellow-600 font-medium">
+              <span className="text-center text-brand-primary font-medium">
                 {formatPrice(item.price)}
               </span>
 
               {/* QUANTITY */}
               <div className="flex justify-center">
-                <div className="flex items-center border rounded-full px-3 py-1 gap-3">
+                <div className="flex items-center border border-brand-primary-light bg-white rounded-[12px] px-3 py-1 gap-3">
                   <button
                     disabled={item.quantity <= 1}
                     onClick={() =>
                       item.product &&
                       updateQuantity(item.product.id, "dec", item.quantity)
                     }
-                    className="disabled:opacity-30 disabled:cursor-not-allowed">
+                    className="disabled:opacity-30 disabled:cursor-not-allowed text-brand-text hover:text-brand-primary">
                     <Minus size={16} />
                   </button>
 
-                  <span className="font-semibold">{item.quantity}</span>
+                  <span className="font-semibold text-brand-text">{item.quantity}</span>
 
                   <button
                     disabled={item.product ? item.quantity >= item.product.stock : false}
@@ -206,14 +206,14 @@ export default function CartPage() {
                       item.product &&
                       updateQuantity(item.product.id, "inc", item.quantity)
                     }
-                    className="disabled:opacity-30 disabled:cursor-not-allowed">
+                    className="disabled:opacity-30 disabled:cursor-not-allowed text-brand-text hover:text-brand-primary">
                     <Plus size={16} />
                   </button>
                 </div>
               </div>
 
               {/* SUBTOTAL */}
-              <span className="text-right text-yellow-600 font-medium">
+              <span className="text-right text-brand-primary font-medium">
                 {formatPrice(item.price * item.quantity)}
               </span>
             </div>
@@ -221,34 +221,34 @@ export default function CartPage() {
         </div>
 
         {/* RIGHT */}
-        <div className="border rounded-lg p-6 h-fit shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">
+        <div className="bg-brand-surface border border-brand-primary-light rounded-2xl p-6 h-fit shadow-sm">
+          <h2 className="text-lg font-semibold mb-4 text-brand-text">
             {t("cart.cartTotalTitle")}
           </h2>
 
-          <div className="flex justify-between py-3 border-b">
+          <div className="flex justify-between py-3 border-b border-brand-primary-light text-brand-text">
             <span>{t("label.subtotal")}:</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
 
-          <div className="flex justify-between py-3 border-b">
+          <div className="flex justify-between py-3 border-b border-brand-primary-light text-brand-text">
             <span>{t("label.shipping")}:</span>
             <span>{t("label.free")}</span>
           </div>
 
-          <div className="flex justify-between py-3 font-semibold">
+          <div className="flex justify-between py-3 font-semibold text-brand-text">
             <span>{t("label.total")}:</span>
-            <span className="text-yellow-600">{formatPrice(subtotal)}</span>
+            <span className="text-brand-primary text-lg">{formatPrice(subtotal)}</span>
           </div>
 
           <div className="mt-6">
             <button
               onClick={() => router.push("/checkout")}
               disabled={cart.length === 0}
-              className={`w-full text-white py-3 rounded-full transition ${
+              className={`w-full text-white h-11 font-semibold rounded-[12px] transition duration-300 flex items-center justify-center cursor-pointer border-none shadow-sm ${
                 cart.length === 0
                   ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-[#eba07a] hover:bg-yellow-600"
+                  : "bg-brand-primary hover:bg-[#8d6338]"
               }`}>
               {t("action.proceedToCheckout")}
             </button>

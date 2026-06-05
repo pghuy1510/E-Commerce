@@ -169,24 +169,24 @@ export default function CouponInput({
     : 0;
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 space-y-6">
+    <div className="bg-brand-surface rounded-3xl shadow-sm border border-brand-border p-6 space-y-6">
       {/* HEADER */}
       <div>
         <div className="flex items-center gap-2">
-          <Ticket className="w-5 h-5 text-amber-500" />
-          <h3 className="text-lg font-semibold text-gray-900">Mã giảm giá (Coupon)</h3>
+          <Ticket className="w-5 h-5 text-brand-primary" />
+          <h3 className="text-lg font-semibold text-brand-text">Mã giảm giá (Coupon)</h3>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-brand-muted mt-1">
           Chọn hoặc nhập mã giảm giá của bạn để được khấu trừ vào đơn hàng.
         </p>
       </div>
 
       {/* FREESHIP & NEXT COUPON PROGRESS */}
       {progress && (
-        <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/50 space-y-3">
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
+        <div className="bg-sale/10 rounded-2xl p-4 border border-sale/20 space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold text-brand-text">
             <span className="flex items-center gap-1.5">
-              <Truck className="w-4 h-4 text-amber-500" />
+              <Truck className="w-4 h-4 text-sale" />
               {progress.neededForFreeShipping > 0 
                 ? `Mua thêm ${formatPrice(progress.neededForFreeShipping)} để được miễn phí vận chuyển`
                 : "Chúc mừng! Đơn hàng của bạn đã được miễn phí vận chuyển"}
@@ -194,16 +194,16 @@ export default function CouponInput({
             <span>{freeShipPct}%</span>
           </div>
           
-          <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-brand-bg h-2 rounded-full overflow-hidden">
             <div 
-              className="bg-amber-500 h-full rounded-full transition-all duration-500" 
+              className="bg-sale h-full rounded-full transition-all duration-500" 
               style={{ width: `${freeShipPct}%` }}
             />
           </div>
 
           {progress.nextCoupon && (
-            <p className="text-[11px] text-amber-700 bg-amber-100/50 rounded-xl px-3 py-1.5 font-medium">
-              💡 Mua thêm <strong className="text-amber-800">{formatPrice(progress.nextCoupon.needed)}</strong> để kích hoạt mã <strong className="text-amber-800">#{progress.nextCoupon.code}</strong> (giúp tiết kiệm thêm {formatPrice(progress.nextCoupon.estimatedSaving)}).
+            <p className="text-[11px] text-sale bg-sale/10 rounded-xl px-3 py-1.5 font-medium">
+              💡 Mua thêm <strong className="text-sale font-bold">{formatPrice(progress.nextCoupon.needed)}</strong> để kích hoạt mã <strong className="text-sale font-bold">#{progress.nextCoupon.code}</strong> (giúp tiết kiệm thêm {formatPrice(progress.nextCoupon.estimatedSaving)}).
             </p>
           )}
         </div>
@@ -221,7 +221,7 @@ export default function CouponInput({
             }}
             disabled={!!appliedCode}
             placeholder="Nhập mã giảm giá (ví dụ: WELCOME10)"
-            className="flex-1 rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300 disabled:bg-gray-100 disabled:text-gray-500 font-mono uppercase"
+            className="flex-1 rounded-2xl border border-brand-border bg-brand-bg/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-primary/50 disabled:bg-gray-100 disabled:text-gray-500 font-mono uppercase text-brand-text"
           />
           {appliedCode ? (
             <button
@@ -236,7 +236,7 @@ export default function CouponInput({
               type="button"
               onClick={() => handleApply(value)}
               disabled={validating || !value.trim()}
-              className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              className="rounded-2xl bg-brand-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-hover transition disabled:opacity-50 disabled:cursor-not-allowed">
               {validating ? "Đang kiểm tra..." : "Áp dụng"}
             </button>
           )}
@@ -262,7 +262,7 @@ export default function CouponInput({
           {loading ? (
             <p className="text-xs text-gray-400 italic">Đang tìm mã giảm giá khả dụng...</p>
           ) : coupons.length === 0 ? (
-            <p className="text-xs text-gray-500 italic bg-gray-50 rounded-2xl p-4 text-center">
+            <p className="text-xs text-brand-muted italic bg-brand-bg rounded-2xl p-4 text-center border border-brand-border">
               Bạn chưa sở hữu mã giảm giá nào. Hãy hoàn thành các thử thách hoặc đặt thêm đơn hàng để được tặng mã!
             </p>
           ) : (
@@ -284,32 +284,32 @@ export default function CouponInput({
                 return (
                   <div 
                     key={item.code} 
-                    className={`border rounded-2xl p-3 flex flex-col justify-between transition-all duration-200 bg-white ${
+                    className={`border rounded-2xl p-3 flex flex-col justify-between transition-all duration-200 bg-brand-surface ${
                       isSelected 
-                        ? "border-amber-500 bg-amber-50/10 shadow-sm" 
-                        : "border-gray-200 hover:border-amber-300"
+                        ? "border-brand-primary bg-brand-primary-light/20 shadow-sm" 
+                        : "border-brand-border hover:border-brand-primary"
                     }`}
                   >
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 font-mono font-bold text-[10px] px-2 py-0.5 rounded-md border border-amber-100 uppercase">
+                        <span className="inline-flex items-center gap-1 bg-brand-primary-light/40 text-brand-primary font-mono font-bold text-[10px] px-2 py-0.5 rounded-md border border-brand-border uppercase">
                           {item.code}
                         </span>
-                        <span className="text-[9px] font-bold text-gray-400 uppercase">{labelText}</span>
+                        <span className="text-[9px] font-bold text-brand-muted uppercase">{labelText}</span>
                       </div>
                       
-                      <h5 className="font-bold text-sm text-gray-900 mt-1">{discountText}</h5>
-                      <p className="text-[10px] text-gray-500">Đơn tối thiểu: {formattedMinOrder}</p>
+                      <h5 className="font-bold text-brand-text text-sm mt-1">{discountText}</h5>
+                      <p className="text-[10px] text-brand-muted">Đơn tối thiểu: {formattedMinOrder}</p>
                       
-                      <p className="text-[9px] text-gray-400 italic">
+                      <p className="text-[9px] text-brand-muted italic">
                         Hạn dùng: {new Date(item.expiresAt).toLocaleDateString("vi-VN")}
                       </p>
                     </div>
 
-                    <div className="mt-3.5 pt-2 border-t border-dashed border-gray-100 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-gray-400">Tồn: {item.remainingUses} lượt</span>
+                    <div className="mt-3.5 pt-2 border-t border-dashed border-brand-border flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-brand-muted">Tồn: {item.remainingUses} lượt</span>
                       {isSelected ? (
-                        <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 font-bold bg-amber-100/50 px-2 py-1 rounded-xl">
+                        <span className="inline-flex items-center gap-0.5 text-xs text-brand-primary font-bold bg-brand-primary-light/40 px-2 py-1 rounded-xl">
                           <Check className="w-3.5 h-3.5" /> Đã dùng
                         </span>
                       ) : (
@@ -317,7 +317,7 @@ export default function CouponInput({
                           type="button"
                           onClick={() => handleApply(item.code)}
                           disabled={!!appliedCode || validating}
-                          className="text-xs font-semibold text-amber-600 hover:text-amber-700 transition"
+                          className="text-xs font-semibold text-brand-primary hover:text-brand-primary-hover transition"
                         >
                           Áp dụng
                         </button>

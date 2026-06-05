@@ -15,7 +15,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { FaFacebook } from "react-icons/fa";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { cartAPI, wishlistAPI, userProfileAPI } from "@/lib/api";
+import { cartAPI, wishlistAPI, userProfileAPI, categoryAPI, type Category } from "@/lib/api";
 import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
 import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
@@ -29,12 +29,24 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
 
   const [openLang, setOpenLang] = useState(false);
   const [openCurrency, setOpenCurrency] = useState(false);
 
   const langRef = useRef<HTMLDivElement>(null);
   const currencyRef = useRef<HTMLDivElement>(null);
+
+  // Fetch categories once on mount
+  useEffect(() => {
+    categoryAPI.getAll()
+      .then((data) => {
+        setDbCategories(data || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching categories in header:", err);
+      });
+  }, []);
 
   const { data: session } = useSession();
   const router = useRouter();
@@ -79,12 +91,13 @@ export default function Header() {
           setUserRole(profile.role || "user");
         })
         .catch((err) => {
-          console.error("Error fetching user profile in header:", err);
           if (err.response?.status === 401) {
             setAuthToken(null);
             localStorage.removeItem("username");
             setLocalUsername(null);
             setUserRole(null);
+          } else {
+            console.error("Error fetching user profile in header:", err);
           }
         });
       return;
@@ -109,12 +122,13 @@ export default function Header() {
         setUserRole(profile.role || "user");
       })
       .catch((err) => {
-        console.error("Error fetching user profile in header:", err);
         if (err.response?.status === 401) {
           setAuthToken(null);
           localStorage.removeItem("username");
           setLocalUsername(null);
           setUserRole(null);
+        } else {
+          console.error("Error fetching user profile in header:", err);
         }
       });
   }, [session]);
@@ -265,7 +279,7 @@ export default function Header() {
       <div className="flex items-center justify-between bg-gray-100 px-10 py-2 text-sm">
         <div className="flex items-center gap-6 text-gray-600">
           <span className="flex items-center gap-2">
-            <FaFacebook className="h-4 w-4 text-yellow-600" />
+            <FaFacebook className="h-4 w-4 text-brand-primary" />
             {t("header.followers", {
               count: "7.5k",
             })}
@@ -274,7 +288,7 @@ export default function Header() {
           <div className="h-4 w-px bg-gray-300" />
 
           <span className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-yellow-600" />
+            <Phone className="h-4 w-4 text-brand-primary" />
             +84 971 599 019
           </span>
         </div>
@@ -289,7 +303,7 @@ export default function Header() {
                 setOpenLang(!openLang);
                 setOpenCurrency(false);
               }}
-              className="flex cursor-pointer items-center gap-1 hover:text-yellow-600">
+              className="flex cursor-pointer items-center gap-1 hover:text-brand-primary">
               {languageLabel}
 
               <ChevronDown
@@ -308,11 +322,11 @@ export default function Header() {
                     setOpenLang(false);
                   }}
                   className="group relative cursor-pointer px-4 py-2">
-                  <span className="transition-colors duration-200 group-hover:text-yellow-600">
+                  <span className="transition-colors duration-200 group-hover:text-brand-primary">
                     {t("language.english")}
                   </span>
 
-                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
+                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
                 </div>
 
                 <div
@@ -321,11 +335,11 @@ export default function Header() {
                     setOpenLang(false);
                   }}
                   className="group relative cursor-pointer px-4 py-2">
-                  <span className="transition-colors duration-200 group-hover:text-yellow-600">
+                  <span className="transition-colors duration-200 group-hover:text-brand-primary">
                     {t("language.vietnamese")}
                   </span>
 
-                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
+                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
                 </div>
               </div>
             )}
@@ -341,7 +355,7 @@ export default function Header() {
 
                 setOpenLang(false);
               }}
-              className="flex cursor-pointer items-center gap-1 hover:text-yellow-600">
+              className="flex cursor-pointer items-center gap-1 hover:text-brand-primary">
               {currencyLabel}
 
               <ChevronDown
@@ -360,11 +374,11 @@ export default function Header() {
                     setOpenCurrency(false);
                   }}
                   className="group relative cursor-pointer px-4 py-2">
-                  <span className="transition-colors duration-200 group-hover:text-yellow-600">
+                  <span className="transition-colors duration-200 group-hover:text-brand-primary">
                     $USD
                   </span>
 
-                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
+                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
                 </div>
 
                 <div
@@ -373,11 +387,11 @@ export default function Header() {
                     setOpenCurrency(false);
                   }}
                   className="group relative cursor-pointer px-4 py-2">
-                  <span className="transition-colors duration-200 group-hover:text-yellow-600">
+                  <span className="transition-colors duration-200 group-hover:text-brand-primary">
                     ₫VND
                   </span>
 
-                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
+                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
                 </div>
               </div>
             )}
@@ -386,7 +400,7 @@ export default function Header() {
           {/* USER */}
           {displayName ? (
             <div className="group relative cursor-pointer">
-              <div className="flex items-center gap-2 hover:text-yellow-600">
+              <div className="flex items-center gap-2 hover:text-brand-primary">
                 <User className="h-5 w-5" />
 
                 <span className="font-medium">{displayName}</span>
@@ -405,13 +419,13 @@ export default function Header() {
 
                 <Link
                   href="/profile"
-                  className="block px-4 py-2 hover:text-yellow-600">
+                  className="block px-4 py-2 hover:text-brand-primary">
                   {t("header.profile")}
                 </Link>
 
                 <Link
                   href="/orders"
-                  className="block px-4 py-2 hover:text-yellow-600">
+                  className="block px-4 py-2 hover:text-brand-primary">
                   {t("header.orders")}
                 </Link>
 
@@ -425,7 +439,7 @@ export default function Header() {
           ) : (
             <Link
               href="/login"
-              className="cursor-pointer hover:text-yellow-600">
+              className="cursor-pointer hover:text-brand-primary">
               {t("header.logIn")}
             </Link>
           )}
@@ -440,7 +454,7 @@ export default function Header() {
       <div className="flex items-center justify-between px-10 py-4">
         {/* LOGO */}
         <Link href="/" className="flex items-center gap-3">
-          <div className="rounded-full bg-yellow-600 p-3">
+          <div className="rounded-full bg-brand-primary p-3">
             <ShoppingBag className="h-5 w-5 text-white" />
           </div>
 
@@ -452,16 +466,25 @@ export default function Header() {
           {/* HOME */}
           <Link
             href="/"
-            className="group relative transition hover:text-yellow-600">
+            className="group relative transition hover:text-brand-primary">
             {t("nav.home")}
 
-            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
           </Link>
 
-          {/* SHOP */}
+          {/* SHOP BOOK */}
+          <Link
+            href="/shop?category=Books"
+            className="group relative transition hover:text-brand-primary">
+            {t("nav.shopBook")}
+
+            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
+          </Link>
+
+          {/* SHOP PRODUCTS */}
           <div className="group relative">
-            <div className="flex cursor-pointer items-center gap-1 transition hover:text-yellow-600">
-              {t("nav.shop")}
+            <div className="flex cursor-pointer items-center gap-1 transition hover:text-brand-primary">
+              {t("nav.shopProducts")}
 
               <ChevronDown size={16} />
             </div>
@@ -469,27 +492,23 @@ export default function Header() {
             {/* MEGA MENU */}
             <div className="invisible absolute left-1/2 top-10 z-50 w-[720px] -translate-x-1/2 rounded-2xl border border-gray-100 bg-white opacity-0 shadow-2xl transition-all duration-300 group-hover:visible group-hover:opacity-100">
               <div className="grid grid-cols-3 gap-8 p-8">
-                {/* CATEGORY */}
+                {/* CATEGORIES */}
                 <div>
                   <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-900">
                     {t("nav.categories")}
                   </h3>
 
                   <div className="space-y-3">
-                    {[
-                      "Men Fashion",
-                      "Women Fashion",
-                      "Sneakers",
-                      "Sports Shoes",
-                      "Accessories",
-                    ].map((item, index) => (
-                      <Link
-                        key={index}
-                        href={`/shop?category=${item}`}
-                        className="block text-sm text-gray-600 transition hover:text-yellow-600">
-                        {translateCategory(item)}
-                      </Link>
-                    ))}
+                    {dbCategories
+                      .filter((c) => c.name.trim().toLowerCase() !== "books")
+                      .map((cat) => (
+                        <Link
+                          key={cat.id}
+                          href={`/shop?category=${cat.name}`}
+                          className="block text-sm text-gray-600 transition hover:text-brand-primary">
+                          {translateCategory(cat.name)}
+                        </Link>
+                      ))}
                   </div>
                 </div>
 
@@ -525,7 +544,7 @@ export default function Header() {
                       <Link
                         key={index}
                         href={item.href}
-                        className="block text-sm text-gray-600 transition hover:text-yellow-600">
+                        className="block text-sm text-gray-600 transition hover:text-brand-primary">
                         {translateCategory(item.name)}
                       </Link>
                     ))}
@@ -533,9 +552,9 @@ export default function Header() {
                 </div>
 
                 {/* PROMO */}
-                <div className="flex flex-col justify-between rounded-2xl border border-yellow-100 bg-yellow-50 p-5">
+                <div className="flex flex-col justify-between rounded-2xl border border-brand-primary-light bg-brand-primary-light/20 p-5">
                   <div>
-                    <p className="mb-2 text-xs uppercase tracking-widest text-yellow-700">
+                    <p className="mb-2 text-xs uppercase tracking-widest text-brand-primary">
                       {t("nav.specialOffer")}
                     </p>
 
@@ -550,7 +569,7 @@ export default function Header() {
 
                   <Link
                     href="/shop"
-                    className="mt-5 inline-flex items-center justify-center rounded-full bg-yellow-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-yellow-700">
+                    className="mt-5 inline-flex items-center justify-center rounded-full bg-brand-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-800">
                     {t("action.shopNowPlain")}
                   </Link>
                 </div>
@@ -561,28 +580,28 @@ export default function Header() {
           {/* NEW ARRIVALS */}
           <Link
             href="/new-arrivals"
-            className="group relative transition hover:text-yellow-600">
+            className="group relative transition hover:text-brand-primary">
             {t("nav.newArrivals")}
 
-            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
           </Link>
 
           {/* BEST SELLERS */}
           <Link
             href="/best-sellers"
-            className="group relative transition hover:text-yellow-600">
+            className="group relative transition hover:text-brand-primary">
             {t("nav.bestSellers")}
 
-            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
           </Link>
 
           {/* CONTACT */}
           <Link
             href="/contact"
-            className="group relative transition hover:text-yellow-600">
+            className="group relative transition hover:text-brand-primary">
             {t("nav.contact")}
 
-            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-yellow-600 transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
           </Link>
         </nav>
 
@@ -609,10 +628,10 @@ export default function Header() {
 
           {/* WISHLIST */}
           <Link href="/wishlist" className="relative">
-            <Heart className="h-5 w-5 cursor-pointer text-gray-700 transition hover:text-yellow-600" />
+            <Heart className="h-5 w-5 cursor-pointer text-gray-700 transition hover:text-brand-primary" />
 
             {wishlistCount > 0 && (
-              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-600 text-xs text-white">
+              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary text-xs text-white">
                 {wishlistCount}
               </span>
             )}
@@ -620,10 +639,10 @@ export default function Header() {
 
           {/* CART */}
           <Link href="/cart" className="relative">
-            <ShoppingCart className="h-5 w-5 cursor-pointer text-gray-700 transition hover:text-yellow-600" />
+            <ShoppingCart className="h-5 w-5 cursor-pointer text-gray-700 transition hover:text-brand-primary" />
 
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-600 text-xs text-white">
+              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary text-xs text-white">
                 {cartCount}
               </span>
             )}

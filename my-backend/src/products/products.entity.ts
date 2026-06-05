@@ -26,6 +26,9 @@ export class Product {
   @Column()
   stock!: number;
 
+  @Column({ name: 'reserved_stock', default: 0 })
+  reservedStock!: number;
+
   @Column({ nullable: true })
   image!: string;
 

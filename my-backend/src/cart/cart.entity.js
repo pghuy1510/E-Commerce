@@ -17,6 +17,8 @@ let Cart = class Cart {
     id;
     user;
     items;
+    created_at;
+    updated_at;
 };
 exports.Cart = Cart;
 __decorate([
@@ -32,6 +34,14 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => cart_item_entity_1.CartItem, (item) => item.cart, { cascade: true }),
     __metadata("design:type", Array)
 ], Cart.prototype, "items", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', type: 'timestamptz' }),
+    __metadata("design:type", Date)
+], Cart.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', type: 'timestamptz' }),
+    __metadata("design:type", Date)
+], Cart.prototype, "updated_at", void 0);
 exports.Cart = Cart = __decorate([
     (0, typeorm_1.Entity)('carts')
 ], Cart);

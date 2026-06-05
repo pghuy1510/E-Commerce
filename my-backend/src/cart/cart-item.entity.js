@@ -19,6 +19,8 @@ let CartItem = class CartItem {
     product;
     quantity;
     price;
+    created_at;
+    updated_at;
 };
 exports.CartItem = CartItem;
 __decorate([
@@ -50,6 +52,14 @@ __decorate([
     }),
     __metadata("design:type", Number)
 ], CartItem.prototype, "price", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', type: 'timestamptz' }),
+    __metadata("design:type", Date)
+], CartItem.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', type: 'timestamptz' }),
+    __metadata("design:type", Date)
+], CartItem.prototype, "updated_at", void 0);
 exports.CartItem = CartItem = __decorate([
     (0, typeorm_1.Entity)('cart_items')
 ], CartItem);

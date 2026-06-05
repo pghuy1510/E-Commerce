@@ -10,29 +10,41 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JwtStrategy = void 0;
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
-let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy, 'jwt') {
-    constructor(configService) {
+const users_service_1 = require("../users/users.service");
+let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
+    usersService;
+    constructor(configService, usersService) {
         const options = {
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: configService.getOrThrow('JWT_SECRET'),
         };
         super(options);
+        this.usersService = usersService;
     }
-    validate(payload) {
+    async validate(payload) {
+        const userId = Number(payload.sub);
+        const user = await this.usersService.findOne(userId);
+        if (!user) {
+            throw new common_1.UnauthorizedException('Người dùng không tồn tại hoặc phiên đăng nhập hết hạn.');
+        }
+        if (!user.isActive) {
+            throw new common_1.UnauthorizedException('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
+        }
         return {
-            id: payload.sub,
-            username: payload.username,
+            id: user.id,
+            username: user.username,
+            role: user.role,
         };
     }
 };
 exports.JwtStrategy = JwtStrategy;
 exports.JwtStrategy = JwtStrategy = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [config_1.ConfigService])
+    __metadata("design:paramtypes", [config_1.ConfigService,
+        users_service_1.UsersService])
 ], JwtStrategy);

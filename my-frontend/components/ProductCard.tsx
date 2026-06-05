@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Eye, Heart, ShoppingCart } from "lucide-react";
+import { Eye, Heart, ShoppingCart, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePreferences } from "@/lib/i18n";
 import {
@@ -21,7 +21,7 @@ type ProductCardProps = {
 };
 
 const BADGE_STYLES: Record<BadgeTone, string> = {
-  amber: "bg-yellow-600 text-white",
+  amber: "bg-brand-primary text-white",
   emerald: "bg-emerald-600 text-white",
   gray: "bg-gray-700 text-white",
 };
@@ -80,11 +80,12 @@ export default function ProductCard({
   const soldCount = showSold && "sold" in product ? product.sold : undefined;
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-yellow-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <div className="relative bg-[#f8f1e7] p-4">
+    <div className="group flex h-full flex-col overflow-hidden rounded-[16px] border border-brand-border bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all duration-300 hover:border-[#a7794a] hover:shadow-xl">
+      {/* IMAGE AREA */}
+      <div className="relative w-full aspect-square overflow-hidden rounded-[12px] bg-brand-surface border border-[#eadfcc] mb-4 flex items-center justify-center">
         {badge && (
           <span
-            className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-semibold ${BADGE_STYLES[badgeTone]}`}>
+            className={`absolute left-3 top-3 z-10 rounded-full px-3 py-1 text-xs font-semibold ${BADGE_STYLES[badgeTone]}`}>
             {badge}
           </span>
         )}
@@ -92,21 +93,22 @@ export default function ProductCard({
         <button
           type="button"
           onClick={() => router.push(`/product/${product.id}`)}
-          className="relative block h-48 w-full overflow-hidden rounded-xl bg-white">
+          className="relative block w-full h-full">
           <Image
             src={product.image || "/placeholder.png"}
             alt={product.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-contain transition duration-300 group-hover:scale-105"
+            className="object-cover rounded-[12px] transition-transform duration-300 group-hover:-translate-x-[20px]"
           />
         </button>
 
-        <div className="absolute right-4 top-4 flex flex-col gap-2 opacity-0 translate-x-2 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
+        {/* ACTION ICONS - SLIDES IN ON HOVER */}
+        <div className="absolute right-3 top-3 z-10 flex flex-col gap-[10px] opacity-0 invisible translate-x-[16px] transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-x-0">
           <button
             type="button"
             onClick={handleWishlist}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow hover:bg-yellow-600 hover:text-white transition">
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white border border-[#eadfcc] shadow-xs hover:bg-[#a7794a] hover:text-white transition-all duration-300 cursor-pointer text-brand-muted">
             <Heart size={16} />
           </button>
 
@@ -114,64 +116,69 @@ export default function ProductCard({
             type="button"
             onClick={handleAddToCart}
             disabled={product.stock <= 0}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow hover:bg-yellow-600 hover:text-white transition disabled:cursor-not-allowed disabled:opacity-60">
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white border border-[#eadfcc] shadow-xs hover:bg-[#a7794a] hover:text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer text-brand-muted">
             <ShoppingCart size={16} />
           </button>
 
           <button
             type="button"
             onClick={() => router.push(`/product/${product.id}`)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow hover:bg-gray-800 hover:text-white transition">
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white border border-[#eadfcc] shadow-xs hover:bg-[#a7794a] hover:text-white transition-all duration-300 cursor-pointer text-brand-muted">
             <Eye size={16} />
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-4 pb-5 pt-4">
-        <p className="text-xs text-gray-500">
+      {/* INFO SECTION */}
+      <div className="flex flex-1 flex-col mt-3">
+        {/* Category: 14px font-medium color #a7794a */}
+        <p className="text-[14px] text-brand-primary font-medium">
           {product.category?.name
             ? translateCategory(product.category.name)
             : t("label.categoryFallback")}
         </p>
 
+        {/* Title: 18px font-semibold color #2f2a24, margin-top: 6px */}
         <button
           type="button"
           onClick={() => router.push(`/product/${product.id}`)}
-          className="mt-1 text-left text-sm font-semibold text-gray-900 line-clamp-2 hover:text-yellow-700">
+          className="mt-[6px] text-left text-[18px] font-semibold text-brand-text line-clamp-2 hover:text-brand-primary transition-colors cursor-pointer leading-snug min-h-[56px] block w-full">
           {product.name}
         </button>
 
-        {typeof soldCount === "number" && (
-          <p className="mt-1 text-xs text-gray-500">
-            {t("label.sold", { count: soldCount })}
-          </p>
-        )}
-
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-base font-semibold text-gray-900">
+        {/* Price: 18px font-bold color #2f2a24, margin-top: 10px, left accent line 3px solid #a7794a, padding-left 8px */}
+        <div className="mt-[10px] flex items-center justify-between border-l-3 border-brand-primary pl-2">
+          <span className="text-[18px] font-bold text-brand-text">
             {formatPrice(product.price)}
           </span>
-
-          {product.stock > 0 ? (
-            <span className="text-xs font-medium text-emerald-600">
-              {t("label.inStockWithCount", { count: product.stock })}
-            </span>
-          ) : (
-            <span className="text-xs font-medium text-red-500">
-              {t("label.outOfStockShort")}
-            </span>
-          )}
         </div>
 
+        {/* Rating section: margin-top: 14px, star color #f0a044 */}
+        <div className="mt-[14px] flex items-center justify-between border-t border-brand-border pt-3">
+          <span className="text-[14px] text-brand-muted font-medium">
+            {typeof soldCount === "number" ? (
+              t("label.sold", { count: soldCount })
+            ) : product.stock > 0 ? (
+              t("label.stock", { count: product.stock })
+            ) : (
+              <span className="text-red-500 font-medium">{t("label.outOfStockShort")}</span>
+            )}
+          </span>
+
+          <div className="flex gap-0.5 text-brand-stars">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} size={12} fill="currentColor" stroke="none" />
+            ))}
+          </div>
+        </div>
+
+        {/* Button: margin-top: auto */}
         <button
           type="button"
           onClick={handleAddToCart}
           disabled={product.stock <= 0}
-          className="relative mt-4 w-full overflow-hidden rounded-full bg-[#eee0d9] py-2 text-sm font-medium text-yellow-700 transition group disabled:cursor-not-allowed disabled:opacity-60">
-          <span className="absolute inset-0 -translate-x-full bg-yellow-600 transition-transform duration-300 group-hover:translate-x-0"></span>
-          <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-            {t("action.addToCart")}
-          </span>
+          className="mt-auto w-full h-[44px] bg-brand-primary hover:bg-brand-primary-hover text-white text-sm font-semibold rounded-[10px] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 border-none shadow-sm">
+          {t("action.addToCart")}
         </button>
       </div>
     </div>

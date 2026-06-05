@@ -69,7 +69,7 @@ export default function BannerGrid() {
 
             <button
               onClick={() => router.push("/shop")}
-              className="mt-5 w-fit bg-yellow-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition cursor-pointer">
+              className="mt-5 w-fit bg-brand-primary text-white px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition cursor-pointer">
               {t("action.explore")}
             </button>
           </div>

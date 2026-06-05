@@ -175,7 +175,7 @@ function OrderSuccessContent() {
               <div className="hidden print:block mb-8 border-b pb-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold text-amber-600">ANTIGRAVITY BOOKSTORE</h2>
+                    <h2 className="text-2xl font-bold text-amber-600">E-Commerce</h2>
                     <p className="text-xs text-gray-500 mt-1">Hóa đơn mua hàng chính thức</p>
                   </div>
                   <div className="text-right">

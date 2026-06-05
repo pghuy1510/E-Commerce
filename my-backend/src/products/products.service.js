@@ -22,9 +22,64 @@ let ProductsService = class ProductsService {
     constructor(productRepo) {
         this.productRepo = productRepo;
     }
-    findAll() {
-        return this.productRepo.find({
-            relations: ['category'],
+    async findAll(query) {
+        const qb = this.productRepo
+            .createQueryBuilder('product')
+            .leftJoinAndSelect('product.category', 'category')
+            .leftJoin('order_items', 'oi', 'oi.product_id = product.id')
+            .leftJoin('reviews', 'r', 'r.product_id = product.id')
+            .addSelect('COALESCE(SUM(oi.quantity), 0)', 'sold')
+            .addSelect('COALESCE(AVG(r.rating), 5.0)', 'avgRating')
+            .groupBy('product.id')
+            .addGroupBy('category.id');
+        if (query?.search) {
+            qb.andWhere('(LOWER(product.name) LIKE :search OR LOWER(product.description) LIKE :search)', { search: `%${query.search.toLowerCase()}%` });
+        }
+        if (query?.category) {
+            qb.andWhere('LOWER(category.name) = LOWER(:category)', {
+                category: query.category,
+            });
+        }
+        if (query?.minPrice !== undefined) {
+            qb.andWhere('product.price >= :minPrice', { minPrice: query.minPrice });
+        }
+        if (query?.maxPrice !== undefined) {
+            qb.andWhere('product.price <= :maxPrice', { maxPrice: query.maxPrice });
+        }
+        if (query?.inStock) {
+            qb.andWhere('product.stock > 0');
+        }
+        if (query?.rating !== undefined) {
+            qb.having('COALESCE(AVG(r.rating), 5.0) >= :rating', {
+                rating: query.rating,
+            });
+        }
+        // Sort order:
+        // newest, price-asc, price-desc, best-selling, top-rated
+        if (query?.sortBy === 'price-asc') {
+            qb.orderBy('product.price', 'ASC');
+        }
+        else if (query?.sortBy === 'price-desc') {
+            qb.orderBy('product.price', 'DESC');
+        }
+        else if (query?.sortBy === 'best-selling') {
+            qb.orderBy('sold', 'DESC');
+        }
+        else if (query?.sortBy === 'top-rated') {
+            qb.orderBy('avgRating', 'DESC');
+        }
+        else {
+            qb.orderBy('product.id', 'DESC');
+        }
+        const { raw, entities } = await qb.getRawAndEntities();
+        return entities.map((product, index) => {
+            const sold = Number(raw[index]?.sold ?? 0);
+            const rating = Number(raw[index]?.avgRating ?? 5.0);
+            return {
+                ...product,
+                sold,
+                rating: Math.round(rating * 10) / 10,
+            };
         });
     }
     findOne(id) {
@@ -60,6 +115,40 @@ let ProductsService = class ProductsService {
             throw new common_1.NotFoundException('Product not found');
         }
         return this.productRepo.remove(product);
+    }
+    async findByCategory(categoryName) {
+        return this.productRepo
+            .createQueryBuilder('product')
+            .leftJoinAndSelect('product.category', 'category')
+            .where('LOWER(category.name) = LOWER(:name)', {
+            name: categoryName,
+        })
+            .orderBy('product.id', 'DESC') // mới nhất lên đầu
+            .take(10) // limit 10 sp
+            .getMany();
+    }
+    async getNewArrivals(limit = 12) {
+        return this.productRepo.find({
+            relations: ['category'],
+            order: { id: 'DESC' },
+            take: limit,
+        });
+    }
+    async getTopSelling(limit = 10) {
+        const { raw, entities } = await this.productRepo
+            .createQueryBuilder('product')
+            .leftJoin('order_items', 'oi', 'oi.product_id = product.id')
+            .leftJoinAndSelect('product.category', 'category')
+            .addSelect('COALESCE(SUM(oi.quantity), 0)', 'sold')
+            .groupBy('product.id')
+            .addGroupBy('category.id')
+            .orderBy('sold', 'DESC')
+            .limit(limit)
+            .getRawAndEntities();
+        return entities.map((product, index) => ({
+            ...product,
+            sold: Number(raw[index]?.sold ?? 0),
+        }));
     }
 };
 exports.ProductsService = ProductsService;

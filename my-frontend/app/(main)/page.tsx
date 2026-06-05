@@ -18,7 +18,7 @@ export default function Home() {
   const { t, translateCategory } = usePreferences();
 
   return (
-    <main className="bg-gray-100 min-h-screen">
+    <main className="bg-[#f7f3ec] min-h-screen">
       {/* HERO SLIDER */}
       <HeroSlider />
 

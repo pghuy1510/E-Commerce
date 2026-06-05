@@ -17,6 +17,11 @@ const common_1 = require("@nestjs/common");
 const users_service_1 = require("./users.service");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const update_profile_dto_1 = require("./dto/update-profile.dto");
+const update_address_dto_1 = require("./dto/update-address.dto");
+const create_bank_dto_1 = require("./dto/create-bank.dto");
+const change_password_dto_1 = require("./dto/change-password.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
@@ -30,6 +35,100 @@ let UsersController = class UsersController {
     }
     findOne(id) {
         return this.usersService.findOne(+id);
+    }
+    getProfile(req) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.getProfile(userId);
+    }
+    updateProfile(req, body) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        // Log authorization header for debugging 401 issues
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const authHeader = req.headers?.authorization;
+            // Use console.debug so it's easy to filter in dev logs
+            console.debug('[users.controller] updateProfile called - userId:', userId, 'authHeader:', authHeader);
+        }
+        catch (e) {
+            // ignore logging errors
+        }
+        return this.usersService.updateProfile(userId, body);
+    }
+    getAddress(req) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.getAddress(userId);
+    }
+    updateAddress(req, body) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.updateAddress(userId, body);
+    }
+    listAddresses(req) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.listAddresses(userId);
+    }
+    addAddress(req, body) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.addAddress(userId, body);
+    }
+    patchAddress(req, addressId, body) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.patchAddress(userId, Number(addressId), body);
+    }
+    deleteAddress(req, addressId) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.deleteAddress(userId, Number(addressId));
+    }
+    setDefaultAddress(req, addressId) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.setDefaultAddress(userId, Number(addressId));
+    }
+    listBanks(req) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.listBanks(userId);
+    }
+    addBank(req, body) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.addBank(userId, body);
+    }
+    changePassword(req, body) {
+        const userId = Number(req.user.id);
+        if (!userId) {
+            throw new common_1.BadRequestException('Invalid userId');
+        }
+        return this.usersService.changePassword(userId, body);
     }
     update(id, updateUserDto) {
         return this.usersService.update(+id, updateUserDto);
@@ -59,6 +158,111 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('me/profile'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('me/profile'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_profile_dto_1.UpdateProfileDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('me/address'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "getAddress", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('me/address'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_address_dto_1.UpdateAddressDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "updateAddress", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('me/addresses'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "listAddresses", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('me/addresses'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_address_dto_1.UpdateAddressDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "addAddress", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('me/addresses/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, update_address_dto_1.UpdateAddressDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "patchAddress", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('me/addresses/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "deleteAddress", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('me/addresses/:id/default'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "setDefaultAddress", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('me/banks'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "listBanks", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('me/banks'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_bank_dto_1.CreateBankDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "addBank", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('me/password'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "changePassword", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),

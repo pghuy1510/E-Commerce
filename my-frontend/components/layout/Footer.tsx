@@ -12,7 +12,7 @@ export default function Footer() {
     <footer className="bg-gray-100 text-gray-700 pt-12 pb-8 px-6 md:px-20">
       {/* LINE NGĂN CÁCH */}
       <div className="mb-12">
-        <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-yellow-600 to-transparent"></div>
+        <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-brand-primary to-transparent"></div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -20,7 +20,7 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <div className="bg-yellow-600 p-3 rounded-full">
+              <div className="bg-brand-primary p-3 rounded-full">
                 <ShoppingBag className="text-white w-5 h-5" />
               </div>
               <span className="text-2xl font-bold text-gray-900">
@@ -60,7 +60,7 @@ export default function Footer() {
             ].map((item) => (
               <li
                 key={item}
-                className="hover:text-yellow-600 cursor-pointer transition">
+                className="hover:text-brand-primary cursor-pointer transition">
                 {item}
               </li>
             ))}
@@ -81,7 +81,7 @@ export default function Footer() {
             ].map((item) => (
               <li
                 key={item}
-                className="hover:text-yellow-600 cursor-pointer transition">
+                className="hover:text-brand-primary cursor-pointer transition">
                 {item}
               </li>
             ))}
@@ -101,7 +101,7 @@ export default function Footer() {
               placeholder={t("footer.emailPlaceholder")}
               className="flex-1 px-4 py-2 outline-none"
             />
-            <button className="bg-yellow-600 text-white px-2 hover:bg-yellow-700 transition">
+            <button className="bg-brand-primary text-white px-2 hover:bg-brand-primary-hover transition">
               {t("action.subscribe")}
             </button>
           </div>
