@@ -290,10 +290,39 @@ export class PaymentService {
     };
   }
 
+  private normalizePaymentCode(code: string): string {
+    // Normalization is required because BIDV Virtual Account transactions through SePay
+    // sometimes send the payment code without dashes (e.g. 656D15B036264DA288510E4B6132D975),
+    // whereas payment records store the paymentCode with dashes in UUID format.
+    return (code || '')
+      .replace(/-/g, '')
+      .replace(/\s/g, '')
+      .trim()
+      .toUpperCase();
+  }
+
   async handleWebhook(dto: PaymentWebhookDto, raw: Record<string, unknown>) {
     let payment: Payment | null = null;
     try {
-      if (!dto.code) {
+      console.log('========== SEPAY WEBHOOK ==========');
+      console.log(JSON.stringify(dto, null, 2));
+      console.log('===================================');
+
+      // Attempt to extract the UUID-like token from content if dto.code is empty/not provided
+      const uuidMatch = dto.content?.match(
+        /([A-F0-9]{32}|[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12})/i,
+      );
+      const extractedCode = uuidMatch?.[1] ?? '';
+
+      const incomingCode = this.normalizePaymentCode(
+        dto.code || extractedCode || ''
+      );
+
+      console.log('WEBHOOK CODE:', dto.code);
+      console.log('WEBHOOK CONTENT:', dto.content);
+      console.log('NORMALIZED CODE:', incomingCode);
+
+      if (!incomingCode) {
         await this.paymentLogRepo.save({
           provider: 'sepay',
           providerTransactionId: dto.id ? String(dto.id) : null,
@@ -303,9 +332,15 @@ export class PaymentService {
         return { status: 'ignored' };
       }
 
-      payment = await this.paymentRepo.findOne({
-        where: { paymentCode: dto.code.trim().toUpperCase() },
-      });
+      payment = await this.paymentRepo
+        .createQueryBuilder('payment')
+        .where(
+          "REPLACE(UPPER(payment.paymentCode), '-', '') = :code",
+          { code: incomingCode }
+        )
+        .getOne();
+
+      console.log('MATCHED PAYMENT:', payment?.id);
 
       if (!payment) {
         throw new NotFoundException('Payment not found');

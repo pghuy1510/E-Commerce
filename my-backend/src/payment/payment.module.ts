@@ -12,6 +12,7 @@ import { CouponModule } from '../coupons/coupon.module';
 import { PaymentService } from './payment.service';
 import { PaymentController } from './payment.controller';
 import { AuthModule } from '../auth/auth.module';
+import { MailModule } from '../common/mail.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AuthModule } from '../auth/auth.module';
     ]),
     CouponModule,
     AuthModule,
+    MailModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService],

@@ -16,8 +16,12 @@ let Payment = class Payment {
     order_id;
     method; // COD | MOMO | VNPAY
     amount;
-    status; // pending | success | failed
+    status; // pending | paid | failed | expired | refunded
     transaction_id;
+    tokenHash;
+    paymentCode;
+    paid_at;
+    expired_at;
     created_at;
 };
 exports.Payment = Payment;
@@ -45,6 +49,22 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Payment.prototype, "transaction_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'token_hash', nullable: true }),
+    __metadata("design:type", String)
+], Payment.prototype, "tokenHash", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'payment_code', type: 'varchar', unique: true, nullable: true }),
+    __metadata("design:type", Object)
+], Payment.prototype, "paymentCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'paid_at', type: 'timestamptz', nullable: true }),
+    __metadata("design:type", Object)
+], Payment.prototype, "paid_at", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'expired_at', type: 'timestamptz', nullable: true }),
+    __metadata("design:type", Object)
+], Payment.prototype, "expired_at", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
