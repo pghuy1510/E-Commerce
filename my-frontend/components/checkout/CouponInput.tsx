@@ -35,7 +35,11 @@ export default function CouponInput({
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const isLoggedIn = typeof window !== "undefined" && !!getBrowserToken();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!getBrowserToken());
+  }, []);
 
   // Tải danh sách coupon của user và progress freeship
   useEffect(() => {

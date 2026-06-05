@@ -52,7 +52,11 @@ export default function AddressSelector({
     isDefault: false,
   });
 
-  const isLoggedIn = typeof window !== "undefined" && !!getBrowserToken();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!getBrowserToken());
+  }, []);
 
   const loadAddresses = async (idToSelect?: number) => {
     try {

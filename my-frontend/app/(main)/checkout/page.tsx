@@ -62,7 +62,11 @@ export default function CheckoutPage() {
   const [profileName, setProfileName] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
 
-  const isLoggedIn = typeof window !== "undefined" && !!getBrowserToken();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!getBrowserToken());
+  }, []);
 
   const machineId = useMemo(() => {
     if (typeof window === "undefined") return "WEB";
@@ -77,7 +81,9 @@ export default function CheckoutPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        if (isLoggedIn) {
+        const token = getBrowserToken();
+        const userLoggedIn = !!token;
+        if (userLoggedIn) {
           const [cartRes, addressRes, profileRes, provincesData] = await Promise.all([
             cartAPI.get(),
             userAddressAPI.get().catch(() => ({} as any)),
@@ -136,7 +142,7 @@ export default function CheckoutPage() {
       }
     };
     void load();
-  }, [isLoggedIn]);
+  }, []);
 
   const shippingFee = 0;
   const discount = couponDiscount;

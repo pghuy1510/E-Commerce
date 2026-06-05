@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GuestCheckoutDto = exports.GuestCartItemDto = exports.CheckoutDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 class CheckoutDto {
     receiverName;
     receiverPhone;
@@ -229,3 +230,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], GuestCheckoutDto.prototype, "guestEmail", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => GuestCartItemDto),
+    __metadata("design:type", Array)
+], GuestCheckoutDto.prototype, "items", void 0);

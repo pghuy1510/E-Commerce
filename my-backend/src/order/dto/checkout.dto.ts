@@ -5,7 +5,10 @@ import {
   IsString,
   MaxLength,
   Min,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CheckoutDto {
   @IsString()
@@ -154,5 +157,8 @@ export class GuestCheckoutDto {
   @IsString()
   guestEmail!: string;
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GuestCartItemDto)
   items!: GuestCartItemDto[];
 }
