@@ -87,6 +87,14 @@ export default function AdminPromotionsPage() {
   const [dealSubmitting, setDealSubmitting] = useState(false);
   const [dealError, setDealError] = useState<string | null>(null);
 
+  // Home Banner States
+  const [dealBannerEnabled, setDealBannerEnabled] = useState(true);
+  const [dealBannerUrl, setDealBannerUrl] = useState("");
+  const [dealBannerTitle, setDealBannerTitle] = useState("");
+  const [dealBannerSubtitle, setDealBannerSubtitle] = useState("");
+  const [dealBannerButtonText, setDealBannerButtonText] = useState("");
+  const [dealBannerButtonUrl, setDealBannerButtonUrl] = useState("");
+
   // Audit Logs State
   const [logs, setLogs] = useState<any[]>([]);
   const [logsTotal, setLogsTotal] = useState(0);
@@ -285,6 +293,12 @@ export default function AdminPromotionsPage() {
     setCanEditDealPrices(true);
     setDealProductSearch("");
     setDealError(null);
+    setDealBannerEnabled(true);
+    setDealBannerUrl("");
+    setDealBannerTitle("");
+    setDealBannerSubtitle("");
+    setDealBannerButtonText("");
+    setDealBannerButtonUrl("");
     setIsDealModalOpen(true);
   };
 
@@ -322,6 +336,12 @@ export default function AdminPromotionsPage() {
       setCanEditDealPrices(detail.canEditPrices);
       setDealProductSearch("");
       setDealError(null);
+      setDealBannerEnabled(detail.bannerEnabled !== undefined ? detail.bannerEnabled : true);
+      setDealBannerUrl(detail.bannerUrl || "");
+      setDealBannerTitle(detail.bannerTitle || "");
+      setDealBannerSubtitle(detail.bannerSubtitle || "");
+      setDealBannerButtonText(detail.bannerButtonText || "");
+      setDealBannerButtonUrl(detail.bannerButtonUrl || "");
       setIsDealModalOpen(true);
     } catch (err) {
       console.error(err);
@@ -419,6 +439,12 @@ export default function AdminPromotionsPage() {
     const payload = {
       name: dealName.trim(),
       description: dealDescription.trim() || undefined,
+      bannerEnabled: dealBannerEnabled,
+      bannerUrl: dealBannerUrl.trim() || undefined,
+      bannerTitle: dealBannerTitle.trim() || undefined,
+      bannerSubtitle: dealBannerSubtitle.trim() || undefined,
+      bannerButtonText: dealBannerButtonText.trim() || undefined,
+      bannerButtonUrl: dealBannerButtonUrl.trim() || undefined,
       startsAt: new Date(dealStartsAt).toISOString(),
       expiresAt: new Date(dealExpiresAt).toISOString(),
       isActive: dealIsActive,
@@ -490,7 +516,7 @@ export default function AdminPromotionsPage() {
           onClick={() => setActiveTab("coupons")}
           className={`px-6 py-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
             activeTab === "coupons"
-              ? "border-amber-500 text-amber-600"
+              ? "border-brand-primary text-brand-primary"
               : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
@@ -501,7 +527,7 @@ export default function AdminPromotionsPage() {
           onClick={() => setActiveTab("deals")}
           className={`px-6 py-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
             activeTab === "deals"
-              ? "border-amber-500 text-amber-600"
+              ? "border-brand-primary text-brand-primary"
               : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
@@ -512,7 +538,7 @@ export default function AdminPromotionsPage() {
           onClick={() => setActiveTab("audit")}
           className={`px-6 py-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
             activeTab === "audit"
-              ? "border-amber-500 text-amber-600"
+              ? "border-brand-primary text-brand-primary"
               : "border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
@@ -533,12 +559,12 @@ export default function AdminPromotionsPage() {
                 placeholder="Tìm kiếm coupon theo mã hoặc tên..."
                 value={couponSearch}
                 onChange={(e) => setCouponSearch(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-amber-500 transition placeholder:text-gray-400"
+                className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-brand-primary transition placeholder:text-gray-400"
               />
             </div>
             <button
               onClick={handleOpenCouponModal}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm px-6 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-amber-100 transition cursor-pointer"
+              className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold text-sm px-6 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-brand-primary/10 transition cursor-pointer"
             >
               <Plus size={18} /> Thêm Coupon Mới
             </button>
@@ -548,7 +574,7 @@ export default function AdminPromotionsPage() {
           <div className="bg-white border border-gray-150 rounded-3xl overflow-hidden shadow-sm">
             {loading ? (
               <div className="flex items-center justify-center py-40">
-                <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
               </div>
             ) : filteredCoupons.length === 0 ? (
               <div className="text-center py-24 text-gray-400 font-medium">
@@ -578,8 +604,8 @@ export default function AdminPromotionsPage() {
 
                       return (
                         <tr key={c.id} className="hover:bg-gray-50/30 transition">
-                          <td className="px-6 py-4 font-mono font-black text-amber-700 text-xs">
-                            <span className="bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 uppercase tracking-wide">
+                          <td className="px-6 py-4 font-mono font-black text-brand-primary text-xs">
+                            <span className="bg-brand-primary/10 px-2.5 py-1 rounded-lg border border-brand-border uppercase tracking-wide">
                               {c.code}
                             </span>
                           </td>
@@ -613,7 +639,7 @@ export default function AdminPromotionsPage() {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => handleOpenEditCouponModal(c)}
-                              className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition cursor-pointer"
+                              className="p-2 text-gray-400 hover:text-brand-primary hover:bg-brand-primary/10 rounded-xl transition cursor-pointer"
                               title="Sửa coupon"
                             >
                               <Edit size={16} />
@@ -649,12 +675,12 @@ export default function AdminPromotionsPage() {
                 placeholder="Tìm kiếm chương trình Flash Sale..."
                 value={dealSearch}
                 onChange={(e) => setDealSearch(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-amber-500 transition placeholder:text-gray-400"
+                className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-brand-primary transition placeholder:text-gray-400"
               />
             </div>
             <button
               onClick={handleOpenDealModal}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm px-6 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-amber-100 transition cursor-pointer"
+              className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold text-sm px-6 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-brand-primary/10 transition cursor-pointer"
             >
               <Plus size={18} /> Tạo Flash Sale Mới
             </button>
@@ -664,7 +690,7 @@ export default function AdminPromotionsPage() {
           <div className="space-y-6">
             {loading ? (
               <div className="flex items-center justify-center py-40 bg-white border border-gray-150 rounded-3xl">
-                <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
               </div>
             ) : filteredDeals.length === 0 ? (
               <div className="bg-white text-center py-24 text-gray-400 border border-gray-150 rounded-3xl font-medium">
@@ -682,10 +708,10 @@ export default function AdminPromotionsPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
                           <h3 className="font-extrabold text-gray-900 text-base">{deal.name}</h3>
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            !deal.isActive ? "bg-gray-100 text-gray-400" :
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                            !deal.isActive ? "bg-gray-100 text-gray-400 border-gray-250" :
                             isExpired ? "bg-rose-50 text-rose-600 border border-rose-100" :
-                            isUpcoming ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                            isUpcoming ? "bg-sale/10 text-sale border border-sale/25" :
                             "bg-green-50 text-green-600 border border-green-100"
                           }`}>
                             {!deal.isActive ? "Tạm tắt" : isExpired ? "Kết thúc" : isUpcoming ? "Sắp diễn ra" : "Đang chạy"}
@@ -698,14 +724,14 @@ export default function AdminPromotionsPage() {
                       
                       <div className="flex items-center gap-4">
                         {deal.featuredCoupons?.length > 0 && (
-                          <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100 text-xs font-bold text-amber-800">
+                          <div className="flex items-center gap-1.5 bg-brand-primary/10 px-3 py-1.5 rounded-xl border border-brand-border text-xs font-bold text-brand-primary">
                             <Ticket size={14} /> {deal.featuredCoupons.length} Vouchers liên kết
                           </div>
                         )}
                         <button
                           disabled={isExpired}
                           onClick={() => handleOpenEditDealModal(deal)}
-                          className="p-2.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent"
+                          className="p-2.5 text-gray-400 hover:text-brand-primary hover:bg-brand-primary/10 rounded-xl transition cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent"
                           title={isExpired ? "Deal đã kết thúc không thể sửa" : "Sửa Flash Sale"}
                         >
                           <Edit size={16} />
@@ -753,7 +779,7 @@ export default function AdminPromotionsPage() {
                                       <span>{soldPct}%</span>
                                     </div>
                                     <div className="w-full bg-gray-150 h-1.5 rounded-full overflow-hidden">
-                                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${soldPct}%` }}></div>
+                                      <div className="bg-brand-primary h-full rounded-full" style={{ width: `${soldPct}%` }}></div>
                                     </div>
                                   </div>
                                 </div>
@@ -786,7 +812,7 @@ export default function AdminPromotionsPage() {
                     setLogsPage(1);
                     fetchAuditLogs(1, e.target.value, logsFilterAction);
                   }}
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-gray-700 outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-gray-700 outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
                 >
                   <option value="">Tất cả (Coupons & Deals)</option>
                   <option value="coupon">Coupon</option>
@@ -803,7 +829,7 @@ export default function AdminPromotionsPage() {
                     setLogsPage(1);
                     fetchAuditLogs(1, logsFilterType, e.target.value);
                   }}
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-gray-700 outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-gray-700 outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
                 >
                   <option value="">Tất cả hành động</option>
                   <option value="create">Tạo mới (create)</option>
@@ -824,7 +850,7 @@ export default function AdminPromotionsPage() {
           <div className="bg-white border border-gray-150 rounded-3xl overflow-hidden shadow-sm">
             {logsLoading ? (
               <div className="flex items-center justify-center py-40">
-                <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
               </div>
             ) : logs.length === 0 ? (
               <div className="text-center py-24 text-gray-400 font-medium">
@@ -863,7 +889,7 @@ export default function AdminPromotionsPage() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
                                 log.action === "create" ? "bg-green-50 text-green-700 border border-green-100" :
-                                log.action === "update" ? "bg-amber-50 text-amber-700 border border-amber-100" :
+                                log.action === "update" ? "bg-brand-primary/10 text-brand-primary border border-brand-border" :
                                 "bg-red-50 text-red-700 border border-red-100"
                               }`}>
                                 {log.action === "create" && "Tạo mới"}
@@ -1233,6 +1259,85 @@ export default function AdminPromotionsPage() {
                     className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
                   />
                 </div>
+              </div>
+
+              {/* Homepage Banner Config Section */}
+              <div className="bg-amber-50/20 p-5 rounded-3xl border border-amber-100/60 space-y-4">
+                <h4 className="font-extrabold text-sm text-amber-800 flex items-center gap-1.5">
+                  🖼️ Cấu Hình Banner Quảng Cáo Trên Trang Chủ (Homepage Banner)
+                </h4>
+                
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="dealBannerEnabled"
+                    checked={dealBannerEnabled}
+                    onChange={(e) => setDealBannerEnabled(e.target.checked)}
+                    className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-400 cursor-pointer"
+                  />
+                  <label htmlFor="dealBannerEnabled" className="text-xs font-bold text-gray-700 select-none cursor-pointer">
+                    Hiển thị banner cho Deal này lên trang chủ khi Deal đang kích hoạt
+                  </label>
+                </div>
+
+                {dealBannerEnabled && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Đường dẫn hình ảnh Banner (URL)</label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: /img/sale.jpg hoặc link ảnh online HTTPS"
+                        value={dealBannerUrl}
+                        onChange={(e) => setDealBannerUrl(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tiêu đề Banner (Marketing)</label>
+                      <input
+                        type="text"
+                        placeholder="Để trống sẽ mặc định dùng Tên sự kiện"
+                        value={dealBannerTitle}
+                        onChange={(e) => setDealBannerTitle(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Mô tả ngắn Banner (Marketing)</label>
+                      <input
+                        type="text"
+                        placeholder="Để trống sẽ mặc định dùng Mô tả chi tiết"
+                        value={dealBannerSubtitle}
+                        onChange={(e) => setDealBannerSubtitle(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Chữ hiển thị trên Nút (CTA Button Text)</label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: SĂN DEAL NGAY"
+                        value={dealBannerButtonText}
+                        onChange={(e) => setDealBannerButtonText(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition font-medium"
+                      />
+                    </div>
+
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Đường dẫn khi click vào Nút (CTA Button Link)</label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: /deals hoặc link chi tiết deal. Nhập link tuyệt đối (http/https) hoặc link tương đối (/)"
+                        value={dealBannerButtonUrl}
+                        onChange={(e) => setDealBannerButtonUrl(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition font-medium"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Linked Coupons Multi-selector */}

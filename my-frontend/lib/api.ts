@@ -803,14 +803,20 @@ export const adminAPI = {
     const res = await api.patch<Coupon>(`/coupons/${id}`, payload);
     return res.data;
   },
-  listDeals: async (): Promise<{ id: number; name: string; description?: string; startsAt: string; expiresAt: string; isActive: boolean; dealProducts: DealProduct[]; featuredCoupons: Coupon[] }[]> => {
+  listDeals: async (): Promise<{ id: number; name: string; description?: string; bannerEnabled: boolean; bannerUrl?: string; bannerTitle?: string; bannerSubtitle?: string; bannerButtonText?: string; bannerButtonUrl?: string; startsAt: string; expiresAt: string; isActive: boolean; dealProducts: DealProduct[]; featuredCoupons: Coupon[] }[]> => {
     requireAuthToken();
-    const res = await api.get<{ id: number; name: string; description?: string; startsAt: string; expiresAt: string; isActive: boolean; dealProducts: DealProduct[]; featuredCoupons: Coupon[] }[]>("/deals");
+    const res = await api.get<{ id: number; name: string; description?: string; bannerEnabled: boolean; bannerUrl?: string; bannerTitle?: string; bannerSubtitle?: string; bannerButtonText?: string; bannerButtonUrl?: string; startsAt: string; expiresAt: string; isActive: boolean; dealProducts: DealProduct[]; featuredCoupons: Coupon[] }[]>("/deals");
     return res.data;
   },
   createDeal: async (payload: {
     name: string;
     description?: string;
+    bannerEnabled?: boolean;
+    bannerUrl?: string;
+    bannerTitle?: string;
+    bannerSubtitle?: string;
+    bannerButtonText?: string;
+    bannerButtonUrl?: string;
     startsAt: string;
     expiresAt: string;
     isActive?: boolean;
@@ -833,6 +839,12 @@ export const adminAPI = {
   updateDeal: async (id: number, payload: {
     name: string;
     description?: string;
+    bannerEnabled?: boolean;
+    bannerUrl?: string;
+    bannerTitle?: string;
+    bannerSubtitle?: string;
+    bannerButtonText?: string;
+    bannerButtonUrl?: string;
     startsAt: string;
     expiresAt: string;
     isActive?: boolean;
@@ -991,6 +1003,12 @@ export interface Deal {
   id: number;
   name: string;
   description?: string;
+  bannerEnabled: boolean;
+  bannerUrl?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerButtonText?: string;
+  bannerButtonUrl?: string;
   startsAt: string;
   expiresAt: string;
   isActive: boolean;
@@ -1005,8 +1023,8 @@ export interface DealProduct {
 }
 
 export const dealAPI = {
-  getActiveDeal: async (): Promise<{ deal: Deal; featuredCoupons: Coupon[] } | null> => {
-    const res = await api.get<{ deal: Deal; featuredCoupons: Coupon[] } | null>("/deals/active");
+  getActiveDeal: async (): Promise<{ deal: Deal; featuredCoupons: Coupon[]; serverTime: string } | null> => {
+    const res = await api.get<{ deal: Deal; featuredCoupons: Coupon[]; serverTime: string } | null>("/deals/active");
     return res.data;
   },
   getDealProducts: async (dealId: number): Promise<DealProduct[]> => {

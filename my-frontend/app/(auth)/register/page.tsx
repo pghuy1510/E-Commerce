@@ -96,7 +96,7 @@ export default function RegisterPage() {
                         : "border-red-500"
                       : "border-gray-200"
                   }
-                  focus:border-yellow-500
+                  focus:border-brand-primary
                 `}
               />
 
@@ -133,7 +133,7 @@ export default function RegisterPage() {
                         : "border-red-500"
                       : "border-gray-200"
                   }
-                  focus:border-yellow-500
+                  focus:border-brand-primary
                 `}
               />
 
@@ -157,7 +157,7 @@ export default function RegisterPage() {
               className={`w-full py-2 font-semibold transition text-white
                 ${
                   isUsernameValid && isPasswordValid
-                    ? "bg-yellow-500 hover:bg-yellow-600"
+                    ? "bg-brand-primary hover:bg-brand-primary-hover"
                     : "bg-gray-300 cursor-not-allowed"
                 }
               `}>
@@ -190,7 +190,7 @@ export default function RegisterPage() {
 
             <p className="text-sm mt-4 text-center text-gray-500">
               {t("auth.haveAccount")}{" "}
-              <Link href="/login" className="text-yellow-500 hover:underline">
+              <Link href="/login" className="text-brand-primary hover:underline">
                 {t("action.login")}
               </Link>
             </p>
@@ -198,7 +198,7 @@ export default function RegisterPage() {
         </div>
 
         {/* KHỐI VÀNG */}
-        <div className="absolute left-[80px] top-[-50px] w-[400px] h-[600px] bg-yellow-500 text-white shadow-2xl flex flex-col justify-between p-10 z-10">
+        <div className="absolute left-[80px] top-[-50px] w-[400px] h-[600px] bg-brand-primary text-white shadow-2xl flex flex-col justify-between p-10 z-10">
           <div>
             <Store size={40} />
           </div>

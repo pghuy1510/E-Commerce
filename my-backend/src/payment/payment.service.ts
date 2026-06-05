@@ -13,6 +13,7 @@ import { Payment } from './entities/payment.entity';
 import { QrPayment } from './entities/qr-payment.entity';
 import { PaymentLog } from './entities/payment-log.entity';
 import { Order } from '../order/order.entity';
+import { OrderItem } from '../order/order-item.entity';
 import { OrderStatusLog } from '../order/order-status-log.entity';
 import { Cart } from '../cart/cart.entity';
 import { CartItem } from '../cart/cart-item.entity';
@@ -629,11 +630,13 @@ export class PaymentService {
           // 3. Lock Order, check status and restore stock
           const currentOrder = await orderRepo.findOne({
             where: { id: order.id },
-            relations: ['items'],
             lock: { mode: 'pessimistic_write' },
           });
 
           if (currentOrder && currentOrder.status === 'pending') {
+            currentOrder.items = await manager.getRepository(OrderItem).find({
+              where: { order: { id: currentOrder.id } },
+            });
             // Release reserved stock since payment has expired and was never paid
             if (currentOrder.items) {
               for (const item of currentOrder.items) {

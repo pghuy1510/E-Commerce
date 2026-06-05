@@ -46,6 +46,12 @@ export class DealsController {
     dto: {
       name: string;
       description?: string;
+      bannerEnabled?: boolean;
+      bannerUrl?: string;
+      bannerTitle?: string;
+      bannerSubtitle?: string;
+      bannerButtonText?: string;
+      bannerButtonUrl?: string;
       startsAt: string;
       expiresAt: string;
       isActive?: boolean;
@@ -76,6 +82,12 @@ export class DealsController {
     dto: {
       name: string;
       description?: string;
+      bannerEnabled?: boolean;
+      bannerUrl?: string;
+      bannerTitle?: string;
+      bannerSubtitle?: string;
+      bannerButtonText?: string;
+      bannerButtonUrl?: string;
       startsAt: string;
       expiresAt: string;
       isActive?: boolean;

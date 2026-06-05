@@ -31,6 +31,24 @@ export class Deal {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
+  @Column({ name: 'banner_enabled', type: 'boolean', default: true })
+  bannerEnabled!: boolean;
+
+  @Column({ name: 'banner_url', type: 'varchar', length: 500, nullable: true })
+  bannerUrl?: string;
+
+  @Column({ name: 'banner_title', type: 'varchar', length: 255, nullable: true })
+  bannerTitle?: string;
+
+  @Column({ name: 'banner_subtitle', type: 'varchar', length: 500, nullable: true })
+  bannerSubtitle?: string;
+
+  @Column({ name: 'banner_button_text', type: 'varchar', length: 100, nullable: true })
+  bannerButtonText?: string;
+
+  @Column({ name: 'banner_button_url', type: 'varchar', length: 500, nullable: true })
+  bannerButtonUrl?: string;
+
   @ManyToMany(() => Coupon)
   @JoinTable({ name: 'deal_featured_coupons' })
   featuredCoupons!: Coupon[];

@@ -80,7 +80,7 @@ export default function AdminDashboardPage() {
               <TrendingUp size={12} /> Đơn giao thành công
             </p>
           </div>
-          <div className="bg-orange-500 text-white p-3 rounded-2xl shadow-md shadow-orange-100 shrink-0">
+          <div className="bg-brand-primary text-white p-3 rounded-2xl shadow-md shadow-brand-primary/10 shrink-0">
             <DollarSign className="w-6 h-6" />
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-sm lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between border-b pb-3">
             <h3 className="font-bold text-gray-900">Đơn hàng mới nhận</h3>
-            <Link href="/admin/orders" className="text-xs font-bold text-orange-500 hover:text-orange-600 transition flex items-center gap-1">
+            <Link href="/admin/orders" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1">
               Xem tất cả <ArrowRight size={14} />
             </Link>
           </div>
@@ -164,13 +164,13 @@ export default function AdminDashboardPage() {
                   <tr key={o.id} className="hover:bg-gray-50/50">
                     <td className="py-3.5 font-bold text-gray-900">#ORD-{o.id}</td>
                     <td className="py-3.5 text-gray-600 font-medium">{o.fullName}</td>
-                    <td className="py-3.5 text-right font-bold text-orange-500">{formatPrice(o.totalAmount)}</td>
+                    <td className="py-3.5 text-right font-bold text-brand-primary">{formatPrice(o.totalAmount)}</td>
                     <td className="py-3.5 text-center">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
                         o.status === "delivered" ? "bg-green-50 text-green-700 border border-green-100" :
                         o.status === "cancelled" ? "bg-red-50 text-red-700 border border-red-100" :
                         o.status === "shipping" ? "bg-blue-50 text-blue-700 border border-blue-100" :
-                        "bg-yellow-50 text-yellow-700 border border-yellow-100"
+                        "bg-brand-primary/10 text-brand-primary border border-brand-border"
                       }`}>
                         {o.status}
                       </span>
@@ -186,7 +186,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b pb-3">
             <h3 className="font-bold text-gray-900">Sách sắp hết kho</h3>
-            <Link href="/admin/products" className="text-xs font-bold text-orange-500 hover:text-orange-600 transition flex items-center gap-1">
+            <Link href="/admin/products" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1">
               Xem kho <ArrowRight size={14} />
             </Link>
           </div>
@@ -202,7 +202,7 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-gray-400 mt-0.5">Mã sản phẩm: #{p.id}</p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-xl text-xs font-bold ${
-                    p.stock === 0 ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
+                    p.stock === 0 ? "bg-red-100 text-red-700" : "bg-brand-primary/10 text-brand-primary"
                   }`}>
                     Còn {p.stock}
                   </span>

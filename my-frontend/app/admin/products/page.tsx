@@ -163,13 +163,13 @@ export default function AdminProductsPage() {
               placeholder="Tìm kiếm sản phẩm theo tên..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-amber-500 transition placeholder:text-gray-400"
+              className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-brand-primary transition placeholder:text-gray-400"
             />
           </div>
           <select
             value={selectedCategoryFilter}
             onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
           >
             <option value="all">Tất cả Danh Mục</option>
             {categories.map((c) => (
@@ -183,7 +183,7 @@ export default function AdminProductsPage() {
         {/* Add Product Button */}
         <button
           onClick={handleOpenCreateModal}
-          className="bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm px-6 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-amber-100 transition shrink-0"
+          className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold text-sm px-6 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-brand-primary/10 transition shrink-0"
         >
           <Plus size={18} /> Thêm Sản Phẩm Mới
         </button>
@@ -193,7 +193,7 @@ export default function AdminProductsPage() {
       <div className="bg-white border border-gray-150 rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-40">
-            <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-24 text-gray-400 font-medium">
@@ -238,13 +238,13 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4 font-medium text-gray-600 text-xs uppercase tracking-wide">
                       {p.category ? translateCategory(p.category.name) : "Khác"}
                     </td>
-                    <td className="px-6 py-4 text-right font-bold text-amber-600">
+                    <td className="px-6 py-4 text-right font-bold text-brand-primary">
                       {formatPrice(p.price)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-2.5 py-1 rounded-xl text-xs font-bold ${
                         p.stock === 0 ? "bg-red-50 text-red-600 border border-red-100" :
-                        p.stock <= 10 ? "bg-orange-50 text-orange-600 border border-orange-100" :
+                        p.stock <= 10 ? "bg-brand-primary/10 text-brand-primary border border-brand-border" :
                         "bg-green-50 text-green-600 border border-green-100"
                       }`}>
                         {p.stock === 0 ? "Hết hàng" : `Còn ${p.stock}`}
@@ -254,7 +254,7 @@ export default function AdminProductsPage() {
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => handleOpenEditModal(p)}
-                          className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition"
+                          className="p-2 text-gray-500 hover:text-brand-primary hover:bg-brand-primary/10 rounded-xl transition"
                           title="Sửa sản phẩm"
                         >
                           <Edit2 size={16} />
@@ -281,7 +281,7 @@ export default function AdminProductsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-2xl overflow-hidden animate-scaleIn">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-amber-50/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-brand-primary/10">
               <h3 className="font-extrabold text-gray-900 text-base">
                 {modalMode === "create" ? "Thêm Sản Phẩm Sách Mới" : "Cập Nhật Thông Tin Sách"}
               </h3>
@@ -312,7 +312,7 @@ export default function AdminProductsPage() {
                     placeholder="Nhập tên sách..."
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition"
                   />
                 </div>
 
@@ -322,7 +322,7 @@ export default function AdminProductsPage() {
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
                   >
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -343,7 +343,7 @@ export default function AdminProductsPage() {
                     placeholder="Nhập đơn giá (VNĐ)..."
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition"
                   />
                 </div>
 
@@ -357,7 +357,7 @@ export default function AdminProductsPage() {
                     placeholder="Số lượng sách trong kho..."
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition"
                   />
                 </div>
               </div>
@@ -370,7 +370,7 @@ export default function AdminProductsPage() {
                   placeholder="Dán link ảnh từ Unsplash, Google Drive, Imgur..."
                   value={image}
                   onChange={(e) => setImage(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition"
                 />
               </div>
 
@@ -383,7 +383,7 @@ export default function AdminProductsPage() {
                   placeholder="Viết nội dung giới thiệu tóm tắt cuốn sách..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition resize-none"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition resize-none"
                 />
               </div>
 
@@ -400,7 +400,7 @@ export default function AdminProductsPage() {
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white text-sm font-semibold transition flex items-center gap-1.5"
+                  className="px-6 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary-light text-white text-sm font-semibold transition flex items-center gap-1.5"
                 >
                   {formSubmitting && <Loader2 size={16} className="animate-spin" />}
                   {modalMode === "create" ? "Thêm mới" : "Cập nhật"}

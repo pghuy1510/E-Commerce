@@ -41,7 +41,10 @@ export default function Header() {
   useEffect(() => {
     categoryAPI.getAll()
       .then((data) => {
-        setDbCategories(data || []);
+        const filtered = (data || []).filter(
+          (cat) => cat.name !== "Books" && cat.name !== "Mouse" && cat.name !== "Keyboard"
+        );
+        setDbCategories(filtered);
       })
       .catch((err) => {
         console.error("Error fetching categories in header:", err);
@@ -472,14 +475,6 @@ export default function Header() {
             <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
           </Link>
 
-          {/* SHOP BOOK */}
-          <Link
-            href="/shop?category=Books"
-            className="group relative transition hover:text-brand-primary">
-            {t("nav.shopBook")}
-
-            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
-          </Link>
 
           {/* SHOP PRODUCTS */}
           <div className="group relative">
@@ -499,16 +494,14 @@ export default function Header() {
                   </h3>
 
                   <div className="space-y-3">
-                    {dbCategories
-                      .filter((c) => c.name.trim().toLowerCase() !== "books")
-                      .map((cat) => (
-                        <Link
-                          key={cat.id}
-                          href={`/shop?category=${cat.name}`}
-                          className="block text-sm text-gray-600 transition hover:text-brand-primary">
-                          {translateCategory(cat.name)}
-                        </Link>
-                      ))}
+                    {dbCategories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        href={`/shop?category=${cat.name}`}
+                        className="block text-sm text-gray-600 transition hover:text-brand-primary">
+                        {translateCategory(cat.name)}
+                      </Link>
+                    ))}
                   </div>
                 </div>
 

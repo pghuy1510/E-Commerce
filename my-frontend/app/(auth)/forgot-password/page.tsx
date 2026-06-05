@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
           {/* Form Side */}
           <div className="w-[380px] border border-gray-100 p-8 bg-white rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
-              <Link href="/login" className="text-gray-400 hover:text-yellow-600 transition">
+              <Link href="/login" className="text-gray-400 hover:text-brand-primary transition">
                 <ArrowLeft size={20} />
               </Link>
               <h2 className="text-2xl font-bold text-gray-800">Forgot Password</h2>
@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
 
             {step === "email" ? (
               <form onSubmit={handleSendOtp} className="space-y-4">
-                <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+                <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
                   <Mail className="absolute left-1 top-2.5 text-gray-400" size={18} />
                   <input
                     type="email"
@@ -143,14 +143,14 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-60 text-sm shadow-md"
+                  className="w-full bg-brand-primary text-white py-3 rounded-xl font-semibold hover:bg-brand-primary-hover transition disabled:opacity-60 text-sm shadow-md"
                 >
                   {loading ? "Sending OTP..." : "Send Verification Code"}
                 </button>
               </form>
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
-                <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+                <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
                   <KeyRound className="absolute left-1 top-2.5 text-gray-400" size={18} />
                   <input
                     type="text"
@@ -163,7 +163,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+                <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
                   <KeyRound className="absolute left-1 top-2.5 text-gray-400" size={18} />
                   <input
                     type="password"
@@ -175,7 +175,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+                <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
                   <KeyRound className="absolute left-1 top-2.5 text-gray-400" size={18} />
                   <input
                     type="password"
@@ -190,7 +190,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-60 text-sm shadow-md"
+                  className="w-full bg-brand-primary text-white py-3 rounded-xl font-semibold hover:bg-brand-primary-hover transition disabled:opacity-60 text-sm shadow-md"
                 >
                   {loading ? "Resetting Password..." : "Verify & Reset Password"}
                 </button>
@@ -198,7 +198,7 @@ export default function ForgotPasswordPage() {
             )}
 
             <div className="mt-6 text-center">
-              <Link href="/login" className="text-sm text-gray-500 hover:text-yellow-600 transition">
+              <Link href="/login" className="text-sm text-gray-500 hover:text-brand-primary transition">
                 Back to Sign In
               </Link>
             </div>
@@ -206,7 +206,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Yellow Branding Box */}
-        <div className="absolute left-[80px] top-[-30px] w-[400px] h-[550px] bg-yellow-500 text-white shadow-2xl flex flex-col justify-between p-10 z-10 rounded-3xl">
+        <div className="absolute left-[80px] top-[-30px] w-[400px] h-[550px] bg-brand-primary text-white shadow-2xl flex flex-col justify-between p-10 z-10 rounded-3xl">
           <div>
             <ShoppingBag size={44} />
           </div>
@@ -219,8 +219,8 @@ export default function ForgotPasswordPage() {
           </div>
 
           <div className="flex justify-center">
-            <div className="relative w-64 h-48 bg-yellow-400 bg-opacity-25 rounded-2xl flex items-center justify-center border border-yellow-300 border-opacity-35">
-              <KeyRound size={80} className="text-yellow-100 opacity-80 animate-pulse" />
+            <div className="relative w-64 h-48 bg-brand-primary-light/40 rounded-2xl flex items-center justify-center border border-brand-border border-opacity-35">
+              <KeyRound size={80} className="text-brand-primary opacity-80 animate-pulse" />
             </div>
           </div>
         </div>
@@ -229,7 +229,7 @@ export default function ForgotPasswordPage() {
       {/* Mobile-friendly Giao diện */}
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-gray-100 md:hidden">
         <div className="flex items-center gap-2 mb-2">
-          <Link href="/login" className="text-gray-400 hover:text-yellow-600 transition">
+          <Link href="/login" className="text-gray-400 hover:text-brand-primary transition">
             <ArrowLeft size={20} />
           </Link>
           <h2 className="text-2xl font-bold text-gray-800">Forgot Password</h2>
@@ -255,7 +255,7 @@ export default function ForgotPasswordPage() {
 
         {step === "email" ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
-            <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+            <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
               <Mail className="absolute left-1 top-2.5 text-gray-400" size={18} />
               <input
                 type="email"
@@ -270,14 +270,14 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-60 text-sm shadow-md"
+              className="w-full bg-brand-primary text-white py-3 rounded-xl font-semibold hover:bg-brand-primary-hover transition disabled:opacity-60 text-sm shadow-md"
             >
               {loading ? "Sending OTP..." : "Send Verification Code"}
             </button>
           </form>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
-            <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+            <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
               <KeyRound className="absolute left-1 top-2.5 text-gray-400" size={18} />
               <input
                 type="text"
@@ -290,7 +290,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+            <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
               <KeyRound className="absolute left-1 top-2.5 text-gray-400" size={18} />
               <input
                 type="password"
@@ -302,7 +302,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <div className="relative border-b border-gray-200 focus-within:border-yellow-500 transition py-1">
+            <div className="relative border-b border-gray-200 focus-within:border-brand-primary transition py-1">
               <KeyRound className="absolute left-1 top-2.5 text-gray-400" size={18} />
               <input
                 type="password"
@@ -317,7 +317,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-60 text-sm shadow-md"
+              className="w-full bg-brand-primary text-white py-3 rounded-xl font-semibold hover:bg-brand-primary-hover transition disabled:opacity-60 text-sm shadow-md"
             >
               {loading ? "Resetting Password..." : "Verify & Reset Password"}
             </button>
@@ -325,7 +325,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <div className="mt-6 text-center">
-          <Link href="/login" className="text-sm text-gray-500 hover:text-yellow-600 transition">
+          <Link href="/login" className="text-sm text-gray-500 hover:text-brand-primary transition">
             Back to Sign In
           </Link>
         </div>

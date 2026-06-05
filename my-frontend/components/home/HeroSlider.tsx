@@ -8,7 +8,6 @@ import "swiper/css/pagination";
 import "swiper/css/effect-fade";
 
 import Image from "next/image";
-import HeroBook from "./HeroBook";
 import HeroVideo from "./HeroShoe";
 import HeroClothes from "./HeroClothes";
 import HeroPhone from "./HeroPhone";
@@ -31,11 +30,6 @@ export default function HeroSlider() {
         loop
         className="h-full">
         {/* Slide 1 */}
-        <SwiperSlide className="!relative !h-full overflow-hidden">
-          <HeroBook />
-        </SwiperSlide>
-
-        {/* Slide 2 */}
         <SwiperSlide className="!relative !h-full overflow-hidden">
           <HeroVideo />
         </SwiperSlide>

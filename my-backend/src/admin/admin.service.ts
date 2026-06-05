@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between } from 'typeorm';
 import { Product } from '../products/products.entity';
 import { Order } from '../order/order.entity';
+import { OrderItem } from '../order/order-item.entity';
 import { OrderReturn } from '../order/order-return.entity';
 import { OrderStatusLog } from '../order/order-status-log.entity';
 import { User } from '../users/entities/user.entity';
@@ -156,13 +157,16 @@ export class AdminService {
 
       const order = await orderRepo.findOne({
         where: { id: orderId },
-        relations: ['items'],
         lock: { mode: 'pessimistic_write' },
       });
 
       if (!order) {
         throw new NotFoundException('Không tìm thấy đơn hàng');
       }
+
+      order.items = await manager.getRepository(OrderItem).find({
+        where: { order: { id: order.id } },
+      });
 
       const oldStatus = order.status;
       order.status = dto.status;

@@ -29,7 +29,7 @@ export class DealsService {
   /**
    * Fetch the currently active deal event
    */
-  async getActiveDeal(): Promise<{ deal: Deal; featuredCoupons: Coupon[] } | null> {
+  async getActiveDeal(): Promise<{ deal: Deal; featuredCoupons: Coupon[]; serverTime: string } | null> {
     const now = new Date();
     const deal = await this.dealRepo.findOne({
       where: {
@@ -47,6 +47,7 @@ export class DealsService {
     return {
       deal,
       featuredCoupons: deal.featuredCoupons ?? [],
+      serverTime: now.toISOString(),
     };
   }
 
@@ -139,6 +140,12 @@ export class DealsService {
     dto: {
       name: string;
       description?: string;
+      bannerEnabled?: boolean;
+      bannerUrl?: string;
+      bannerTitle?: string;
+      bannerSubtitle?: string;
+      bannerButtonText?: string;
+      bannerButtonUrl?: string;
       startsAt: string;
       expiresAt: string;
       isActive?: boolean;
@@ -182,6 +189,12 @@ export class DealsService {
     const deal = this.dealRepo.create({
       name: dto.name,
       description: dto.description,
+      bannerEnabled: dto.bannerEnabled !== undefined ? dto.bannerEnabled : true,
+      bannerUrl: dto.bannerUrl,
+      bannerTitle: dto.bannerTitle,
+      bannerSubtitle: dto.bannerSubtitle,
+      bannerButtonText: dto.bannerButtonText,
+      bannerButtonUrl: dto.bannerButtonUrl,
       startsAt: new Date(dto.startsAt),
       expiresAt: new Date(dto.expiresAt),
       isActive: dto.isActive !== undefined ? dto.isActive : true,
@@ -233,6 +246,12 @@ export class DealsService {
     dto: {
       name: string;
       description?: string;
+      bannerEnabled?: boolean;
+      bannerUrl?: string;
+      bannerTitle?: string;
+      bannerSubtitle?: string;
+      bannerButtonText?: string;
+      bannerButtonUrl?: string;
       startsAt: string;
       expiresAt: string;
       isActive?: boolean;
@@ -326,6 +345,12 @@ export class DealsService {
 
     deal.name = dto.name;
     deal.description = dto.description;
+    deal.bannerEnabled = dto.bannerEnabled !== undefined ? dto.bannerEnabled : true;
+    deal.bannerUrl = dto.bannerUrl;
+    deal.bannerTitle = dto.bannerTitle;
+    deal.bannerSubtitle = dto.bannerSubtitle;
+    deal.bannerButtonText = dto.bannerButtonText;
+    deal.bannerButtonUrl = dto.bannerButtonUrl;
     deal.startsAt = new Date(dto.startsAt);
     deal.expiresAt = new Date(dto.expiresAt);
     if (dto.isActive !== undefined) {

@@ -7,7 +7,6 @@ import {
   cartAPI,
   checkoutAPI,
   PaymentMethod,
-  userAddressAPI,
   userProfileAPI,
   locationAPI,
   ProvinceOption,
@@ -84,9 +83,8 @@ export default function CheckoutPage() {
         const token = getBrowserToken();
         const userLoggedIn = !!token;
         if (userLoggedIn) {
-          const [cartRes, addressRes, profileRes, provincesData] = await Promise.all([
+          const [cartRes, profileRes, provincesData] = await Promise.all([
             cartAPI.get(),
-            userAddressAPI.get().catch(() => ({} as any)),
             userProfileAPI.get().catch(() => ({} as any)),
             locationAPI.getProvinces().catch(() => []),
           ]);
@@ -105,18 +103,6 @@ export default function CheckoutPage() {
               "Một số sản phẩm trong giỏ hàng đã hết hàng hoặc không đủ số lượng tồn kho. Vui lòng quay lại giỏ hàng để cập nhật.",
             );
           }
-
-          setAddress((prev) => ({
-            ...prev,
-            receiverName: profileRes.fullName ?? prev.receiverName,
-            receiverPhone: profileRes.phone ?? prev.receiverPhone,
-            province: addressRes.province ?? prev.province,
-            commune: addressRes.commune ?? addressRes.district ?? prev.commune,
-            detail: addressRes.detail ?? prev.detail,
-            provinceId: addressRes.provinceId ?? prev.provinceId,
-            wardId: addressRes.wardId ?? prev.wardId,
-            addressDetail: addressRes.addressDetail ?? addressRes.detail ?? prev.addressDetail,
-          }));
         } else {
           const [cartRes, provincesData] = await Promise.all([
             cartAPI.get(),
@@ -231,9 +217,9 @@ export default function CheckoutPage() {
           window.dispatchEvent(new Event("cart-updated"));
         }
         if (paymentMethod === "qr") {
-          router.push(`/checkout/payment?paymentId=${res.paymentId}&token=${res.paymentToken}`);
+          router.push(`/checkout/payment?paymentId=${res.paymentId}&token=${res.paymentToken}&email=${encodeURIComponent(guestEmail)}`);
         } else {
-          router.push(`/order-success?orderId=${res.orderId}`);
+          router.push(`/order-success?orderId=${res.orderId}&email=${encodeURIComponent(guestEmail)}`);
         }
       }
     } catch (err: any) {

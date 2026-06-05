@@ -8,10 +8,10 @@ import ProductCard from "@/components/ProductCard";
 const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
   <div className="mb-4">
     <div className="flex items-center gap-2">
-      <span className="h-2 w-2 rounded-full bg-yellow-600"></span>
+      <span className="h-2 w-2 rounded-full bg-brand-primary"></span>
       <h3 className="font-semibold text-gray-800">{children}</h3>
     </div>
-    <div className="mt-2 h-[3px] w-12 rounded-full bg-gradient-to-r from-yellow-600 to-transparent"></div>
+    <div className="mt-2 h-[3px] w-12 rounded-full bg-gradient-to-r from-brand-primary to-transparent"></div>
   </div>
 );
 
@@ -153,9 +153,9 @@ export default function BestSellersPage() {
 
   return (
     <div className="w-full">
-      <div className="bg-gradient-to-r from-yellow-600/90 via-yellow-100 to-white py-16">
+      <div className="bg-gradient-to-r from-brand-primary-light/60 via-[#f4ebdd] to-brand-surface py-16">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-yellow-700">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">
             {t("nav.bestSellers")}
           </p>
           <h1 className="text-4xl font-bold text-gray-900">
@@ -175,7 +175,7 @@ export default function BestSellersPage() {
               type="button"
               onClick={clearFilters}
               disabled={!hasActiveFilters}
-              className="text-xs font-semibold text-gray-500 transition hover:text-yellow-600 disabled:cursor-not-allowed disabled:text-gray-300">
+              className="text-xs font-semibold text-gray-500 transition hover:text-brand-primary disabled:cursor-not-allowed disabled:text-gray-300">
               {t("label.clearFilters")}
             </button>
           </div>
@@ -187,7 +187,7 @@ export default function BestSellersPage() {
                 placeholder={t("label.searchHere")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-yellow-500"
+                className="w-full rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-brand-primary"
               />
             </div>
 
@@ -197,7 +197,7 @@ export default function BestSellersPage() {
                 <button
                   type="button"
                   onClick={() => setCategories([])}
-                  className="mb-3 text-xs font-semibold text-gray-500 hover:text-yellow-600">
+                  className="mb-3 text-xs font-semibold text-gray-500 hover:text-brand-primary">
                   {t("label.allCategories")}
                 </button>
                 <div className="space-y-2">
@@ -207,7 +207,7 @@ export default function BestSellersPage() {
                         type="checkbox"
                         checked={categories.includes(cat)}
                         onChange={() => toggleCategory(cat)}
-                        className="accent-yellow-600"
+                        className="accent-brand-primary"
                       />
                       {translateCategory(cat)}
                     </label>
@@ -229,7 +229,7 @@ export default function BestSellersPage() {
                     onChange={(e) =>
                       handleMinPriceChange(Number(e.target.value))
                     }
-                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-yellow-500"
+                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-primary"
                   />
                 </label>
                 <label className="text-xs text-gray-500">
@@ -242,7 +242,7 @@ export default function BestSellersPage() {
                     onChange={(e) =>
                       handleMaxPriceChange(Number(e.target.value))
                     }
-                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-yellow-500"
+                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-primary"
                   />
                 </label>
               </div>
@@ -256,7 +256,7 @@ export default function BestSellersPage() {
                   onChange={(e) =>
                     handleMinPriceChange(Number(e.target.value))
                   }
-                  className="w-full accent-yellow-600"
+                  className="w-full accent-brand-primary"
                 />
                 <input
                   type="range"
@@ -266,7 +266,7 @@ export default function BestSellersPage() {
                   onChange={(e) =>
                     handleMaxPriceChange(Number(e.target.value))
                   }
-                  className="w-full accent-yellow-600"
+                  className="w-full accent-brand-primary"
                 />
                 <p className="text-xs text-gray-500">
                   {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
@@ -281,7 +281,7 @@ export default function BestSellersPage() {
                   type="checkbox"
                   checked={inStock}
                   onChange={() => setInStock(!inStock)}
-                  className="accent-yellow-600"
+                  className="accent-brand-primary"
                 />
                 {t("label.inStockOnly")}
               </label>
@@ -299,7 +299,7 @@ export default function BestSellersPage() {
           {loading ? (
             <div className="flex h-64 items-center justify-center">
               <div className="text-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-yellow-600"></div>
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-brand-primary"></div>
                 <p className="mt-4 text-gray-500">{t("label.loadingProducts")}</p>
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function BestSellersPage() {
                   <select
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
-                    className="rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-yellow-500">
+                    className="rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-brand-primary">
                     <option value="default">{t("label.sortDefault")}</option>
                     <option value="price-asc">{t("label.sortPriceAsc")}</option>
                     <option value="price-desc">{t("label.sortPriceDesc")}</option>

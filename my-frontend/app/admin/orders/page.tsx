@@ -289,13 +289,13 @@ export default function AdminOrdersPage() {
               placeholder="Tìm kiếm theo mã đơn hoặc người mua..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-amber-500 transition placeholder:text-gray-400"
+              className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-brand-primary transition placeholder:text-gray-400"
             />
           </div>
           <select
             value={selectedStatusFilter}
             onChange={(e) => setSelectedStatusFilter(e.target.value)}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
           >
             <option value="all">Tất cả Trạng Thái</option>
             <option value="pending">Chờ Thanh Toán (Pending)</option>
@@ -318,7 +318,7 @@ export default function AdminOrdersPage() {
       <div className="bg-white border border-gray-150 rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-40">
-            <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="text-center py-24 text-gray-400 font-medium">
@@ -357,7 +357,7 @@ export default function AdminOrdersPage() {
                     <td className="px-6 py-4 text-gray-500 max-w-xs truncate">
                       {o.items?.map((item: any) => `${item.productName} (x${item.quantity})`).join(", ")}
                     </td>
-                    <td className="px-6 py-4 text-right font-extrabold text-amber-600">
+                    <td className="px-6 py-4 text-right font-extrabold text-brand-primary">
                       {formatPrice(o.totalAmount)}
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -366,13 +366,13 @@ export default function AdminOrdersPage() {
                         o.status === "cancelled" ? "bg-red-50 text-red-700 border border-red-100" :
                         o.status === "shipping" ? "bg-blue-50 text-blue-700 border border-blue-100" :
                         o.status === "refunded" ? "bg-green-50 text-green-700 border border-green-100" :
-                        o.status === "return_requested" ? "bg-orange-50 text-orange-700 border border-orange-100" :
+                        o.status === "return_requested" ? "bg-brand-primary/10 text-brand-primary border border-brand-border" :
                         o.status === "return_approved" ? "bg-blue-50 text-blue-700 border border-blue-100" :
                         o.status === "product_received" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
                         o.status === "refund_processing" ? "bg-purple-50 text-purple-700 border border-purple-100" :
                         o.status === "return_rejected" ? "bg-red-50 text-red-700 border border-red-100" :
                         o.status === "return_cancelled" ? "bg-gray-50 text-gray-500 border border-gray-100" :
-                        "bg-yellow-50 text-yellow-700 border border-yellow-100"
+                        "bg-brand-primary/10 text-brand-primary border border-brand-border"
                       }`}>
                         {o.status === "return_requested" && "Chờ duyệt trả"}
                         {o.status === "return_approved" && "Đã duyệt trả"}
@@ -388,7 +388,7 @@ export default function AdminOrdersPage() {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleOpenStatusModal(o)}
-                          className="px-3 py-1.5 bg-gray-50 hover:bg-amber-500 hover:text-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 transition flex items-center gap-1"
+                          className="px-3 py-1.5 bg-gray-50 hover:bg-brand-primary hover:text-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 transition flex items-center gap-1"
                         >
                           <ClipboardList size={13} /> Cập nhật
                         </button>
@@ -415,7 +415,7 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-lg overflow-hidden animate-scaleIn">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-amber-50/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-brand-primary/10">
               <div>
                 <h3 className="font-extrabold text-gray-900 text-base">
                   {returnStatuses.includes(selectedOrder.status) ? "Xử lý Trả Hàng & Hoàn Tiền" : "Cập Nhật Trạng Thái Đơn Hàng"}
@@ -446,13 +446,13 @@ export default function AdminOrdersPage() {
                 <div className="p-6 space-y-5">
                   {loadingReturn ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+                      <Loader2 className="w-6 h-6 text-brand-primary animate-spin" />
                       <span className="ml-2 text-xs text-gray-400">Đang tải thông tin trả hàng...</span>
                     </div>
                   ) : selectedOrderReturn ? (
                     <div className="space-y-4">
                       {/* Return Request Info Details */}
-                      <div className="bg-amber-50/40 border border-amber-100 rounded-2xl p-4 space-y-2.5 text-xs text-gray-600">
+                      <div className="bg-brand-primary/10 border border-brand-border rounded-2xl p-4 space-y-2.5 text-xs text-gray-600">
                         <h4 className="font-extrabold text-gray-800 text-xs uppercase tracking-wider">Thông tin yêu cầu trả hàng</h4>
                         <p><span className="font-bold text-gray-700">Lý do:</span> {selectedOrderReturn.reason}</p>
                         <p>
@@ -461,7 +461,7 @@ export default function AdminOrdersPage() {
                         </p>
                         
                         {selectedOrderReturn.imageProof ? (
-                          <div className="space-y-1">
+                           <div className="space-y-1">
                             <span className="font-bold text-gray-700">Minh chứng hình ảnh:</span>
                             <a
                               href={getProofUrl(selectedOrderReturn.imageProof)}
@@ -573,7 +573,7 @@ export default function AdminOrdersPage() {
                             {["refunded", "return_rejected", "return_cancelled"].includes(selectedOrderReturn.status) && (
                               <div className="p-3 bg-gray-50 border border-gray-150 rounded-xl text-xs font-medium text-gray-500 w-full text-center">
                                 Quy trình đổi trả đã kết thúc ở trạng thái:{" "}
-                                <span className="font-extrabold uppercase text-amber-600">{selectedOrderReturn.status}</span>
+                                <span className="font-extrabold uppercase text-brand-primary">{selectedOrderReturn.status}</span>
                               </div>
                             )}
                           </div>
@@ -647,7 +647,7 @@ export default function AdminOrdersPage() {
                           .map((log: any, idx: number) => (
                             <div key={log.id || idx} className="relative">
                               {/* Dot */}
-                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />
+                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-primary border border-white" />
                               <div className="flex justify-between items-start gap-4">
                                 <div>
                                   <p className="font-bold text-gray-800">
@@ -689,7 +689,7 @@ export default function AdminOrdersPage() {
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
                     >
                       <option value="pending">Chờ Thanh Toán (Pending)</option>
                       <option value="confirmed">Đã Xác Nhận (Confirmed)</option>
@@ -712,7 +712,7 @@ export default function AdminOrdersPage() {
                           placeholder="Nhập mã vận đơn (GHTK, GHN...)"
                           value={trackingNumber}
                           onChange={(e) => setTrackingNumber(e.target.value)}
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition"
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition"
                         />
                       </div>
 
@@ -725,7 +725,7 @@ export default function AdminOrdersPage() {
                           type="date"
                           value={estimatedDeliveryDate}
                           onChange={(e) => setEstimatedDeliveryDate(e.target.value)}
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
                         />
                       </div>
                     </div>
@@ -739,7 +739,7 @@ export default function AdminOrdersPage() {
                       placeholder="Ghi nhận nhật ký trạng thái (ví dụ: 'Admin đã nhận được thanh toán', 'Hàng bắt đầu xuất kho'...)"
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500 transition resize-none"
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition resize-none"
                     />
                   </div>
 
@@ -752,7 +752,7 @@ export default function AdminOrdersPage() {
                           .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                           .map((log: any, idx: number) => (
                             <div key={log.id || idx} className="relative">
-                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />
+                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-primary border border-white" />
                               <div className="flex justify-between items-start gap-4">
                                 <div>
                                   <p className="font-bold text-gray-800">
@@ -785,7 +785,7 @@ export default function AdminOrdersPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white text-sm font-semibold transition flex items-center gap-1.5"
+                      className="px-6 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary/50 text-white text-sm font-semibold transition flex items-center gap-1.5"
                     >
                       {submitting && <Loader2 size={16} className="animate-spin" />}
                       Lưu thay đổi

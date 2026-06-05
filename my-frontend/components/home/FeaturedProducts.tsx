@@ -40,7 +40,7 @@ export default function FeaturedBooks() {
             </div>
 
             <button
-              onClick={() => router.push("/shop?category=Books")}
+              onClick={() => router.push("/shop?category=Accessories")}
               className="relative overflow-hidden bg-brand-primary text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider group cursor-pointer transition hover:scale-105 active:scale-95 shadow border-none">
               <span className="absolute inset-0 bg-brand-primary-hover translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out"></span>
               <span className="relative z-10 transition-colors duration-300">

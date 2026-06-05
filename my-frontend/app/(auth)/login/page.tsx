@@ -50,14 +50,14 @@ export default function LoginPage() {
             <input
               type="text"
               placeholder={t("auth.username")}
-              className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-yellow-500 transition"
+              className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-brand-primary transition"
               onChange={(e) => setUsername(e.target.value)}
             />
 
             <input
               type="password"
               placeholder={t("auth.password")}
-              className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-yellow-500 transition"
+              className="w-full mb-4 p-2 border-b border-gray-200 outline-none focus:border-brand-primary transition"
               onChange={(e) => setPassword(e.target.value)}
             />
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
                 <input type="checkbox" className="mr-2" />
                 {t("auth.rememberMe")}
               </label>
-              <Link href="/forgot-password" className="hover:text-yellow-500">
+              <Link href="/forgot-password" className="hover:text-brand-primary">
                 {t("auth.forgotPassword")}
               </Link>
             </div>
@@ -74,7 +74,7 @@ export default function LoginPage() {
             {/* LOGIN THƯỜNG */}
             <button
               onClick={handleLogin}
-              className="w-full bg-yellow-500 text-white py-2 font-semibold hover:bg-yellow-600 transition">
+              className="w-full bg-brand-primary text-white py-2 font-semibold hover:bg-brand-primary-hover transition">
               {t("action.loginUpper")}
             </button>
 
@@ -107,7 +107,7 @@ export default function LoginPage() {
               {t("auth.noAccount")}{" "}
               <Link
                 href="/register"
-                className="text-yellow-500 hover:underline">
+                className="text-brand-primary hover:underline">
                 {t("action.signUp")}
               </Link>
             </p>
@@ -115,7 +115,7 @@ export default function LoginPage() {
         </div>
 
         {/* KHỐI VÀNG */}
-        <div className="absolute left-[80px] top-[-50px] w-[400px] h-[600px] bg-yellow-500 text-white shadow-2xl flex flex-col justify-between p-10 z-10">
+        <div className="absolute left-[80px] top-[-50px] w-[400px] h-[600px] bg-brand-primary text-white shadow-2xl flex flex-col justify-between p-10 z-10">
           <div className="text-white">
             <ShoppingBag size={40} />
           </div>

@@ -74,10 +74,11 @@ export default function Footer() {
           </h3>
           <ul className="space-y-2 text-sm">
             {[
-              t("footer.category.novelBooks"),
-              t("footer.category.poetryBooks"),
-              t("footer.category.politicalBooks"),
-              t("footer.category.historyBooks"),
+              t("footer.category.computers"),
+              t("footer.category.phones"),
+              t("footer.category.clothing"),
+              t("footer.category.shoes"),
+              t("footer.category.accessories"),
             ].map((item) => (
               <li
                 key={item}

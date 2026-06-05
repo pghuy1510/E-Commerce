@@ -15,6 +15,7 @@ function CheckoutPaymentContent() {
   const { formatPrice, language } = usePreferences();
   const paymentId = Number(searchParams.get("paymentId"));
   const token = searchParams.get("token") || undefined;
+  const email = searchParams.get("email");
 
   const [status, setStatus] = useState<PaymentStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,11 +33,34 @@ function CheckoutPaymentContent() {
       const res = await paymentAPI.getStatus(paymentId, token);
       setStatus(res);
       setError("");
+      
       if (res.paymentStatus === "paid") {
-        router.replace(`/order-success?orderId=${res.orderId}`);
-      }
-      if (res.paymentStatus === "failed") {
-        router.replace(`/order-failed?orderId=${res.orderId}`);
+        localStorage.removeItem("pending_payment");
+        localStorage.removeItem(`dismiss_${paymentId}`);
+        router.replace(`/order-success?orderId=${res.orderId}` + (email ? `&email=${encodeURIComponent(email)}` : ""));
+      } else if (res.paymentStatus === "failed") {
+        localStorage.removeItem("pending_payment");
+        localStorage.removeItem(`dismiss_${paymentId}`);
+        router.replace(`/order-failed?orderId=${res.orderId}` + (email ? `&email=${encodeURIComponent(email)}` : ""));
+      } else if (res.orderStatus === "cancelled") {
+        localStorage.removeItem("pending_payment");
+        localStorage.removeItem(`dismiss_${paymentId}`);
+      } else {
+        // Pending or expired - save metadata to localStorage
+        const expiresAt = res.qr?.expiredAt ? new Date(res.qr.expiredAt).getTime() : Date.now() + 15 * 60 * 1000;
+        let checkoutUrl = `/checkout/payment?paymentId=${paymentId}`;
+        if (token) checkoutUrl += `&token=${encodeURIComponent(token)}`;
+        if (email) checkoutUrl += `&email=${encodeURIComponent(email)}`;
+
+        localStorage.setItem(
+          "pending_payment",
+          JSON.stringify({
+            paymentId,
+            checkoutUrl,
+            expiresAt,
+            lastCheckedAt: Date.now()
+          })
+        );
       }
     } catch (err: any) {
       setError(
@@ -100,8 +124,12 @@ function CheckoutPaymentContent() {
     try {
       setLoading(true);
       await orderAPI.changeToCod(status.orderId);
+      localStorage.removeItem("pending_payment");
+      if (paymentId) {
+        localStorage.removeItem(`dismiss_${paymentId}`);
+      }
       alert("Đã chuyển đổi phương thức thanh toán sang COD thành công!");
-      router.replace(`/order-success?orderId=${status.orderId}`);
+      router.replace(`/order-success?orderId=${status.orderId}` + (email ? `&email=${encodeURIComponent(email)}` : ""));
     } catch (err: any) {
       console.error(err);
       setError(

@@ -93,6 +93,13 @@ export default function AddressSelector({
         });
       } else {
         setShowManualForm(true);
+        if (profileName || profilePhone) {
+          onChange({
+            ...value,
+            receiverName: value.receiverName || profileName || "",
+            receiverPhone: value.receiverPhone || profilePhone || "",
+          });
+        }
       }
     } catch (err) {
       console.error("Lỗi khi tải sổ địa chỉ:", err);

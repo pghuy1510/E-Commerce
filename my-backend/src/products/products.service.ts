@@ -43,9 +43,15 @@ export class ProductsService {
     }
 
     if (query?.category) {
-      qb.andWhere('LOWER(category.name) = LOWER(:category)', {
-        category: query.category,
-      });
+      if (query.category.toLowerCase() === 'accessories') {
+        qb.andWhere('LOWER(category.name) IN (:...catNames)', {
+          catNames: ['accessories', 'mouse', 'keyboard'],
+        });
+      } else {
+        qb.andWhere('LOWER(category.name) = LOWER(:category)', {
+          category: query.category,
+        });
+      }
     }
 
     if (query?.minPrice !== undefined) {
@@ -139,12 +145,21 @@ export class ProductsService {
   }
 
   async findByCategory(categoryName: string) {
-    return this.productRepo
+    const qb = this.productRepo
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .where('LOWER(category.name) = LOWER(:name)', {
+      .leftJoinAndSelect('product.category', 'category');
+
+    if (categoryName.toLowerCase() === 'accessories') {
+      qb.where('LOWER(category.name) IN (:...names)', {
+        names: ['accessories', 'mouse', 'keyboard'],
+      });
+    } else {
+      qb.where('LOWER(category.name) = LOWER(:name)', {
         name: categoryName,
-      })
+      });
+    }
+
+    return qb
       .orderBy('product.id', 'DESC') // mới nhất lên đầu
       .take(10) // limit 10 sp
       .getMany();

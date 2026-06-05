@@ -54,7 +54,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+          <Loader2 className="w-10 h-10 text-brand-primary animate-spin" />
           <p className="text-gray-500 font-semibold">Đang xác thực quyền Admin...</p>
         </div>
       </div>
@@ -79,12 +79,12 @@ export default function AdminLayout({
         <div>
           {/* LOGO AREA */}
           <div className="p-6 border-b border-gray-150 flex items-center gap-2.5">
-            <div className="bg-orange-500 text-white p-2 rounded-xl">
+            <div className="bg-brand-primary text-white p-2 rounded-xl">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <span className="font-extrabold text-lg text-gray-950 block leading-tight">E-Commerce</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-orange-500 block">Dashboard</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-brand-primary block">Dashboard</span>
             </div>
           </div>
 
@@ -99,7 +99,7 @@ export default function AdminLayout({
                   href={item.href}
                   className={`flex items-center justify-between px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 group ${
                     isActive
-                      ? "bg-orange-500 text-white shadow-md shadow-orange-100"
+                      ? "bg-brand-primary text-white shadow-md shadow-brand-primary/10"
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
@@ -118,7 +118,7 @@ export default function AdminLayout({
         <div className="p-4 border-t border-gray-150 space-y-2">
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition"
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold text-sm text-gray-600 hover:bg-brand-bg hover:text-brand-primary transition"
           >
             <Home className="w-5 h-5 text-gray-400" />
             <span>Về Trang Chủ Shop</span>
@@ -133,7 +133,7 @@ export default function AdminLayout({
             <div>
               <div className="p-6 border-b flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-6 h-6 text-orange-500" />
+                  <ShieldCheck className="w-6 h-6 text-brand-primary" />
                   <span className="font-extrabold text-base text-gray-900">E-Commerce Admin</span>
                 </div>
                 <button onClick={() => setIsSidebarOpen(false)} className="p-1 rounded-full hover:bg-gray-100">
@@ -151,7 +151,7 @@ export default function AdminLayout({
                       href={item.href}
                       onClick={() => setIsSidebarOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition ${
-                        isActive ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-50"
+                        isActive ? "bg-brand-primary text-white" : "text-gray-600 hover:bg-gray-50"
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -165,7 +165,7 @@ export default function AdminLayout({
             <div className="p-4 border-t">
               <Link
                 href="/"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm text-gray-600 hover:bg-brand-bg hover:text-brand-primary transition"
               >
                 <Home className="w-5 h-5" />
                 <span>Về Trang Chủ Shop</span>
@@ -199,10 +199,10 @@ export default function AdminLayout({
 
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex flex-col text-right">
-              <span className="text-xs font-semibold text-orange-500 uppercase tracking-wider">Quản trị viên</span>
+              <span className="text-xs font-semibold text-brand-primary uppercase tracking-wider">Quản trị viên</span>
               <span className="text-sm font-bold text-gray-800">Admin Account</span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600">
+            <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center font-bold text-brand-primary">
               AD
             </div>
           </div>

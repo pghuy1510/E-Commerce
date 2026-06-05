@@ -265,7 +265,7 @@ export default function AdminUsersPage() {
     return (
       <div className="flex items-center justify-center py-40">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
           <p className="font-medium text-gray-500">
             Đang tải danh sách khách hàng...
           </p>
@@ -318,7 +318,7 @@ export default function AdminUsersPage() {
           <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
             Quản trị viên
           </p>
-          <p className="mt-2 text-3xl font-black text-amber-600">
+          <p className="mt-2 text-3xl font-black text-brand-primary">
             {adminCount}
           </p>
         </div>
@@ -333,14 +333,14 @@ export default function AdminUsersPage() {
               placeholder="Tìm theo username, email hoặc ID..."
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-full rounded-2xl border border-gray-200 py-2.5 pl-10 pr-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-amber-500"
+              className="w-full rounded-2xl border border-gray-200 py-2.5 pl-10 pr-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-brand-primary"
             />
           </div>
 
           <select
             value={roleFilter}
             onChange={(event) => setRoleFilter(event.target.value)}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 outline-none transition focus:border-amber-500">
+            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 outline-none transition focus:border-brand-primary">
             <option value="all">Tất cả quyền</option>
             <option value="user">User</option>
             <option value="admin">Admin</option>
@@ -349,14 +349,14 @@ export default function AdminUsersPage() {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 outline-none transition focus:border-amber-500">
+            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 outline-none transition focus:border-brand-primary">
             <option value="all">Tất cả trạng thái</option>
             <option value="active">Đang hoạt động</option>
             <option value="banned">Đang bị khóa</option>
           </select>
         </div>
 
-        <div className="rounded-2xl bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-700">
+        <div className="rounded-2xl bg-brand-primary/10 px-4 py-3 text-xs font-semibold text-brand-primary">
           {filteredUsers.length} / {users.length} tài khoản
         </div>
       </div>
@@ -387,7 +387,7 @@ export default function AdminUsersPage() {
                     <tr key={user.id} className="transition hover:bg-gray-50/40">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-sm font-black text-amber-700">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-primary/10 text-sm font-black text-brand-primary">
                             {user.username.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -410,7 +410,7 @@ export default function AdminUsersPage() {
                           }
                           className={`rounded-xl border px-3 py-2 text-xs font-bold outline-none transition disabled:opacity-60 ${
                             user.role === "admin"
-                              ? "border-amber-200 bg-amber-50 text-amber-700"
+                              ? "border-brand-border bg-brand-primary/10 text-brand-primary"
                               : "border-gray-200 bg-gray-50 text-gray-600"
                           }`}>
                           <option value="user">User</option>
@@ -434,7 +434,7 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-right font-extrabold text-amber-600">
+                      <td className="px-6 py-4 text-right font-extrabold text-brand-primary">
                         {formatPrice(user.totalSpent)}
                       </td>
 
@@ -451,7 +451,7 @@ export default function AdminUsersPage() {
                           <button
                             type="button"
                             onClick={() => openOrdersDrawer(user)}
-                            className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-amber-500 hover:text-white">
+                            className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-brand-primary hover:text-white">
                             <Eye size={13} /> Đơn
                           </button>
 
@@ -497,7 +497,7 @@ export default function AdminUsersPage() {
           <aside className="relative z-10 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-primary">
                   Lịch sử mua hàng
                 </p>
                 <h2 className="mt-1 text-xl font-black text-gray-900">
@@ -515,7 +515,7 @@ export default function AdminUsersPage() {
             <div className="flex-1 overflow-y-auto p-6">
               {ordersLoading ? (
                 <div className="flex items-center justify-center py-24">
-                  <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+                  <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
                 </div>
               ) : ordersError ? (
                 <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">
@@ -560,7 +560,7 @@ export default function AdminUsersPage() {
                                 ? "border-red-100 bg-red-50 text-red-700"
                                 : order.status === "shipping"
                                   ? "border-blue-100 bg-blue-50 text-blue-700"
-                                  : "border-yellow-100 bg-yellow-50 text-yellow-700"
+                                  : "border-brand-border bg-brand-primary/10 text-brand-primary"
                           }`}>
                           {order.status}
                         </span>
@@ -577,7 +577,7 @@ export default function AdminUsersPage() {
                                 .join(", ")
                             : "Không có dữ liệu sản phẩm"}
                         </p>
-                        <p className="mt-3 text-right text-base font-black text-amber-600">
+                        <p className="mt-3 text-right text-base font-black text-brand-primary">
                           {formatPrice(order.totalAmount)}
                         </p>
                       </div>
@@ -594,7 +594,7 @@ export default function AdminUsersPage() {
       {isEditModalOpen && editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-amber-50/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-brand-primary/10">
               <div>
                 <h3 className="font-extrabold text-gray-900 text-base">Chỉnh Sửa Tài Khoản</h3>
                 <p className="text-xs text-gray-500 mt-0.5">ID Người dùng: #{editingUser.id}</p>
@@ -622,7 +622,7 @@ export default function AdminUsersPage() {
                   required
                   value={editUsername}
                   onChange={(e) => setEditUsername(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
                 />
               </div>
 
@@ -632,7 +632,7 @@ export default function AdminUsersPage() {
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
                 />
               </div>
 
@@ -642,7 +642,7 @@ export default function AdminUsersPage() {
                   type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
                 />
               </div>
 
@@ -652,7 +652,7 @@ export default function AdminUsersPage() {
                   type="text"
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
                 />
               </div>
 
@@ -662,7 +662,7 @@ export default function AdminUsersPage() {
                   <select
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
@@ -674,7 +674,7 @@ export default function AdminUsersPage() {
                   <select
                     value={editIsActive ? "active" : "banned"}
                     onChange={(e) => setEditIsActive(e.target.value === "active")}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500 transition text-gray-600 font-semibold"
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
                   >
                     <option value="active">Hoạt động</option>
                     <option value="banned">Bị khóa</option>
@@ -694,7 +694,7 @@ export default function AdminUsersPage() {
                 <button
                   type="submit"
                   disabled={editSubmitting}
-                  className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white text-sm font-semibold transition flex items-center gap-1.5"
+                  className="px-6 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary-light text-white text-sm font-semibold transition flex items-center gap-1.5"
                 >
                   {editSubmitting && <Loader2 size={16} className="animate-spin" />}
                   Lưu

@@ -28,6 +28,7 @@ type Props = {
 
 /* ===== DATA ===== */
 const categories: { name: Category; image: string }[] = [
+  { name: "Books", image: "/img/book.jpg" },
   { name: "Shoes", image: "/img/shoe.jpg" },
   { name: "Clothing", image: "/img/clothing.jpg" },
   { name: "Computers", image: "/img/computer.webp" },

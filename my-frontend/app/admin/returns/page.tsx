@@ -165,12 +165,12 @@ export default function AdminReturnsPage() {
         </div>
 
         <div className="bg-white p-6 rounded-3xl border border-gray-150 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
+          <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary">
             <Info size={20} />
           </div>
           <div>
             <span className="text-xs text-gray-400 block font-bold uppercase tracking-wider">Chờ xét duyệt</span>
-            <span className="text-2xl font-black text-amber-600">{pendingCount}</span>
+            <span className="text-2xl font-black text-brand-primary">{pendingCount}</span>
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export default function AdminReturnsPage() {
       <div className="bg-white border border-gray-150 rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-40">
-            <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
           </div>
         ) : returns.length === 0 ? (
           <div className="text-center py-24 text-gray-400 font-medium">
@@ -228,10 +228,10 @@ export default function AdminReturnsPage() {
                           <button
                             type="button"
                             onClick={() => setExpandedReturnId(expandedReturnId === ret.id ? null : ret.id)}
-                            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-amber-500 transition"
+                            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-brand-primary transition"
                             title="Xem chi tiết & Lịch sử hành trình"
                           >
-                            <ChevronDown size={14} className={`transform transition-transform ${expandedReturnId === ret.id ? "rotate-180 text-amber-500" : ""}`} />
+                            <ChevronDown size={14} className={`transform transition-transform ${expandedReturnId === ret.id ? "rotate-180 text-brand-primary" : ""}`} />
                           </button>
                           <span>#RET-{ret.id}</span>
                         </div>
@@ -267,12 +267,12 @@ export default function AdminReturnsPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right font-extrabold text-amber-600 text-sm">
+                      <td className="px-6 py-4 text-right font-extrabold text-brand-primary text-sm">
                         {formatPrice(ret.refundAmount || ret.order?.totalAmount)}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
-                          ret.status === "return_requested" ? "bg-orange-50 text-orange-700 border-orange-100" :
+                          ret.status === "return_requested" ? "bg-brand-primary/10 text-brand-primary border-brand-border" :
                           ret.status === "return_approved" ? "bg-blue-50 text-blue-700 border-blue-100" :
                           ret.status === "product_received" ? "bg-indigo-50 text-indigo-700 border-indigo-100" :
                           ret.status === "refund_processing" ? "bg-purple-50 text-purple-700 border-purple-100" :
@@ -287,6 +287,7 @@ export default function AdminReturnsPage() {
                           {ret.status === "refunded" && "Đã hoàn tiền"}
                           {ret.status === "return_rejected" && "Từ chối trả hàng"}
                           {ret.status === "return_cancelled" && "Đã hủy"}
+                          {ret.status}
                         </span>
 
                         {/* Display transaction details if completed */}
@@ -373,7 +374,7 @@ export default function AdminReturnsPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-gray-600 animate-fadeIn">
                             {/* Left Col: Return Request & Refund Details */}
                             <div className="bg-white border border-gray-150 rounded-2xl p-4 space-y-2 shadow-sm">
-                              <h4 className="font-extrabold text-amber-600 text-xs uppercase tracking-wider mb-2">Chi tiết yêu cầu trả hàng</h4>
+                              <h4 className="font-extrabold text-brand-primary text-xs uppercase tracking-wider mb-2">Chi tiết yêu cầu trả hàng</h4>
                               <p><span className="font-bold text-gray-700">Mã yêu cầu:</span> #RET-{ret.id}</p>
                               <p><span className="font-bold text-gray-700">Mã đơn hàng:</span> #ORD-{ret.order?.id}</p>
                               <p><span className="font-bold text-gray-700">Lý do đổi trả:</span> {ret.reason}</p>
@@ -412,7 +413,7 @@ export default function AdminReturnsPage() {
 
                             {/* Right Col: Audit Timeline */}
                             <div className="bg-white border border-gray-150 rounded-2xl p-4 shadow-sm">
-                              <h4 className="font-extrabold text-amber-600 text-xs uppercase tracking-wider mb-2">Lịch sử trạng thái (Audit Timeline)</h4>
+                              <h4 className="font-extrabold text-brand-primary text-xs uppercase tracking-wider mb-2">Lịch sử trạng thái (Audit Timeline)</h4>
                               <div className="relative border-l border-gray-200 pl-4 space-y-3.5 py-1">
                                 {ret.order?.statusLogs && ret.order.statusLogs.length > 0 ? (
                                   [...ret.order.statusLogs]
@@ -439,7 +440,7 @@ export default function AdminReturnsPage() {
                                       return (
                                         <div key={log.id || idx} className="relative">
                                           {/* Circle Dot */}
-                                          <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />
+                                          <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-primary border border-white" />
                                           <div className="flex justify-between items-start gap-4">
                                             <div>
                                               <p className="font-bold text-gray-800">
@@ -491,7 +492,7 @@ export default function AdminReturnsPage() {
                 <select
                   value={refundMethod}
                   onChange={(e) => setRefundMethod(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary font-medium"
                 >
                   <option value="Bank Transfer">Chuyển khoản ngân hàng (Bank Transfer)</option>
                   <option value="Momo">Ví điện tử Momo</option>
@@ -509,7 +510,7 @@ export default function AdminReturnsPage() {
                   placeholder="Ví dụ: VCB123456789"
                   value={refundTxnId}
                   onChange={(e) => setRefundTxnId(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary font-mono"
                 />
               </div>
 
