@@ -15,7 +15,7 @@ interface RevenueAreaChartProps {
 }
 
 export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
-  const { formatPrice } = usePreferences();
+  const { formatPrice, language } = usePreferences();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const revenues = data ?? [];
@@ -25,7 +25,9 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
     return (
       <div className="h-[320px] flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-3xl text-gray-400 bg-gray-50/50 gap-2">
         <Calendar className="w-8 h-8 text-gray-300" />
-        <p className="text-sm font-medium">Không có dữ liệu doanh thu trong khoảng thời gian này.</p>
+        <p className="text-sm font-medium">
+          {language === "vi" ? "Không có dữ liệu doanh thu trong khoảng thời gian này." : "No revenue data available for this period."}
+        </p>
       </div>
     );
   }
@@ -142,18 +144,19 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
         {length > 0 && (
           <g className="fill-brand-muted font-bold text-[10px]">
             {/* Start */}
+            {/* Start */}
             <text x={paddingLeft} y={paddingTop + chartHeight + 22} textAnchor="start">
-              {new Date(revenues[0].date).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}
+              {new Date(revenues[0].date).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { month: "short", day: "numeric" })}
             </text>
             {/* Mid */}
             {length > 2 && (
               <text x={paddingLeft + chartWidth / 2} y={paddingTop + chartHeight + 22} textAnchor="middle">
-                {new Date(revenues[Math.floor(length / 2)].date).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}
+                {new Date(revenues[Math.floor(length / 2)].date).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { month: "short", day: "numeric" })}
               </text>
             )}
             {/* End */}
             <text x={paddingLeft + chartWidth} y={paddingTop + chartHeight + 22} textAnchor="end">
-              {new Date(revenues[length - 1].date).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}
+              {new Date(revenues[length - 1].date).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { month: "short", day: "numeric" })}
             </text>
           </g>
         )}
@@ -249,7 +252,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
         >
           {/* Tooltip header: Date */}
           <p className="text-[10px] text-brand-muted font-bold uppercase tracking-wider">
-            {new Date(revenues[hoveredIndex].date).toLocaleDateString("vi-VN", {
+            {new Date(revenues[hoveredIndex].date).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", {
               weekday: "long",
               year: "numeric",
               month: "long",
@@ -263,7 +266,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
               {formatPrice(revenues[hoveredIndex].revenue)}
             </span>
             <span className="text-[10px] font-semibold text-brand-secondary">
-              {revenues[hoveredIndex].ordersCount} đơn hàng
+              {revenues[hoveredIndex].ordersCount} {language === "vi" ? "đơn hàng" : "orders"}
             </span>
           </div>
 

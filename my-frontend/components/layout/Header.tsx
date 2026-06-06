@@ -18,9 +18,10 @@ import { FaFacebook } from "react-icons/fa";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { cartAPI, wishlistAPI, userProfileAPI, categoryAPI, type Category } from "@/lib/api";
-import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
+import { getBrowserToken, setAuthToken, logoutExpiredSession } from "@/lib/auth-token";
 import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
+import { isTokenExpired } from "@/lib/jwt";
 
 export default function Header() {
   const { language, setLanguage, t, translateCategory } =
@@ -90,7 +91,9 @@ export default function Header() {
           setUserRole(profile.role || "user");
         })
         .catch((err) => {
-          if (err.response?.status === 401) {
+          if (err.code === "TOKEN_EXPIRED") {
+            void logoutExpiredSession();
+          } else if (err.response?.status === 401 || err.code === "AUTH_REQUIRED") {
             setAuthToken(null);
             localStorage.removeItem("username");
             setLocalUsername(null);
@@ -107,7 +110,20 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (!session?.backendAccessToken) return;
+    if (!session) {
+      if (!getBrowserToken()) {
+        setLocalUsername(null);
+        setUserRole(null);
+      }
+      return;
+    }
+
+    if (!session.backendAccessToken) return;
+
+    if (isTokenExpired(session.backendAccessToken)) {
+      void logoutExpiredSession();
+      return;
+    }
 
     setAuthToken(session.backendAccessToken);
 
@@ -121,7 +137,9 @@ export default function Header() {
         setUserRole(profile.role || "user");
       })
       .catch((err) => {
-        if (err.response?.status === 401) {
+        if (err.code === "TOKEN_EXPIRED") {
+          void logoutExpiredSession();
+        } else if (err.response?.status === 401 || err.code === "AUTH_REQUIRED") {
           setAuthToken(null);
           localStorage.removeItem("username");
           setLocalUsername(null);

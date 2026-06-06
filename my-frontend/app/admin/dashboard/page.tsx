@@ -15,9 +15,7 @@ import {
   ChevronRight,
   ClipboardList,
   CheckCircle2,
-  Truck,
-  XCircle,
-  RotateCcw,
+  TrendingDown,
   RefreshCw
 } from "lucide-react";
 import Link from "next/link";
@@ -32,7 +30,7 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { formatPrice } = usePreferences();
+  const { formatPrice, language } = usePreferences();
 
   // Restock Modal States
   const [restockProduct, setRestockProduct] = useState<any | null>(null);
@@ -59,7 +57,7 @@ export default function AdminDashboardPage() {
       setOrders(ordersData);
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Không thể tải dữ liệu thống kê.");
+      setError(err?.response?.data?.message || (language === "vi" ? "Không thể tải dữ liệu thống kê." : "Failed to load dashboard stats."));
     } finally {
       setLoading(false);
     }
@@ -77,7 +75,7 @@ export default function AdminDashboardPage() {
       await fetchDashboardStats();
     } catch (err: any) {
       console.error(err);
-      alert("Không thể bổ sung tồn kho sản phẩm.");
+      alert(language === "vi" ? "Không thể bổ sung tồn kho sản phẩm." : "Failed to restock product inventory.");
     } finally {
       setUpdatingStock(false);
     }
@@ -105,15 +103,15 @@ export default function AdminDashboardPage() {
 
   const revenueGrowth = calculateGrowth(currRevenue, prevRevenue);
 
-  const renderGrowthIndicator = (growth: number | null, periodLabel = "15 ngày trước") => {
+  const renderGrowthIndicator = (growth: number | null, periodLabel = language === "vi" ? "15 ngày trước" : "15 days ago") => {
     if (growth === null) {
-      return <span className="text-brand-muted font-medium text-[11px]">Chưa đủ dữ liệu so sánh</span>;
+      return <span className="text-brand-muted font-medium text-[11px]">{language === "vi" ? "Chưa đủ dữ liệu so sánh" : "Insufficient data for comparison"}</span>;
     }
     const isPositive = growth >= 0;
     return (
       <span className={`text-[11px] font-bold flex items-center gap-0.5 ${isPositive ? "text-emerald-600" : "text-rose-600"}`}>
         {isPositive ? `↗ +${growth.toFixed(1)}%` : `↘ ${growth.toFixed(1)}%`}
-        <span className="text-brand-muted font-normal"> so với {periodLabel}</span>
+        <span className="text-brand-muted font-normal"> {language === "vi" ? `so với ${periodLabel}` : `vs ${periodLabel}`}</span>
       </span>
     );
   };
@@ -143,7 +141,7 @@ export default function AdminDashboardPage() {
     .slice(0, 4);
 
   const getInitials = (name: string) => {
-    if (!name) return "KH";
+    if (!name) return language === "vi" ? "KH" : "CS";
     const parts = name.split(" ");
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -158,13 +156,13 @@ export default function AdminDashboardPage() {
     // Orders Events
     orders.forEach((o) => {
       let icon = "🛒";
-      let text = `Đơn hàng mới #ORD-${o.id} từ ${o.fullName || "Khách vãng lai"}`;
+      let text = language === "vi" ? `Đơn hàng mới #ORD-${o.id} từ ${o.fullName || "Khách vãng lai"}` : `New order #ORD-${o.id} from ${o.fullName || "Guest"}`;
       if (o.status === "delivered") {
         icon = "📦";
-        text = `Đơn hàng #ORD-${o.id} đã giao thành công`;
+        text = language === "vi" ? `Đơn hàng #ORD-${o.id} đã giao thành công` : `Order #ORD-${o.id} delivered successfully`;
       } else if (o.status === "cancelled") {
         icon = "❌";
-        text = `Đơn hàng #ORD-${o.id} đã bị hủy`;
+        text = language === "vi" ? `Đơn hàng #ORD-${o.id} đã bị hủy` : `Order #ORD-${o.id} has been cancelled`;
       }
       list.push({
         id: `order-${o.id}-${o.status}`,
@@ -182,7 +180,7 @@ export default function AdminDashboardPage() {
           id: `stock-${p.id}`,
           type: "stock",
           icon: "⚠️",
-          text: `Sách "${p.name}" sắp hết kho (Chỉ còn ${p.stock} cuốn)`,
+          text: language === "vi" ? `Sách "${p.name}" sắp hết kho (Chỉ còn ${p.stock} cuốn)` : `Book "${p.name}" low stock (${p.stock} remaining)`,
           date: new Date(Date.now() - 2 * 3600 * 1000), // Muffed timestamp
         });
       });
@@ -194,7 +192,7 @@ export default function AdminDashboardPage() {
         id: `user-${u.id}`,
         type: "user",
         icon: "👤",
-        text: `Khách hàng ${u.fullName || u.username} vừa tạo tài khoản`,
+        text: language === "vi" ? `Khách hàng ${u.fullName || u.username} vừa tạo tài khoản` : `Customer ${u.fullName || u.username} registered an account`,
         date: parseDate(u.created_at),
       });
     });
@@ -211,20 +209,20 @@ export default function AdminDashboardPage() {
     if (stock === 0) {
       return (
         <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-700 border border-rose-500/20 whitespace-nowrap">
-          Hết hàng (Critical)
+          {language === "vi" ? "Hết hàng (Critical)" : "Out of Stock (Critical)"}
         </span>
       );
     }
     if (stock <= 3) {
       return (
         <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-orange-500/10 text-orange-700 border border-orange-500/20 whitespace-nowrap">
-          Chỉ còn {stock} cuốn (Danger)
+          {language === "vi" ? `Chỉ còn ${stock} cuốn (Danger)` : `Only ${stock} left (Danger)`}
         </span>
       );
     }
     return (
       <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 whitespace-nowrap">
-        Còn {stock} cuốn (Warning)
+        {language === "vi" ? `Còn ${stock} cuốn (Warning)` : `${stock} left (Warning)`}
       </span>
     );
   };
@@ -234,7 +232,9 @@ export default function AdminDashboardPage() {
       <div className="flex items-center justify-center py-40">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
-          <p className="text-brand-muted font-medium text-sm">Đang tải số liệu thống kê...</p>
+          <p className="text-brand-muted font-medium text-sm">
+            {language === "vi" ? "Đang tải số liệu thống kê..." : "Loading dashboard statistics..."}
+          </p>
         </div>
       </div>
     );
@@ -244,13 +244,13 @@ export default function AdminDashboardPage() {
     return (
       <div className="bg-rose-500/10 text-rose-700 border border-rose-500/20 rounded-3xl p-6 text-center max-w-lg mx-auto">
         <AlertTriangle className="w-10 h-10 text-rose-600 mx-auto mb-3" />
-        <h3 className="font-bold text-lg">Đã xảy ra lỗi</h3>
+        <h3 className="font-bold text-lg">{language === "vi" ? "Đã xảy ra lỗi" : "An error occurred"}</h3>
         <p className="text-sm mt-1 mb-4">{error}</p>
         <button
           onClick={fetchDashboardStats}
           className="px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-semibold transition"
         >
-          Thử Lại
+          {language === "vi" ? "Thử Lại" : "Retry"}
         </button>
       </div>
     );
@@ -262,15 +262,19 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-brand-border/40">
         <div>
           <h2 className="text-2xl font-black text-brand-text flex items-center gap-1.5">
-            Xin chào, Admin
+            {language === "vi" ? "Xin chào, Admin" : "Welcome back, Admin"}
           </h2>
           <p className="text-xs text-brand-muted mt-1.5 flex flex-wrap items-center gap-2">
-            <span>Hôm nay:</span>
-            <strong className="text-brand-text">{todayOrders} đơn hàng</strong>
+            <span>{language === "vi" ? "Hôm nay:" : "Today:"}</span>
+            <strong className="text-brand-text">
+              {todayOrders} {language === "vi" ? "đơn hàng" : "orders"}
+            </strong>
             <span className="text-brand-border">•</span>
             <strong className="text-brand-primary">{formatPrice(todayRevenue)}</strong>
             <span className="text-brand-border">•</span>
-            <strong className="text-brand-text">{stats.lowStockCount} sản phẩm cần nhập</strong>
+            <strong className="text-brand-text">
+              {stats.lowStockCount} {language === "vi" ? "sản phẩm cần nhập" : "items low stock"}
+            </strong>
           </p>
         </div>
 
@@ -278,21 +282,21 @@ export default function AdminDashboardPage() {
         <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
           <Link
             href="/admin/products"
-            className="px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold shadow-md shadow-brand-primary/10 transition flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold shadow-md shadow-brand-primary/10 transition flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus size={14} /> Thêm sản phẩm
+            <Plus size={14} /> {language === "vi" ? "Thêm sản phẩm" : "Add product"}
           </Link>
           <Link
             href="/admin/promotions"
-            className="px-4 py-2.5 rounded-xl bg-brand-surface border border-brand-border/80 hover:bg-brand-primary-light/20 text-brand-text text-xs font-bold transition flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-brand-surface border border-brand-border/80 hover:bg-brand-primary-light/20 text-brand-text text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
           >
-            <Ticket size={14} className="text-brand-muted" /> Tạo khuyến mãi
+            <Ticket size={14} className="text-brand-muted" /> {language === "vi" ? "Tạo khuyến mãi" : "Create promo"}
           </Link>
           <Link
             href="/admin/orders"
-            className="px-4 py-2.5 rounded-xl bg-brand-surface border border-brand-border/80 hover:bg-brand-primary-light/20 text-brand-text text-xs font-bold transition flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-brand-surface border border-brand-border/80 hover:bg-brand-primary-light/20 text-brand-text text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
           >
-            <ClipboardList size={14} className="text-brand-muted" /> Xem đơn hàng
+            <ClipboardList size={14} className="text-brand-muted" /> {language === "vi" ? "Xem đơn hàng" : "View orders"}
           </Link>
         </div>
       </div>
@@ -302,9 +306,13 @@ export default function AdminDashboardPage() {
         {/* TODAY REVENUE */}
         <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between">
           <div className="space-y-2 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">Hôm nay</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">
+              {language === "vi" ? "Hôm nay" : "Today"}
+            </span>
             <h3 className="text-xl font-black text-brand-text truncate">{formatPrice(todayRevenue)}</h3>
-            <p className="text-[11px] text-brand-muted font-medium">Doanh thu ngày hiện tại</p>
+            <p className="text-[11px] text-brand-muted font-medium">
+              {language === "vi" ? "Doanh thu ngày hiện tại" : "Current day revenue"}
+            </p>
           </div>
           <div className="bg-brand-primary/10 text-brand-primary p-3 rounded-2xl shrink-0">
             <DollarSign className="w-5 h-5" />
@@ -314,7 +322,9 @@ export default function AdminDashboardPage() {
         {/* MONTHLY REVENUE */}
         <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between xl:col-span-1 sm:col-span-2 md:col-span-1">
           <div className="space-y-2 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">Tháng này (30 ngày)</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">
+              {language === "vi" ? "Tháng này (30 ngày)" : "This Month (30 days)"}
+            </span>
             <h3 className="text-xl font-black text-brand-text truncate">{formatPrice(stats.totalRevenue)}</h3>
             {renderGrowthIndicator(revenueGrowth)}
           </div>
@@ -326,11 +336,13 @@ export default function AdminDashboardPage() {
         {/* ORDERS COUNT */}
         <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between">
           <div className="space-y-2 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">Đơn Hàng Mới</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">
+              {language === "vi" ? "Đơn Hàng Mới" : "New Orders"}
+            </span>
             <h3 className="text-xl font-black text-brand-text truncate">{stats.totalOrders}</h3>
             <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-0.5">
               <span>↗ +8%</span>
-              <span className="text-brand-muted font-normal"> so với tháng trước</span>
+              <span className="text-brand-muted font-normal"> {language === "vi" ? "so với tháng trước" : "vs last month"}</span>
             </p>
           </div>
           <div className="bg-brand-primary/10 text-brand-primary p-3 rounded-2xl shrink-0">
@@ -341,9 +353,13 @@ export default function AdminDashboardPage() {
         {/* SUCCESS RATE */}
         <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between">
           <div className="space-y-2 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">Tỉ Lệ Thành Công</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">
+              {language === "vi" ? "Tỉ Lệ Thành Công" : "Success Rate"}
+            </span>
             <h3 className="text-xl font-black text-brand-text truncate">{successRate}%</h3>
-            <p className="text-[11px] text-brand-muted font-medium">Tỷ lệ đơn giao hoàn tất</p>
+            <p className="text-[11px] text-brand-muted font-medium">
+              {language === "vi" ? "Tỷ lệ đơn giao hoàn tất" : "Completed delivery rate"}
+            </p>
           </div>
           <div className="bg-brand-primary/10 text-brand-primary p-3 rounded-2xl shrink-0">
             <CheckCircle2 className="w-5 h-5" />
@@ -353,11 +369,13 @@ export default function AdminDashboardPage() {
         {/* LOW STOCK ALERT COUNT */}
         <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between">
           <div className="space-y-2 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">Sắp Hết Hàng</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted block truncate">
+              {language === "vi" ? "Sắp Hết Hàng" : "Low Stock Alerts"}
+            </span>
             <h3 className="text-xl font-black text-brand-text truncate">{stats.lowStockCount}</h3>
             <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-0.5">
               <span>↘ -5%</span>
-              <span className="text-brand-muted font-normal"> so với tháng trước</span>
+              <span className="text-brand-muted font-normal"> {language === "vi" ? "so với tháng trước" : "vs last month"}</span>
             </p>
           </div>
           <div className="bg-brand-primary/10 text-brand-primary p-3 rounded-2xl shrink-0">
@@ -372,22 +390,30 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-7 bg-gradient-to-br from-brand-surface to-brand-primary-light/10 border border-brand-border/40 rounded-3xl p-6 lg:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-muted">Doanh thu</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-muted">
+                {language === "vi" ? "Doanh thu" : "Revenue"}
+              </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <h3 className="text-2xl font-black text-brand-text">Revenue Overview</h3>
                 {revenueGrowth !== null ? (
                   <span className={`text-sm font-bold flex items-center gap-0.5 ${revenueGrowth >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                     {revenueGrowth >= 0 ? `↗ +${revenueGrowth.toFixed(1)}%` : `↘ ${revenueGrowth.toFixed(1)}%`}
-                    <span className="text-xs text-brand-muted font-normal"> so với 15 ngày trước</span>
+                    <span className="text-xs text-brand-muted font-normal">
+                      {language === "vi" ? " so với 15 ngày trước" : " vs 15 days ago"}
+                    </span>
                   </span>
                 ) : (
-                  <span className="text-xs text-brand-muted font-medium">Chưa đủ dữ liệu</span>
+                  <span className="text-xs text-brand-muted font-medium">
+                    {language === "vi" ? "Chưa đủ dữ liệu" : "Insufficient data"}
+                  </span>
                 )}
               </div>
-              <p className="text-xs text-brand-muted mt-1">Thống kê doanh thu hàng ngày trong 30 ngày gần đây</p>
+              <p className="text-xs text-brand-muted mt-1">
+                {language === "vi" ? "Thống kê doanh thu hàng ngày trong 30 ngày gần đây" : "Daily revenue statistics over the last 30 days"}
+              </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-brand-muted bg-brand-surface border border-brand-border/40 px-3 py-1.5 rounded-xl font-medium self-start sm:self-auto shadow-sm">
-              <Calendar size={14} className="text-brand-muted" /> 30 ngày qua
+              <Calendar size={14} className="text-brand-muted" /> {language === "vi" ? "30 ngày qua" : "Last 30 days"}
             </div>
           </div>
 
@@ -399,7 +425,9 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-3 bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-brand-border/40 pb-3 mb-4">
-              <h3 className="font-extrabold text-brand-text text-base">Hoạt động gần đây</h3>
+              <h3 className="font-extrabold text-brand-text text-base">
+                {language === "vi" ? "Hoạt động gần đây" : "Recent Activity"}
+              </h3>
               <RefreshCw size={14} className="text-brand-muted cursor-pointer hover:rotate-180 transition-transform duration-500" onClick={fetchDashboardStats} />
             </div>
 
@@ -410,7 +438,7 @@ export default function AdminDashboardPage() {
                   <div>
                     <p className="font-semibold text-brand-text">{act.text}</p>
                     <span className="text-[10px] text-brand-muted">
-                      {act.date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - {act.date.toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}
+                      {act.date.toLocaleTimeString(language === "vi" ? "vi-VN" : "en-US", { hour: "2-digit", minute: "2-digit" })} - {act.date.toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", { month: "short", day: "numeric" })}
                     </span>
                   </div>
                 </div>
@@ -426,9 +454,11 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-7 bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-brand-border/40 pb-3 mb-4">
-              <h3 className="font-extrabold text-brand-text">Đơn hàng mới nhận</h3>
-              <Link href="/admin/orders" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1">
-                Xem tất cả <ArrowRight size={14} />
+              <h3 className="font-extrabold text-brand-text">
+                {language === "vi" ? "Đơn hàng mới nhận" : "Recent Orders"}
+              </h3>
+              <Link href="/admin/orders" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1 cursor-pointer">
+                {language === "vi" ? "Xem tất cả" : "View all"} <ArrowRight size={14} />
               </Link>
             </div>
 
@@ -436,10 +466,18 @@ export default function AdminDashboardPage() {
               <table className="w-full text-sm text-left border-collapse">
                 <thead>
                   <tr className="text-brand-muted border-b border-brand-border/40 sticky top-0 bg-brand-surface z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.03)]">
-                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px]">Mã đơn</th>
-                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px]">Khách hàng</th>
-                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px] text-right">Tổng tiền</th>
-                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px] text-center">Trạng thái</th>
+                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px]">
+                      {language === "vi" ? "Mã đơn" : "Order ID"}
+                    </th>
+                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px]">
+                      {language === "vi" ? "Khách hàng" : "Customer"}
+                    </th>
+                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px] text-right">
+                      {language === "vi" ? "Tổng tiền" : "Total Amount"}
+                    </th>
+                    <th className="pb-3 pt-1.5 font-bold uppercase tracking-wider text-[10px] text-center">
+                      {language === "vi" ? "Trạng thái" : "Status"}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-border/10">
@@ -455,9 +493,10 @@ export default function AdminDashboardPage() {
                           o.status === "shipping" ? "bg-sky-500/10 text-sky-700 border-sky-500/20" :
                           "bg-amber-500/10 text-amber-700 border border-amber-500/20"
                         }`}>
-                          {o.status === "delivered" ? "Đã giao" :
-                           o.status === "cancelled" ? "Đã hủy" :
-                           o.status === "shipping" ? "Đang giao" : "Chờ xử lý"}
+                          {o.status === "delivered" ? (language === "vi" ? "Đã giao" : "Delivered") :
+                           o.status === "cancelled" ? (language === "vi" ? "Đã hủy" : "Cancelled") :
+                           o.status === "shipping" ? (language === "vi" ? "Đang giao" : "Shipping") : 
+                           (language === "vi" ? "Chờ xử lý" : "Pending")}
                         </span>
                       </td>
                     </tr>
@@ -473,16 +512,18 @@ export default function AdminDashboardPage() {
           <div>
             <div className="flex items-center justify-between border-b border-brand-border/40 pb-3 mb-4">
               <h3 className="font-extrabold text-brand-text flex items-center gap-1.5">
-                ⚠️ Inventory Alerts
+                {language === "vi" ? "⚠️ Cảnh báo tồn kho" : "⚠️ Inventory Alerts"}
               </h3>
-              <Link href="/admin/products" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1">
-                Xem kho <ArrowRight size={14} />
+              <Link href="/admin/products" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1 cursor-pointer">
+                {language === "vi" ? "Xem kho" : "View inventory"} <ArrowRight size={14} />
               </Link>
             </div>
 
             <div className="space-y-4">
               {stats.lowStockProducts.length === 0 ? (
-                <p className="text-center py-6 text-xs text-brand-muted">Kho hàng ở mức an toàn.</p>
+                <p className="text-center py-6 text-xs text-brand-muted">
+                  {language === "vi" ? "Kho hàng ở mức an toàn." : "Stock levels are healthy."}
+                </p>
               ) : (
                 stats.lowStockProducts.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between gap-3 text-xs border-b border-brand-border/20 pb-3 last:border-b-0 last:pb-0">
@@ -508,9 +549,9 @@ export default function AdminDashboardPage() {
                         setRestockProduct(p);
                         setRestockQty(50);
                       }}
-                      className="px-2.5 py-1.5 rounded-lg border border-brand-primary/40 hover:bg-brand-primary-light/20 text-brand-primary text-[10px] font-bold transition shrink-0"
+                      className="px-2.5 py-1.5 rounded-lg border border-brand-primary/40 hover:bg-brand-primary-light/20 text-brand-primary text-[10px] font-bold transition shrink-0 cursor-pointer"
                     >
-                      Restock
+                      {language === "vi" ? "Bổ sung" : "Restock"}
                     </button>
                   </div>
                 ))
@@ -526,13 +567,19 @@ export default function AdminDashboardPage() {
         <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-brand-border/40 pb-3 mb-4">
-              <h3 className="font-extrabold text-brand-text">Sản phẩm bán chạy nhất</h3>
-              <span className="text-[10px] bg-brand-primary/10 text-brand-primary px-2.5 py-1 rounded-xl font-bold uppercase">Thống kê</span>
+              <h3 className="font-extrabold text-brand-text">
+                {language === "vi" ? "Sản phẩm bán chạy nhất" : "Top Selling Products"}
+              </h3>
+              <span className="text-[10px] bg-brand-primary/10 text-brand-primary px-2.5 py-1 rounded-xl font-bold uppercase">
+                {language === "vi" ? "Thống kê" : "Stats"}
+              </span>
             </div>
 
             <div className="space-y-4">
               {topProducts.length === 0 ? (
-                <p className="text-center py-6 text-xs text-brand-muted">Chưa có số liệu sản phẩm bán chạy.</p>
+                <p className="text-center py-6 text-xs text-brand-muted">
+                  {language === "vi" ? "Chưa có số liệu sản phẩm bán chạy." : "No top-selling product data available."}
+                </p>
               ) : (
                 topProducts.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between gap-3 text-xs">
@@ -550,12 +597,16 @@ export default function AdminDashboardPage() {
                       )}
                       <div className="min-w-0">
                         <p className="font-extrabold text-brand-text truncate">{p.name}</p>
-                        <p className="text-[10px] text-brand-muted mt-0.5">Danh mục: {p.category?.name || "Khác"}</p>
+                        <p className="text-[10px] text-brand-muted mt-0.5">
+                          {language === "vi" ? "Danh mục:" : "Category:"} {p.category?.name || (language === "vi" ? "Khác" : "Other")}
+                        </p>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <p className="font-bold text-brand-text">{p.sold} đã bán</p>
+                      <p className="font-bold text-brand-text">
+                        {p.sold} {language === "vi" ? "đã bán" : "sold"}
+                      </p>
                       <p className="text-[10px] font-black text-brand-primary mt-0.5">
                         {formatPrice(p.sold * p.price)}
                       </p>
@@ -573,10 +624,10 @@ export default function AdminDashboardPage() {
           <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm">
             <div className="flex items-center justify-between border-b border-brand-border/40 pb-3 mb-4">
               <h3 className="font-extrabold text-brand-text flex items-center gap-1.5">
-                📊 Sức khỏe đơn hàng
+                📊 {language === "vi" ? "Sức khỏe đơn hàng" : "Order Health"}
               </h3>
               <span className="text-[10px] font-black text-brand-muted">
-                Tổng cộng: {totalOrdersCount} đơn
+                {language === "vi" ? `Tổng cộng: ${totalOrdersCount} đơn` : `Total: ${totalOrdersCount} orders`}
               </span>
             </div>
 
@@ -584,8 +635,10 @@ export default function AdminDashboardPage() {
               {/* DELIVERED */}
               <div className="space-y-1">
                 <div className="flex justify-between font-semibold">
-                  <span className="text-brand-text">Đã giao hoàn tất</span>
-                  <span className="text-emerald-600 font-bold">{deliveredOrdersCount} đơn</span>
+                  <span className="text-brand-text">{language === "vi" ? "Đã giao hoàn tất" : "Completed / Delivered"}</span>
+                  <span className="text-emerald-600 font-bold">
+                    {deliveredOrdersCount} {language === "vi" ? "đơn" : "orders"}
+                  </span>
                 </div>
                 <div className="w-full bg-brand-bg rounded-full h-2 overflow-hidden border border-brand-border/20">
                   <div
@@ -598,8 +651,10 @@ export default function AdminDashboardPage() {
               {/* SHIPPING */}
               <div className="space-y-1">
                 <div className="flex justify-between font-semibold">
-                  <span className="text-brand-text">Đang vận chuyển</span>
-                  <span className="text-sky-600 font-bold">{shippingOrdersCount} đơn</span>
+                  <span className="text-brand-text">{language === "vi" ? "Đang vận chuyển" : "Out for Delivery / Shipping"}</span>
+                  <span className="text-sky-600 font-bold">
+                    {shippingOrdersCount} {language === "vi" ? "đơn" : "orders"}
+                  </span>
                 </div>
                 <div className="w-full bg-brand-bg rounded-full h-2 overflow-hidden border border-brand-border/20">
                   <div
@@ -612,8 +667,10 @@ export default function AdminDashboardPage() {
               {/* CANCELLED */}
               <div className="space-y-1">
                 <div className="flex justify-between font-semibold">
-                  <span className="text-brand-text">Đã hủy đơn</span>
-                  <span className="text-rose-600 font-bold">{cancelledOrdersCount} đơn</span>
+                  <span className="text-brand-text">{language === "vi" ? "Đã hủy đơn" : "Cancelled"}</span>
+                  <span className="text-rose-600 font-bold">
+                    {cancelledOrdersCount} {language === "vi" ? "đơn" : "orders"}
+                  </span>
                 </div>
                 <div className="w-full bg-brand-bg rounded-full h-2 overflow-hidden border border-brand-border/20">
                   <div
@@ -626,8 +683,10 @@ export default function AdminDashboardPage() {
               {/* REFUNDED */}
               <div className="space-y-1">
                 <div className="flex justify-between font-semibold">
-                  <span className="text-brand-text">Hoàn tiền / Trả hàng</span>
-                  <span className="text-amber-600 font-bold">{refundedOrdersCount} đơn</span>
+                  <span className="text-brand-text">{language === "vi" ? "Hoàn tiền / Trả hàng" : "Refunded / Returned"}</span>
+                  <span className="text-amber-600 font-bold">
+                    {refundedOrdersCount} {language === "vi" ? "đơn" : "orders"}
+                  </span>
                 </div>
                 <div className="w-full bg-brand-bg rounded-full h-2 overflow-hidden border border-brand-border/20">
                   <div
@@ -642,15 +701,19 @@ export default function AdminDashboardPage() {
           {/* BEST CUSTOMERS */}
           <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm">
             <div className="flex items-center justify-between border-b border-brand-border/40 pb-3 mb-4">
-              <h3 className="font-extrabold text-brand-text">Khách hàng tiêu biểu</h3>
-              <Link href="/admin/users" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1">
-                Danh sách <ArrowRight size={14} />
+              <h3 className="font-extrabold text-brand-text">
+                {language === "vi" ? "Khách hàng tiêu biểu" : "Best Customers"}
+              </h3>
+              <Link href="/admin/users" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover transition flex items-center gap-1 cursor-pointer">
+                {language === "vi" ? "Danh sách" : "List"} <ArrowRight size={14} />
               </Link>
             </div>
 
             <div className="space-y-4">
               {bestCustomers.length === 0 ? (
-                <p className="text-center py-4 text-xs text-brand-muted">Chưa có dữ liệu khách hàng.</p>
+                <p className="text-center py-4 text-xs text-brand-muted">
+                  {language === "vi" ? "Chưa có dữ liệu khách hàng." : "No customer data available."}
+                </p>
               ) : (
                 bestCustomers.map((cust) => (
                   <div key={cust.id} className="flex items-center justify-between gap-3 text-xs">
@@ -660,13 +723,17 @@ export default function AdminDashboardPage() {
                       </div>
                       <div>
                         <p className="font-bold text-brand-text">{cust.fullName || cust.username}</p>
-                        <p className="text-[10px] text-brand-muted mt-0.5">{cust.email || cust.phone || "Không có liên hệ"}</p>
+                        <p className="text-[10px] text-brand-muted mt-0.5">
+                          {cust.email || cust.phone || (language === "vi" ? "Không có liên hệ" : "No contact info")}
+                        </p>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <p className="font-black text-brand-primary">{formatPrice(cust.totalSpent || 0)}</p>
-                      <p className="text-[10px] text-brand-muted mt-0.5">Tổng chi tiêu</p>
+                      <p className="text-[10px] text-brand-muted mt-0.5">
+                        {language === "vi" ? "Tổng chi tiêu" : "Total Spent"}
+                      </p>
                     </div>
                   </div>
                 ))
@@ -680,15 +747,18 @@ export default function AdminDashboardPage() {
       {restockProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-brand-surface border border-brand-border rounded-3xl p-6 shadow-2xl max-w-sm w-full animate-scaleIn">
-            <h3 className="font-extrabold text-lg text-brand-text mb-2">Bổ sung kho hàng</h3>
+            <h3 className="font-extrabold text-lg text-brand-text mb-2">
+              {language === "vi" ? "Bổ sung kho hàng" : "Restock Inventory"}
+            </h3>
             <p className="text-xs text-brand-muted mb-4 leading-relaxed">
-              Bổ sung tồn kho cho cuốn sách: <strong className="text-brand-text">{restockProduct.name}</strong>
+              {language === "vi" ? "Bổ sung tồn kho cho cuốn sách:" : "Restock inventory for book:"}{" "}
+              <strong className="text-brand-text">{restockProduct.name}</strong>
             </p>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-brand-muted mb-1.5">
-                  Số lượng bổ sung
+                  {language === "vi" ? "Số lượng bổ sung" : "Restock Quantity"}
                 </label>
                 <input
                   type="number"
@@ -703,19 +773,19 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
                 onClick={() => setRestockProduct(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-brand-muted hover:bg-brand-primary-light/20 transition"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-brand-muted hover:bg-brand-primary-light/20 transition cursor-pointer"
               >
-                Hủy
+                {language === "vi" ? "Hủy" : "Cancel"}
               </button>
               <button
                 onClick={handleRestockConfirm}
                 disabled={updatingStock}
-                className="px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold shadow-md shadow-brand-primary/20 transition flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold shadow-md shadow-brand-primary/20 transition flex items-center gap-1.5 cursor-pointer"
               >
                 {updatingStock ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : null}
-                Xác nhận
+                {language === "vi" ? "Xác nhận" : "Confirm"}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { normalizeCartItems } from "./cart";
 import { isTokenExpired } from "./jwt";
+import { logoutExpiredSession } from "./auth-token";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api",
@@ -72,6 +73,15 @@ export function getBrowserToken(): string | undefined {
 }
 
 function requireAuthToken(): string {
+  if (typeof window !== "undefined") {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken && isTokenExpired(storedToken)) {
+      const err = new Error("Token đã hết hạn. Vui lòng đăng nhập lại.");
+      (err as any).code = "TOKEN_EXPIRED";
+      throw err;
+    }
+  }
+
   const token = getBrowserToken();
   if (token) {
     return token;
@@ -145,15 +155,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (typeof window !== "undefined" && error?.response?.status === 401) {
-      try {
-        document.cookie = "token=; Max-Age=0; path=/";
-      } catch {}
-      try {
-        localStorage.removeItem("token");
-      } catch {}
-      try {
-        localStorage.removeItem("username");
-      } catch {}
+      void logoutExpiredSession();
     }
 
     return Promise.reject(error);

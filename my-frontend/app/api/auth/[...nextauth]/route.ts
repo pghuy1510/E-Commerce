@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { isTokenExpired } from "@/lib/jwt";
 
 const handler = NextAuth({
   providers: [
@@ -34,15 +35,33 @@ const handler = NextAuth({
         }
       }
 
+      if (token.backendAccessToken && isTokenExpired(token.backendAccessToken as string)) {
+        token.backendAccessToken = undefined;
+        delete (token as any).backendUserId;
+        delete (token as any).backendUsername;
+        delete (token as any).backendRole;
+      }
+
       return token;
     },
     async session({ session, token }) {
       session.backendAccessToken = token.backendAccessToken as
         | string
         | undefined;
+      
+      if (!token.backendAccessToken) {
+        delete (session as any).backendUserId;
+        delete (session as any).backendUsername;
+        delete (session as any).backendRole;
+      } else {
+        (session as any).backendUserId = (token as any).backendUserId;
+        (session as any).backendUsername = (token as any).backendUsername;
+        (session as any).backendRole = (token as any).backendRole;
+      }
       return session;
     },
   },
 });
+
 
 export { handler as GET, handler as POST };

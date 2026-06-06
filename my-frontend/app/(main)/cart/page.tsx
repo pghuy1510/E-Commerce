@@ -10,6 +10,7 @@ import { cartAPI } from "@/lib/api";
 import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
 import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
+import { isTokenExpired } from "@/lib/jwt";
 import { calculateCartSubtotal } from "@/lib/money";
 
 interface CartItem {
@@ -37,7 +38,7 @@ export default function CartPage() {
     const currentToken = getBrowserToken();
     if (!currentToken) {
       const sessionToken = session?.backendAccessToken;
-      if (sessionToken) {
+      if (sessionToken && !isTokenExpired(sessionToken)) {
         setAuthToken(sessionToken);
       }
     }

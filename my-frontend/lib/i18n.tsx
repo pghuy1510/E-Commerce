@@ -1405,28 +1405,45 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") {
       return;
     }
-    const storedLanguage = window.localStorage.getItem(
-      "preferred-language",
-    ) as Language | null;
-    const storedCurrency = window.localStorage.getItem(
-      "preferred-currency",
-    ) as Currency | null;
+    
+    const syncPreferences = () => {
+      const storedLanguage = window.localStorage.getItem(
+        "preferred-language",
+      ) as Language | null;
+      const storedCurrency = window.localStorage.getItem(
+        "preferred-currency",
+      ) as Currency | null;
 
-    if (storedLanguage === "en" || storedLanguage === "vi") {
-      setLanguageState(storedLanguage);
-    }
-    if (storedCurrency === "USD" || storedCurrency === "VND") {
-      setCurrencyState(storedCurrency);
-    }
+      if (storedLanguage === "en" || storedLanguage === "vi") {
+        setLanguageState(storedLanguage);
+      }
+      if (storedCurrency === "USD" || storedCurrency === "VND") {
+        setCurrencyState(storedCurrency);
+      }
+    };
+
+    syncPreferences();
+
+    window.addEventListener("storage", syncPreferences);
+    return () => {
+      window.removeEventListener("storage", syncPreferences);
+    };
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    window.localStorage.setItem("preferred-language", language);
-    window.localStorage.setItem("preferred-currency", currency);
-    document.documentElement.lang = language;
+    
+    const currentLang = window.localStorage.getItem("preferred-language");
+    const currentCurr = window.localStorage.getItem("preferred-currency");
+
+    if (currentLang !== language || currentCurr !== currency) {
+      window.localStorage.setItem("preferred-language", language);
+      window.localStorage.setItem("preferred-currency", currency);
+      document.documentElement.lang = language;
+      window.dispatchEvent(new Event("storage"));
+    }
   }, [language, currency]);
 
   const value = useMemo<PreferencesContextValue>(() => {

@@ -2,13 +2,19 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
+import { getBrowserToken, setAuthToken, logoutExpiredSession } from "@/lib/auth-token";
+import { isTokenExpired } from "@/lib/jwt";
 
 export default function TokenSynchronizer() {
   const { data: session } = useSession();
 
   useEffect(() => {
     if (session?.backendAccessToken) {
+      if (isTokenExpired(session.backendAccessToken)) {
+        void logoutExpiredSession();
+        return;
+      }
+
       const currentToken = getBrowserToken();
       if (currentToken !== session.backendAccessToken) {
         setAuthToken(session.backendAccessToken);
@@ -22,6 +28,7 @@ export default function TokenSynchronizer() {
       }
     }
   }, [session]);
+
 
   return null;
 }

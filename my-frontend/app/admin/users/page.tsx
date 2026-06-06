@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
 
 type AdminUser = {
   id: number;
@@ -89,6 +90,8 @@ export default function AdminUsersPage() {
     setIsEditModalOpen(true);
   };
 
+  const { formatPrice, language } = usePreferences();
+
   const handleEditUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
@@ -103,7 +106,7 @@ export default function AdminUsersPage() {
         role: editRole,
         isActive: editIsActive,
       });
-      alert("Cập nhật thông tin người dùng thành công!");
+      alert(language === "vi" ? "Cập nhật thông tin người dùng thành công!" : "User profile updated successfully!");
       setIsEditModalOpen(false);
       fetchUsers();
     } catch (err: unknown) {
@@ -112,7 +115,7 @@ export default function AdminUsersPage() {
       setEditError(
         apiError?.response?.data?.message ||
           apiError?.message ||
-          "Không thể cập nhật thông tin người dùng.",
+          (language === "vi" ? "Không thể cập nhật thông tin người dùng." : "Failed to update user profile.")
       );
     } finally {
       setEditSubmitting(false);
@@ -120,11 +123,14 @@ export default function AdminUsersPage() {
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này? Hành động này sẽ gỡ bỏ tài khoản và dọn dẹp các dữ liệu giỏ hàng liên quan, giữ lại lịch sử đơn hàng ở trạng thái vô danh. Không thể hoàn tác.")) return;
+    if (!confirm(language === "vi" 
+      ? "Bạn có chắc chắn muốn xóa tài khoản này? Hành động này sẽ gỡ bỏ tài khoản và dọn dẹp các dữ liệu giỏ hàng liên quan, giữ lại lịch sử đơn hàng ở trạng thái vô danh. Không thể hoàn tác."
+      : "Are you sure you want to delete this account? This will remove the account and clear associated cart items, leaving order history anonymous. This action cannot be undone."
+    )) return;
     try {
       setActionUserId(userId);
       await adminAPI.deleteUser(userId);
-      alert("Xóa tài khoản người dùng thành công!");
+      alert(language === "vi" ? "Xóa tài khoản người dùng thành công!" : "User account deleted successfully!");
       fetchUsers();
     } catch (err: unknown) {
       const apiError = err as ApiError;
@@ -132,14 +138,12 @@ export default function AdminUsersPage() {
       alert(
         apiError?.response?.data?.message ||
           apiError?.message ||
-          "Không thể xóa tài khoản người dùng.",
+          (language === "vi" ? "Không thể xóa tài khoản người dùng." : "Cannot delete user account.")
       );
     } finally {
       setActionUserId(null);
     }
   };
-
-  const { formatPrice } = usePreferences();
 
   const fetchUsers = async () => {
     try {
@@ -153,7 +157,7 @@ export default function AdminUsersPage() {
       setError(
         apiError?.response?.data?.message ||
           apiError?.message ||
-          "Không thể tải danh sách khách hàng.",
+          (language === "vi" ? "Không thể tải danh sách khách hàng." : "Failed to load customers list.")
       );
     } finally {
       setLoading(false);
@@ -188,8 +192,13 @@ export default function AdminUsersPage() {
   const handleRoleChange = async (user: AdminUser, nextRole: string) => {
     if (user.role === nextRole) return;
 
+    const targetRoleText = nextRole === "admin" 
+      ? (language === "vi" ? "Admin" : "Admin") 
+      : (language === "vi" ? "User" : "User");
     const confirmed = confirm(
-      `Cập nhật quyền của ${user.username} thành ${roleLabel[nextRole] ?? nextRole}?`,
+      language === "vi"
+        ? `Cập nhật quyền của ${user.username} thành ${targetRoleText}?`
+        : `Update role of ${user.username} to ${targetRoleText}?`
     );
     if (!confirmed) return;
 
@@ -203,7 +212,7 @@ export default function AdminUsersPage() {
       alert(
         apiError?.response?.data?.message ||
           apiError?.message ||
-          "Không thể cập nhật phân quyền.",
+          (language === "vi" ? "Không thể cập nhật phân quyền." : "Cannot update user role.")
       );
     } finally {
       setActionUserId(null);
@@ -212,9 +221,13 @@ export default function AdminUsersPage() {
 
   const handleToggleBan = async (user: AdminUser) => {
     const nextIsActive = !user.isActive;
-    const actionText = nextIsActive ? "mở khóa" : "khóa";
+    const actionText = nextIsActive 
+      ? (language === "vi" ? "mở khóa" : "unban") 
+      : (language === "vi" ? "khóa" : "ban");
     const confirmed = confirm(
-      `Bạn có chắc chắn muốn ${actionText} tài khoản ${user.username}?`,
+      language === "vi"
+        ? `Bạn có chắc chắn muốn ${actionText} tài khoản ${user.username}?`
+        : `Are you sure you want to ${actionText} the account ${user.username}?`
     );
     if (!confirmed) return;
 
@@ -228,7 +241,7 @@ export default function AdminUsersPage() {
       alert(
         apiError?.response?.data?.message ||
           apiError?.message ||
-          "Không thể cập nhật trạng thái tài khoản.",
+          (language === "vi" ? "Không thể cập nhật trạng thái tài khoản." : "Cannot update account status.")
       );
     } finally {
       setActionUserId(null);
@@ -250,7 +263,7 @@ export default function AdminUsersPage() {
       setOrdersError(
         apiError?.response?.data?.message ||
           apiError?.message ||
-          "Không thể tải lịch sử mua hàng.",
+          (language === "vi" ? "Không thể tải lịch sử mua hàng." : "Failed to load purchase history.")
       );
     } finally {
       setOrdersLoading(false);
@@ -267,7 +280,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
           <p className="font-medium text-gray-500">
-            Đang tải danh sách khách hàng...
+            {language === "vi" ? "Đang tải danh sách khách hàng..." : "Loading customers list..."}
           </p>
         </div>
       </div>
@@ -276,15 +289,15 @@ export default function AdminUsersPage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-lg rounded-3xl border border-red-200 bg-red-50 p-6 text-center text-red-600">
-        <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-red-500" />
-        <h3 className="text-lg font-bold">Không thể tải dữ liệu</h3>
+      <div className="mx-auto max-w-lg rounded-3xl border border-status-danger-border bg-status-danger-bg p-6 text-center text-status-danger-text">
+        <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-status-danger-text" />
+        <h3 className="text-lg font-bold">{language === "vi" ? "Không thể tải dữ liệu" : "Failed to load data"}</h3>
         <p className="mb-4 mt-1 text-sm">{error}</p>
         <button
           type="button"
           onClick={fetchUsers}
-          className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-red-700">
-          Thử lại
+          className="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-primary-hover cursor-pointer">
+          {language === "vi" ? "Thử lại" : "Retry"}
         </button>
       </div>
     );
@@ -293,30 +306,30 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-gray-150 bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            Tổng tài khoản
+        <div className="rounded-3xl border border-brand-border/40 bg-brand-surface p-5 shadow-sm group hover:border-brand-primary/30 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">
+            {language === "vi" ? "Tổng tài khoản" : "Total Accounts"}
           </p>
-          <p className="mt-2 text-3xl font-black text-gray-900">
+          <p className="mt-2 text-3xl font-black text-brand-text">
             {users.length}
           </p>
         </div>
-        <div className="rounded-3xl border border-gray-150 bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            Đang hoạt động
+        <div className="rounded-3xl border border-brand-border/40 bg-brand-surface p-5 shadow-sm group hover:border-brand-primary/30 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">
+            {language === "vi" ? "Đang hoạt động" : "Active"}
           </p>
-          <p className="mt-2 text-3xl font-black text-emerald-600">
+          <p className="mt-2 text-3xl font-black text-status-success-text">
             {activeCount}
           </p>
           {bannedCount > 0 && (
-            <p className="mt-1 text-xs font-semibold text-red-500">
-              {bannedCount} tài khoản đang bị khóa
+            <p className="mt-1 text-xs font-semibold text-status-danger-text">
+              {language === "vi" ? `${bannedCount} tài khoản đang bị khóa` : `${bannedCount} account(s) banned`}
             </p>
           )}
         </div>
-        <div className="rounded-3xl border border-gray-150 bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            Quản trị viên
+        <div className="rounded-3xl border border-brand-border/40 bg-brand-surface p-5 shadow-sm group hover:border-brand-primary/30 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">
+            {language === "vi" ? "Quản trị viên" : "Administrators"}
           </p>
           <p className="mt-2 text-3xl font-black text-brand-primary">
             {adminCount}
@@ -324,24 +337,24 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-gray-150 bg-white p-6 shadow-sm md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-brand-border/40 bg-brand-surface p-6 shadow-sm md:flex-row md:items-center">
         <div className="flex max-w-3xl flex-1 flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted" />
             <input
               type="text"
-              placeholder="Tìm theo username, email hoặc ID..."
+              placeholder={language === "vi" ? "Tìm theo username, email hoặc ID..." : "Search by username, email, or ID..."}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-full rounded-2xl border border-gray-200 py-2.5 pl-10 pr-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-brand-primary"
+              className="w-full rounded-2xl border border-brand-border/30 bg-brand-bg py-2.5 pl-10 pr-4 text-sm text-brand-text outline-none transition placeholder:text-brand-muted focus:border-brand-primary"
             />
           </div>
 
           <select
             value={roleFilter}
             onChange={(event) => setRoleFilter(event.target.value)}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 outline-none transition focus:border-brand-primary">
-            <option value="all">Tất cả quyền</option>
+            className="rounded-2xl border border-brand-border/30 bg-brand-surface px-4 py-2.5 text-sm font-semibold text-brand-text outline-none transition focus:border-brand-primary">
+            <option value="all">{language === "vi" ? "Tất cả quyền" : "All Roles"}</option>
             <option value="user">User</option>
             <option value="admin">Admin</option>
           </select>
@@ -349,52 +362,62 @@ export default function AdminUsersPage() {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 outline-none transition focus:border-brand-primary">
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang hoạt động</option>
-            <option value="banned">Đang bị khóa</option>
+            className="rounded-2xl border border-brand-border/30 bg-brand-surface px-4 py-2.5 text-sm font-semibold text-brand-text outline-none transition focus:border-brand-primary">
+            <option value="all">{language === "vi" ? "Tất cả trạng thái" : "All Statuses"}</option>
+            <option value="active">{language === "vi" ? "Đang hoạt động" : "Active"}</option>
+            <option value="banned">{language === "vi" ? "Đang bị khóa" : "Banned"}</option>
           </select>
         </div>
 
-        <div className="rounded-2xl bg-brand-primary/10 px-4 py-3 text-xs font-semibold text-brand-primary">
-          {filteredUsers.length} / {users.length} tài khoản
+        <div className="rounded-2xl bg-brand-primary/10 px-4 py-3 text-xs font-semibold text-brand-primary border border-brand-primary/20">
+          {filteredUsers.length} / {users.length} {language === "vi" ? "tài khoản" : "accounts"}
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-gray-150 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-3xl border border-brand-border/40 bg-brand-surface shadow-sm">
         {filteredUsers.length === 0 ? (
-          <div className="py-24 text-center font-medium text-gray-400">
-            Không tìm thấy khách hàng phù hợp.
-          </div>
+          <AdminEmptyState
+            icon={UserCog}
+            title={language === "vi" ? "Không tìm thấy khách hàng" : "No customers found"}
+            description={language === "vi" ? "Không tìm thấy khách hàng phù hợp với bộ lọc hiện tại." : "No customers match the current filters."}
+          />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto relative max-h-[600px] overflow-y-auto">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-150 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                  <th className="px-6 py-4">Tài khoản</th>
-                  <th className="px-6 py-4">Quyền</th>
-                  <th className="px-6 py-4">Trạng thái</th>
-                  <th className="px-6 py-4 text-right">Tổng chi tiêu</th>
-                  <th className="px-6 py-4">Ngày tạo</th>
-                  <th className="px-6 py-4 text-center">Thao tác</th>
+                <tr className="bg-brand-surface/95 backdrop-blur-sm border-b border-brand-border/40 text-brand-muted font-bold uppercase text-[10px] tracking-wider sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.03)]">
+                  <th className="px-6 py-4">{language === "vi" ? "Tài khoản" : "Account"}</th>
+                  <th className="px-6 py-4">{language === "vi" ? "Quyền" : "Role"}</th>
+                  <th className="px-6 py-4">{language === "vi" ? "Trạng thái" : "Status"}</th>
+                  <th className="px-6 py-4 text-right">{language === "vi" ? "Tổng chi tiêu" : "Total Spent"}</th>
+                  <th className="px-6 py-4">{language === "vi" ? "Ngày tạo" : "Created Date"}</th>
+                  <th className="px-6 py-4 text-center">{language === "vi" ? "Thao tác" : "Actions"}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-brand-border/10">
                 {filteredUsers.map((user) => {
                   const isBusy = actionUserId === user.id;
+                  const isSelected = selectedUser?.id === user.id;
 
                   return (
-                    <tr key={user.id} className="transition hover:bg-gray-50/40">
+                    <tr
+                      key={user.id}
+                      className={`transition-colors duration-150 ${
+                        isSelected
+                          ? "bg-brand-primary/10 border-l-4 border-l-brand-primary"
+                          : "hover:bg-brand-bg/20 odd:bg-brand-surface even:bg-brand-bg/50"
+                      }`}
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-primary/10 text-sm font-black text-brand-primary">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-primary/10 border border-brand-border/20 text-sm font-black text-brand-primary">
                             {user.username.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate font-bold text-gray-900">
+                            <p className="truncate font-bold text-brand-text">
                               {user.username}
                             </p>
-                            <p className="truncate text-xs font-medium text-gray-400">
+                            <p className="truncate text-xs font-medium text-brand-muted">
                               {user.email || `User ID #${user.id}`}
                             </p>
                           </div>
@@ -406,12 +429,12 @@ export default function AdminUsersPage() {
                           value={user.role}
                           disabled={isBusy}
                           onChange={(event) =>
-                            handleRoleChange(user, event.target.value)
+                              handleRoleChange(user, event.target.value)
                           }
-                          className={`rounded-xl border px-3 py-2 text-xs font-bold outline-none transition disabled:opacity-60 ${
+                          className={`rounded-xl border px-3 py-2 text-xs font-bold outline-none transition disabled:opacity-60 bg-brand-bg ${
                             user.role === "admin"
-                              ? "border-brand-border bg-brand-primary/10 text-brand-primary"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
+                              ? "border-brand-primary/30 text-brand-primary focus:border-brand-primary"
+                              : "border-brand-border/30 text-brand-text focus:border-brand-primary"
                           }`}>
                           <option value="user">User</option>
                           <option value="admin">Admin</option>
@@ -422,15 +445,17 @@ export default function AdminUsersPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase ${
                             user.isActive
-                              ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                              : "border-red-100 bg-red-50 text-red-700"
+                              ? "border-status-success-border bg-status-success-bg text-status-success-text"
+                              : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
                           }`}>
                           {user.isActive ? (
                             <ShieldCheck size={12} />
                           ) : (
                             <Ban size={12} />
                           )}
-                          {user.isActive ? "Active" : "Banned"}
+                          {user.isActive 
+                            ? (language === "vi" ? "Hoạt động" : "Active") 
+                            : (language === "vi" ? "Bị khóa" : "Banned")}
                         </span>
                       </td>
 
@@ -438,8 +463,8 @@ export default function AdminUsersPage() {
                         {formatPrice(user.totalSpent)}
                       </td>
 
-                      <td className="px-6 py-4 text-xs font-medium text-gray-500">
-                        {new Date(user.created_at).toLocaleDateString("vi-VN", {
+                      <td className="px-6 py-4 text-xs font-medium text-brand-muted">
+                        {new Date(user.created_at).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
@@ -451,28 +476,28 @@ export default function AdminUsersPage() {
                           <button
                             type="button"
                             onClick={() => openOrdersDrawer(user)}
-                            className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-brand-primary hover:text-white">
-                            <Eye size={13} /> Đơn
+                            className="flex items-center gap-1 rounded-xl border border-brand-border bg-brand-surface px-2.5 py-1.5 text-xs font-bold text-brand-text transition hover:bg-brand-primary hover:text-white cursor-pointer">
+                            <Eye size={13} /> {language === "vi" ? "Đơn" : "Orders"}
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(user)}
-                            className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white">
-                            Sửa
+                            className="flex items-center gap-1 rounded-xl border border-brand-border bg-brand-surface px-2.5 py-1.5 text-xs font-bold text-brand-primary transition hover:bg-brand-primary hover:text-white cursor-pointer">
+                            {language === "vi" ? "Sửa" : "Edit"}
                           </button>
 
                           <button
                             type="button"
                             disabled={isBusy}
                             onClick={() => handleDeleteUser(user.id)}
-                            className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-600 hover:text-white disabled:opacity-50">
+                            className="flex items-center gap-1 rounded-xl border border-status-danger-border bg-status-danger-bg px-2.5 py-1.5 text-xs font-bold text-status-danger-text transition hover:bg-red-600 hover:text-white disabled:opacity-50 cursor-pointer">
                             {isBusy ? (
                               <Loader2 size={13} className="animate-spin" />
                             ) : (
                               <Trash2 size={13} />
                             )}
-                            Xóa
+                            {language === "vi" ? "Xóa" : "Delete"}
                           </button>
                         </div>
                       </td>
@@ -489,25 +514,25 @@ export default function AdminUsersPage() {
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
           <button
             type="button"
-            aria-label="Đóng lịch sử mua hàng"
+            aria-label={language === "vi" ? "Đóng lịch sử mua hàng" : "Close purchase history"}
             onClick={() => setSelectedUser(null)}
             className="absolute inset-0 cursor-default"
           />
 
-          <aside className="relative z-10 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+          <aside className="relative z-10 flex h-full w-full max-w-xl flex-col bg-brand-surface text-brand-text border-l border-brand-border/40 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-brand-border/40 px-6 py-5 bg-brand-primary-light/5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-brand-primary">
-                  Lịch sử mua hàng
+                  {language === "vi" ? "Lịch sử mua hàng" : "Purchase History"}
                 </p>
-                <h2 className="mt-1 text-xl font-black text-gray-900">
+                <h2 className="mt-1 text-xl font-black text-brand-text">
                   {selectedUser.username}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedUser(null)}
-                className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+                className="rounded-full p-2 text-brand-muted hover:bg-brand-primary-light/20 hover:text-brand-primary transition cursor-pointer">
                 <X size={20} />
               </button>
             </div>
@@ -518,14 +543,14 @@ export default function AdminUsersPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
                 </div>
               ) : ordersError ? (
-                <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">
+                <div className="rounded-2xl border border-status-danger-border bg-status-danger-bg p-4 text-sm font-medium text-status-danger-text">
                   {ordersError}
                 </div>
               ) : userOrders.length === 0 ? (
-                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 text-center">
-                  <ShoppingBag className="mx-auto mb-3 h-9 w-9 text-gray-300" />
-                  <p className="font-semibold text-gray-500">
-                    Tài khoản này chưa có đơn hàng.
+                <div className="rounded-2xl border border-brand-border/30 bg-brand-bg/50 p-8 text-center">
+                  <ShoppingBag className="mx-auto mb-3 h-9 w-9 text-brand-muted" />
+                  <p className="font-semibold text-brand-muted">
+                    {language === "vi" ? "Tài khoản này chưa có đơn hàng." : "This account has no orders."}
                   </p>
                 </div>
               ) : (
@@ -533,15 +558,15 @@ export default function AdminUsersPage() {
                   {userOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                      className="rounded-2xl border border-brand-border/30 bg-brand-bg/50 p-4 shadow-sm hover:border-brand-primary/30 transition-all">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-black text-gray-900">
+                          <p className="font-black text-brand-text">
                             #ORD-{order.id}
                           </p>
-                          <p className="mt-1 text-xs font-medium text-gray-400">
+                          <p className="mt-1 text-xs font-medium text-brand-muted">
                             {new Date(order.created_at).toLocaleString(
-                              "vi-VN",
+                              language === "vi" ? "vi-VN" : "en-US",
                               {
                                 year: "numeric",
                                 month: "short",
@@ -555,27 +580,27 @@ export default function AdminUsersPage() {
                         <span
                           className={`rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase ${
                             order.status === "delivered"
-                              ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                              ? "border-status-success-border bg-status-success-bg text-status-success-text"
                               : order.status === "cancelled"
-                                ? "border-red-100 bg-red-50 text-red-700"
+                                ? "border-status-danger-border bg-status-danger-bg text-status-danger-text"
                                 : order.status === "shipping"
-                                  ? "border-blue-100 bg-blue-50 text-blue-700"
-                                  : "border-brand-border bg-brand-primary/10 text-brand-primary"
+                                  ? "border-status-info-border bg-status-info-bg text-status-info-text"
+                                  : "border-status-warning-border bg-status-warning-bg text-status-warning-text"
                           }`}>
                           {order.status}
                         </span>
                       </div>
 
-                      <div className="mt-3 border-t border-gray-50 pt-3">
-                        <p className="line-clamp-2 text-xs text-gray-500">
+                      <div className="mt-3 border-t border-brand-border/10 pt-3">
+                        <p className="line-clamp-2 text-xs text-brand-muted">
                           {order.items?.length
                             ? order.items
                                 .map(
                                   (item) =>
-                                    `${item.productName ?? "Sản phẩm"} x${item.quantity ?? 1}`,
+                                    `${item.productName ?? (language === "vi" ? "Sản phẩm" : "Product")} x${item.quantity ?? 1}`,
                                 )
                                 .join(", ")
-                            : "Không có dữ liệu sản phẩm"}
+                            : (language === "vi" ? "Không có dữ liệu sản phẩm" : "No product data available")}
                         </p>
                         <p className="mt-3 text-right text-base font-black text-brand-primary">
                           {formatPrice(order.totalAmount)}
@@ -592,16 +617,20 @@ export default function AdminUsersPage() {
 
       {/* EDIT USER MODAL */}
       {isEditModalOpen && editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-brand-primary/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-brand-surface rounded-3xl border border-brand-border shadow-2xl ring-1 ring-brand-border/20 w-full max-w-md overflow-hidden animate-scaleIn">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border/40 bg-brand-primary-light/10">
               <div>
-                <h3 className="font-extrabold text-gray-900 text-base">Chỉnh Sửa Tài Khoản</h3>
-                <p className="text-xs text-gray-500 mt-0.5">ID Người dùng: #{editingUser.id}</p>
+                <h3 className="font-extrabold text-brand-text text-base">
+                  {language === "vi" ? "Chỉnh Sửa Tài Khoản" : "Edit Account"}
+                </h3>
+                <p className="text-xs text-brand-muted mt-0.5">
+                  {language === "vi" ? `ID Người dùng: #${editingUser.id}` : `User ID: #${editingUser.id}`}
+                </p>
               </div>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                className="p-1.5 rounded-full hover:bg-brand-primary-light/20 text-brand-muted hover:text-brand-primary transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -609,60 +638,68 @@ export default function AdminUsersPage() {
 
             <form onSubmit={handleEditUserSubmit} className="p-6 space-y-4">
               {editError && (
-                <div className="p-3 text-xs bg-red-50 text-red-600 border border-red-100 rounded-xl flex items-center gap-2">
+                <div className="p-3 text-xs bg-status-danger-bg text-status-danger-text border border-status-danger-border rounded-xl flex items-center gap-2">
                   <AlertTriangle size={14} />
                   <span>{editError}</span>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tên đăng nhập *</label>
+                <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                  {language === "vi" ? "Tên đăng nhập *" : "Username *"}
+                </label>
                 <input
                   type="text"
                   required
                   value={editUsername}
                   onChange={(e) => setEditUsername(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
+                  className="w-full rounded-xl border border-brand-border/30 bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-primary transition"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
+                <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">Email</label>
                 <input
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
+                  className="w-full rounded-xl border border-brand-border/30 bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-primary transition"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Họ và tên</label>
+                <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                  {language === "vi" ? "Họ và tên" : "Full Name"}
+                </label>
                 <input
                   type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
+                  className="w-full rounded-xl border border-brand-border/30 bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-primary transition"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Số điện thoại</label>
+                <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                  {language === "vi" ? "Số điện thoại" : "Phone Number"}
+                </label>
                 <input
                   type="text"
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
+                  className="w-full rounded-xl border border-brand-border/30 bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-primary transition"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Vai trò</label>
+                  <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                    {language === "vi" ? "Vai trò" : "Role"}
+                  </label>
                   <select
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
+                    className="w-full rounded-xl border border-brand-border/30 bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-primary transition font-semibold"
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
@@ -670,34 +707,36 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái</label>
+                  <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                    {language === "vi" ? "Trạng thái" : "Status"}
+                  </label>
                   <select
                     value={editIsActive ? "active" : "banned"}
                     onChange={(e) => setEditIsActive(e.target.value === "active")}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
+                    className="w-full rounded-xl border border-brand-border/30 bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-primary transition font-semibold"
                   >
-                    <option value="active">Hoạt động</option>
-                    <option value="banned">Bị khóa</option>
+                    <option value="active">{language === "vi" ? "Hoạt động" : "Active"}</option>
+                    <option value="banned">{language === "vi" ? "Bị khóa" : "Banned"}</option>
                   </select>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-end gap-3 pt-3 border-t border-brand-border/10">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
                   disabled={editSubmitting}
-                  className="px-5 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-600 transition"
+                  className="px-5 py-2 rounded-xl border border-brand-border hover:bg-brand-bg text-sm font-semibold text-brand-muted transition cursor-pointer"
                 >
-                  Hủy bỏ
+                  {language === "vi" ? "Hủy bỏ" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={editSubmitting}
-                  className="px-6 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary-light text-white text-sm font-semibold transition flex items-center gap-1.5"
+                  className="px-6 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary-light text-white text-sm font-semibold transition flex items-center gap-1.5 cursor-pointer"
                 >
                   {editSubmitting && <Loader2 size={16} className="animate-spin" />}
-                  Lưu
+                  {language === "vi" ? "Lưu" : "Save"}
                 </button>
               </div>
             </form>

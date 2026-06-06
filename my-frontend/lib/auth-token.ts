@@ -1,5 +1,24 @@
 import { api } from "./api";
 import { isTokenExpired } from "./jwt";
+import { signOut } from "next-auth/react";
+
+let logoutInProgress = false;
+
+export async function logoutExpiredSession() {
+  if (typeof window === "undefined") return;
+  if (logoutInProgress) return;
+  logoutInProgress = true;
+  try {
+    setAuthToken(null);
+    localStorage.removeItem("username");
+    await signOut({ redirect: false });
+  } catch (err) {
+    console.error("Failed to sign out expired session:", err);
+  } finally {
+    logoutInProgress = false;
+  }
+}
+
 
 const getAuthToken = (): string | null => {
   if (typeof window === "undefined") return null;

@@ -24,7 +24,7 @@ import {
   ProvinceOption,
 } from "@/lib/api";
 import { toLegacyAddressPayload } from "@/lib/address";
-import { getBrowserToken, setAuthToken } from "@/lib/auth-token";
+import { getBrowserToken, setAuthToken, logoutExpiredSession } from "@/lib/auth-token";
 import AddressSelectorDropdown from "@/components/address-selector";
 
 export default function ProfilePage() {
@@ -147,10 +147,14 @@ export default function ProfilePage() {
 
         setBanks(bankData);
       } catch (err: any) {
-        console.error("Profile load error:", err);
-        if (err.response?.status === 401) {
+        if (err.code === "TOKEN_EXPIRED") {
+          void logoutExpiredSession();
+          setHasAuth(false);
+        } else if (err.response?.status === 401 || err.code === "AUTH_REQUIRED") {
           setAuthToken(null);
           setHasAuth(false);
+        } else {
+          console.error("Profile load error:", err);
         }
       } finally {
         setLoading(false);

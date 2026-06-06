@@ -22,13 +22,14 @@ import {
 } from "lucide-react";
 import { adminAPI, orderAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
-  const { formatPrice } = usePreferences();
+  const { formatPrice, language } = usePreferences();
 
   // Status Change Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -137,69 +138,69 @@ export default function AdminOrdersPage() {
   };
 
   const handleApproveReturn = async (returnId: number) => {
-    if (!confirm("Xác nhận duyệt yêu cầu trả hàng này?")) return;
+    if (!confirm(language === "vi" ? "Xác nhận duyệt yêu cầu trả hàng này?" : "Are you sure you want to approve this return request?")) return;
     try {
       setSubmitting(true);
       setError(null);
       await adminAPI.approveReturn(returnId);
-      alert("Đã duyệt trả hàng thành công!");
+      alert(language === "vi" ? "Đã duyệt trả hàng thành công!" : "Return request approved successfully!");
       await refreshAfterReturnAction(selectedOrder.id);
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Không thể duyệt trả hàng.");
+      setError(err?.response?.data?.message || (language === "vi" ? "Không thể duyệt trả hàng." : "Cannot approve return request."));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleRejectReturn = async (returnId: number) => {
-    const reason = prompt("Vui lòng nhập lý do từ chối trả hàng:");
+    const reason = prompt(language === "vi" ? "Vui lòng nhập lý do từ chối trả hàng:" : "Please enter a reason for rejecting the return:");
     if (reason === null) return;
     if (!reason.trim()) {
-      alert("Lý do từ chối không được để trống.");
+      alert(language === "vi" ? "Lý do từ chối không được để trống." : "Rejection reason cannot be empty.");
       return;
     }
     try {
       setSubmitting(true);
       setError(null);
       await adminAPI.rejectReturn(returnId, reason.trim());
-      alert("Đã từ chối trả hàng thành công!");
+      alert(language === "vi" ? "Đã từ chối trả hàng thành công!" : "Return request rejected successfully!");
       await refreshAfterReturnAction(selectedOrder.id);
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Không thể từ chối trả hàng.");
+      setError(err?.response?.data?.message || (language === "vi" ? "Không thể từ chối trả hàng." : "Cannot reject return request."));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleMarkReceived = async (returnId: number) => {
-    if (!confirm("Xác nhận đã nhận sản phẩm hoàn trả tại kho?")) return;
+    if (!confirm(language === "vi" ? "Xác nhận đã nhận sản phẩm hoàn trả tại kho?" : "Confirm that the returned items have been received at the warehouse?")) return;
     try {
       setSubmitting(true);
       setError(null);
       await adminAPI.markReturnReceived(returnId);
-      alert("Đã xác nhận nhận hàng tại kho!");
+      alert(language === "vi" ? "Đã xác nhận nhận hàng tại kho!" : "Successfully confirmed receipt at warehouse!");
       await refreshAfterReturnAction(selectedOrder.id);
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Không thể cập nhật trạng thái nhận hàng.");
+      setError(err?.response?.data?.message || (language === "vi" ? "Không thể cập nhật trạng thái nhận hàng." : "Failed to update receipt status."));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleStartRefund = async (returnId: number) => {
-    if (!confirm("Bắt đầu xử lý hoàn tiền cho khách hàng?")) return;
+    if (!confirm(language === "vi" ? "Bắt đầu xử lý hoàn tiền cho khách hàng?" : "Start refund processing for the customer?")) return;
     try {
       setSubmitting(true);
       setError(null);
       await adminAPI.startReturnRefund(returnId);
-      alert("Đã chuyển trạng thái sang Đang xử lý hoàn tiền!");
+      alert(language === "vi" ? "Đã chuyển trạng thái sang Đang xử lý hoàn tiền!" : "Status updated to Refund Processing!");
       await refreshAfterReturnAction(selectedOrder.id);
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Không thể bắt đầu xử lý hoàn tiền.");
+      setError(err?.response?.data?.message || (language === "vi" ? "Không thể bắt đầu xử lý hoàn tiền." : "Cannot initiate refund processing."));
     } finally {
       setSubmitting(false);
     }
@@ -215,12 +216,12 @@ export default function AdminOrdersPage() {
         refundMethod,
         refundTransactionId: refundTxnId,
       });
-      alert("Đã hoàn tất hoàn tiền thành công!");
+      alert(language === "vi" ? "Đã hoàn tất hoàn tiền thành công!" : "Refund processed successfully!");
       setIsCompletingRefund(false);
       await refreshAfterReturnAction(selectedOrder.id);
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Không thể hoàn tất hoàn tiền.");
+      setError(err?.response?.data?.message || (language === "vi" ? "Không thể hoàn tất hoàn tiền." : "Failed to complete refund."));
     } finally {
       setSubmitting(false);
     }
@@ -240,27 +241,27 @@ export default function AdminOrdersPage() {
         note: note.trim() || undefined,
       });
 
-      alert("Cập nhật trạng thái đơn hàng thành công!");
+      alert(language === "vi" ? "Cập nhật trạng thái đơn hàng thành công!" : "Order status updated successfully!");
       setIsModalOpen(false);
       fetchOrdersList();
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Không thể cập nhật trạng thái đơn hàng.");
+      setError(err?.response?.data?.message || (language === "vi" ? "Không thể cập nhật trạng thái đơn hàng." : "Failed to update order status."));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteOrder = async (orderId: number) => {
-    if (!confirm(`Xác nhận xóa vĩnh viễn đơn hàng #ORD-${orderId}? Hành động này sẽ loại bỏ đơn hàng khỏi hệ thống và không thể hoàn tác.`)) return;
+    if (!confirm(language === "vi" ? `Xác nhận xóa vĩnh viễn đơn hàng #ORD-${orderId}? Hành động này sẽ loại bỏ đơn hàng khỏi hệ thống và không thể hoàn tác.` : `Confirm permanent deletion of order #ORD-${orderId}? This action removes the order and cannot be undone.`)) return;
     try {
       setLoading(true);
       await adminAPI.deleteOrder(orderId);
-      alert("Xóa đơn hàng thành công!");
+      alert(language === "vi" ? "Xóa đơn hàng thành công!" : "Order deleted successfully!");
       fetchOrdersList();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || "Không thể xóa đơn hàng.");
+      alert(err?.response?.data?.message || (language === "vi" ? "Không thể xóa đơn hàng." : "Cannot delete order."));
     } finally {
       setLoading(false);
     }
@@ -280,130 +281,149 @@ export default function AdminOrdersPage() {
   return (
     <div className="space-y-6">
       {/* FILTER & SEARCH ROW */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-brand-surface border border-brand-border/40 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row gap-3 flex-1 max-w-2xl">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted w-4 h-4" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo mã đơn hoặc người mua..."
+              placeholder={language === "vi" ? "Tìm kiếm theo mã đơn hoặc người mua..." : "Search by order ID or buyer..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-2xl border border-gray-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-brand-primary transition placeholder:text-gray-400"
+              className="w-full rounded-2xl border border-brand-border bg-transparent pl-10 pr-4 py-2.5 text-sm outline-none focus:border-brand-primary text-brand-text transition placeholder:text-brand-muted"
             />
           </div>
           <select
             value={selectedStatusFilter}
             onChange={(e) => setSelectedStatusFilter(e.target.value)}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
+            className="rounded-2xl border border-brand-border bg-brand-surface text-brand-text px-4 py-2.5 text-sm outline-none focus:border-brand-primary transition font-semibold"
           >
-            <option value="all">Tất cả Trạng Thái</option>
-            <option value="pending">Chờ Thanh Toán (Pending)</option>
-            <option value="confirmed">Đã Xác Nhận (Confirmed)</option>
-            <option value="shipping">Đang Giao Hàng (Shipping)</option>
-            <option value="delivered">Đã Giao Thành Công (Delivered)</option>
-            <option value="cancelled">Đã Hủy (Cancelled)</option>
-            <option value="return_requested">Yêu cầu trả hàng (Return Requested)</option>
-            <option value="return_approved">Đã duyệt trả hàng (Return Approved)</option>
-            <option value="product_received">Đã nhận hàng kho (Product Received)</option>
-            <option value="refund_processing">Đang hoàn tiền (Refund Processing)</option>
-            <option value="refunded">Đã hoàn tiền (Refunded)</option>
-            <option value="return_rejected">Từ chối trả hàng (Return Rejected)</option>
-            <option value="return_cancelled">Đã hủy trả hàng (Return Cancelled)</option>
+            <option value="all">{language === "vi" ? "Tất cả Trạng Thái" : "All Statuses"}</option>
+            <option value="pending">{language === "vi" ? "Chờ Thanh Toán (Pending)" : "Pending Payment (Pending)"}</option>
+            <option value="confirmed">{language === "vi" ? "Đã Xác Nhận (Confirmed)" : "Confirmed (Confirmed)"}</option>
+            <option value="shipping">{language === "vi" ? "Đang Giao Hàng (Shipping)" : "Shipping (Shipping)"}</option>
+            <option value="delivered">{language === "vi" ? "Đã Giao Thành Công (Delivered)" : "Delivered (Delivered)"}</option>
+            <option value="cancelled">{language === "vi" ? "Đã Hủy (Cancelled)" : "Cancelled (Cancelled)"}</option>
+            <option value="return_requested">{language === "vi" ? "Yêu cầu trả hàng (Return Requested)" : "Return Requested (Return Requested)"}</option>
+            <option value="return_approved">{language === "vi" ? "Đã duyệt trả hàng (Return Approved)" : "Return Approved (Return Approved)"}</option>
+            <option value="product_received">{language === "vi" ? "Đã nhận hàng kho (Product Received)" : "Product Received (Product Received)"}</option>
+            <option value="refund_processing">{language === "vi" ? "Đang hoàn tiền (Refund Processing)" : "Refund Processing (Refund Processing)"}</option>
+            <option value="refunded">{language === "vi" ? "Đã hoàn tiền (Refunded)" : "Refunded (Refunded)"}</option>
+            <option value="return_rejected">{language === "vi" ? "Từ chối trả hàng (Return Rejected)" : "Return Rejected (Return Rejected)"}</option>
+            <option value="return_cancelled">{language === "vi" ? "Đã hủy trả hàng (Return Cancelled)" : "Return Cancelled (Return Cancelled)"}</option>
           </select>
         </div>
       </div>
 
       {/* ORDERS LIST CARD */}
-      <div className="bg-white border border-gray-150 rounded-3xl overflow-hidden shadow-sm">
+      <div className="bg-brand-surface border border-brand-border/40 rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-40">
             <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-24 text-gray-400 font-medium">
-            Không tìm thấy đơn hàng nào.
-          </div>
+          <AdminEmptyState
+            icon={ClipboardList}
+            title={language === "vi" ? "Không tìm thấy đơn hàng nào" : "No orders found"}
+            description={language === "vi" ? "Không có đơn hàng nào khớp với tìm kiếm hoặc bộ lọc trạng thái." : "No orders match your search term or status filter."}
+          />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto relative max-h-[600px] overflow-y-auto">
             <table className="w-full text-sm text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-bold uppercase text-[10px] tracking-wider">
-                  <th className="px-6 py-4">Mã đơn</th>
-                  <th className="px-6 py-4">Ngày đặt</th>
-                  <th className="px-6 py-4">Khách hàng</th>
-                  <th className="px-6 py-4">Sản phẩm</th>
-                  <th className="px-6 py-4 text-right">Tổng tiền</th>
-                  <th className="px-6 py-4 text-center">Trạng thái</th>
-                  <th className="px-6 py-4 text-center">Xử lý</th>
+                <tr className="bg-brand-surface/95 backdrop-blur-sm border-b border-brand-border/40 text-brand-muted font-bold uppercase text-[10px] tracking-wider sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.03)]">
+                  <th className="px-6 py-4">{language === "vi" ? "Mã đơn" : "Order ID"}</th>
+                  <th className="px-6 py-4">{language === "vi" ? "Ngày đặt" : "Order Date"}</th>
+                  <th className="px-6 py-4">{language === "vi" ? "Khách hàng" : "Customer"}</th>
+                  <th className="px-6 py-4">{language === "vi" ? "Sản phẩm" : "Products"}</th>
+                  <th className="px-6 py-4 text-right">{language === "vi" ? "Tổng tiền" : "Total Amount"}</th>
+                  <th className="px-6 py-4 text-center">{language === "vi" ? "Trạng thái" : "Status"}</th>
+                  <th className="px-6 py-4 text-center">{language === "vi" ? "Xử lý" : "Actions"}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredOrders.map((o) => (
-                  <tr key={o.id} className="hover:bg-gray-50/30 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">#ORD-{o.id}</td>
-                    <td className="px-6 py-4 text-gray-500 text-xs">
-                      {new Date(o.created_at).toLocaleDateString("vi-VN", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-gray-800">
-                      {o.user?.fullName || o.user?.username || "Guest"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 max-w-xs truncate">
-                      {o.items?.map((item: any) => `${item.productName} (x${item.quantity})`).join(", ")}
-                    </td>
-                    <td className="px-6 py-4 text-right font-extrabold text-brand-primary">
-                      {formatPrice(o.totalAmount)}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                        o.status === "delivered" ? "bg-green-50 text-green-700 border border-green-100" :
-                        o.status === "cancelled" ? "bg-red-50 text-red-700 border border-red-100" :
-                        o.status === "shipping" ? "bg-blue-50 text-blue-700 border border-blue-100" :
-                        o.status === "refunded" ? "bg-green-50 text-green-700 border border-green-100" :
-                        o.status === "return_requested" ? "bg-brand-primary/10 text-brand-primary border border-brand-border" :
-                        o.status === "return_approved" ? "bg-blue-50 text-blue-700 border border-blue-100" :
-                        o.status === "product_received" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
-                        o.status === "refund_processing" ? "bg-purple-50 text-purple-700 border border-purple-100" :
-                        o.status === "return_rejected" ? "bg-red-50 text-red-700 border border-red-100" :
-                        o.status === "return_cancelled" ? "bg-gray-50 text-gray-500 border border-gray-100" :
-                        "bg-brand-primary/10 text-brand-primary border border-brand-border"
-                      }`}>
-                        {o.status === "return_requested" && "Chờ duyệt trả"}
-                        {o.status === "return_approved" && "Đã duyệt trả"}
-                        {o.status === "product_received" && "Đã nhận hàng kho"}
-                        {o.status === "refund_processing" && "Đang hoàn tiền"}
-                        {o.status === "refunded" && "Đã hoàn tiền"}
-                        {o.status === "return_rejected" && "Từ chối trả hàng"}
-                        {o.status === "return_cancelled" && "Đã hủy trả"}
-                        {!returnStatuses.includes(o.status) && o.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleOpenStatusModal(o)}
-                          className="px-3 py-1.5 bg-gray-50 hover:bg-brand-primary hover:text-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 transition flex items-center gap-1"
-                        >
-                          <ClipboardList size={13} /> Cập nhật
-                        </button>
-                        {o.status === "cancelled" && (
+              <tbody className="divide-y divide-brand-border/10">
+                {filteredOrders.map((o) => {
+                  const isSelected = selectedOrder?.id === o.id;
+                  return (
+                    <tr
+                      key={o.id}
+                      className={`transition-colors duration-150 ${
+                        isSelected
+                          ? "bg-brand-primary/10 border-l-4 border-l-brand-primary"
+                          : "hover:bg-brand-bg/20 odd:bg-brand-surface even:bg-brand-bg/50"
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-black text-brand-text">#ORD-{o.id}</td>
+                      <td className="px-6 py-4 text-brand-muted text-xs">
+                        {new Date(o.created_at).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-brand-text">
+                        {o.user?.fullName || o.user?.username || (language === "vi" ? "Khách vãng lai" : "Guest")}
+                      </td>
+                      <td className="px-6 py-4 text-brand-muted max-w-xs truncate">
+                        {o.items?.map((item: any) => `${item.productName} (x${item.quantity})`).join(", ")}
+                      </td>
+                      <td className="px-6 py-4 text-right font-black text-brand-primary text-sm">
+                        {formatPrice(o.totalAmount)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
+                          o.status === "delivered" ? "bg-status-success-bg text-status-success-text border-status-success-border" :
+                          o.status === "cancelled" ? "bg-status-danger-bg text-status-danger-text border-status-danger-border" :
+                          o.status === "shipping" ? "bg-status-info-bg text-status-info-text border-status-info-border" :
+                          o.status === "refunded" ? "bg-status-success-bg text-status-success-text border-status-success-border" :
+                          o.status === "return_requested" ? "bg-status-warning-bg text-status-warning-text border-status-warning-border" :
+                          o.status === "return_approved" ? "bg-status-info-bg text-status-info-text border-status-info-border" :
+                          o.status === "product_received" ? "bg-status-info-bg text-status-info-text border-status-info-border" :
+                          o.status === "refund_processing" ? "bg-status-warning-bg text-status-warning-text border-status-warning-border" :
+                          o.status === "return_rejected" ? "bg-status-danger-bg text-status-danger-text border-status-danger-border" :
+                          o.status === "return_cancelled" ? "bg-status-danger-bg text-status-danger-text border-status-danger-border" :
+                          "bg-status-warning-bg text-status-warning-text border-status-warning-border"
+                        }`}>
+                          {o.status === "return_requested" && (language === "vi" ? "Chờ duyệt trả" : "Return Requested")}
+                          {o.status === "return_approved" && (language === "vi" ? "Đã duyệt trả" : "Return Approved")}
+                          {o.status === "product_received" && (language === "vi" ? "Đã nhận hàng kho" : "Product Received")}
+                          {o.status === "refund_processing" && (language === "vi" ? "Đang hoàn tiền" : "Refund Processing")}
+                          {o.status === "refunded" && (language === "vi" ? "Đã hoàn tiền" : "Refunded")}
+                          {o.status === "return_rejected" && (language === "vi" ? "Từ chối trả hàng" : "Return Rejected")}
+                          {o.status === "return_cancelled" && (language === "vi" ? "Đã hủy trả" : "Return Cancelled")}
+                          {!returnStatuses.includes(o.status) && (
+                            o.status === "pending" ? (language === "vi" ? "Chờ thanh toán" : "Pending") :
+                            o.status === "confirmed" ? (language === "vi" ? "Đã xác nhận" : "Confirmed") :
+                            o.status === "shipping" ? (language === "vi" ? "Đang giao" : "Shipping") :
+                            o.status === "delivered" ? (language === "vi" ? "Đã giao" : "Delivered") :
+                            o.status === "cancelled" ? (language === "vi" ? "Đã hủy" : "Cancelled") :
+                            o.status
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => handleDeleteOrder(o.id)}
-                            className="px-3 py-1.5 bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 rounded-xl text-xs font-bold text-red-600 transition flex items-center gap-1"
+                            onClick={() => handleOpenStatusModal(o)}
+                            className="px-3 py-1.5 bg-brand-surface hover:bg-brand-primary hover:text-white border border-brand-border rounded-xl text-xs font-bold text-brand-text transition flex items-center gap-1 cursor-pointer"
                           >
-                            <Trash2 size={13} /> Xóa
+                            <ClipboardList size={13} /> {language === "vi" ? "Cập nhật" : "Update"}
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {o.status === "cancelled" && (
+                            <button
+                              onClick={() => handleDeleteOrder(o.id)}
+                              className="px-3 py-1.5 bg-status-danger-bg hover:bg-red-600 hover:text-white border border-status-danger-border rounded-xl text-xs font-bold text-status-danger-text transition flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 size={13} /> {language === "vi" ? "Xóa" : "Delete"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -412,19 +432,23 @@ export default function AdminOrdersPage() {
 
       {/* UPDATE STATUS MODAL */}
       {isModalOpen && selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-lg overflow-hidden animate-scaleIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-brand-surface rounded-3xl border border-brand-border shadow-2xl ring-1 ring-brand-border/20 w-full max-w-lg overflow-hidden animate-scaleIn">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-brand-primary/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border/40 bg-brand-primary-light/10">
               <div>
-                <h3 className="font-extrabold text-gray-900 text-base">
-                  {returnStatuses.includes(selectedOrder.status) ? "Xử lý Trả Hàng & Hoàn Tiền" : "Cập Nhật Trạng Thái Đơn Hàng"}
+                <h3 className="font-extrabold text-brand-text text-base">
+                  {returnStatuses.includes(selectedOrder.status) 
+                    ? (language === "vi" ? "Xử lý Trả Hàng & Hoàn Tiền" : "Process Return & Refund") 
+                    : (language === "vi" ? "Cập Nhật Trạng Thái Đơn Hàng" : "Update Order Status")}
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">Mã đơn hàng: #ORD-{selectedOrder.id}</p>
+                <p className="text-xs text-brand-muted mt-0.5">
+                  {language === "vi" ? `Mã đơn hàng: #ORD-${selectedOrder.id}` : `Order ID: #ORD-${selectedOrder.id}`}
+                </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                className="p-1.5 rounded-full hover:bg-brand-primary-light/20 text-brand-muted hover:text-brand-primary transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -433,7 +457,7 @@ export default function AdminOrdersPage() {
             {/* Modal Content */}
             <div className="overflow-y-auto max-h-[75vh]">
               {error && (
-                <div className="mx-6 mt-4 p-3 text-xs bg-red-50 text-red-600 border border-red-100 rounded-xl flex items-center gap-2">
+                <div className="mx-6 mt-4 p-3 text-xs bg-status-danger-bg text-status-danger-text border border-status-danger-border rounded-xl flex items-center gap-2">
                   <AlertTriangle size={14} />
                   <span>{error}</span>
                 </div>
@@ -447,68 +471,76 @@ export default function AdminOrdersPage() {
                   {loadingReturn ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="w-6 h-6 text-brand-primary animate-spin" />
-                      <span className="ml-2 text-xs text-gray-400">Đang tải thông tin trả hàng...</span>
+                      <span className="ml-2 text-xs text-brand-muted">
+                        {language === "vi" ? "Đang tải thông tin trả hàng..." : "Loading return details..."}
+                      </span>
                     </div>
                   ) : selectedOrderReturn ? (
                     <div className="space-y-4">
                       {/* Return Request Info Details */}
-                      <div className="bg-brand-primary/10 border border-brand-border rounded-2xl p-4 space-y-2.5 text-xs text-gray-600">
-                        <h4 className="font-extrabold text-gray-800 text-xs uppercase tracking-wider">Thông tin yêu cầu trả hàng</h4>
-                        <p><span className="font-bold text-gray-700">Lý do:</span> {selectedOrderReturn.reason}</p>
+                      <div className="bg-brand-primary-light/10 border border-brand-border/40 rounded-2xl p-4 space-y-2.5 text-xs text-brand-muted">
+                        <h4 className="font-extrabold text-brand-text text-xs uppercase tracking-wider">
+                          {language === "vi" ? "Thông tin yêu cầu trả hàng" : "Return Request Details"}
+                        </h4>
+                        <p><span className="font-bold text-brand-text">{language === "vi" ? "Lý do:" : "Reason:"}</span> {selectedOrderReturn.reason}</p>
                         <p>
-                          <span className="font-bold text-gray-700">Ngày yêu cầu:</span>{" "}
-                          {new Date(selectedOrderReturn.createdAt).toLocaleString("vi-VN")}
+                          <span className="font-bold text-brand-text">{language === "vi" ? "Ngày yêu cầu:" : "Requested Date:"}</span>{" "}
+                          {new Date(selectedOrderReturn.createdAt).toLocaleString(language === "vi" ? "vi-VN" : "en-US")}
                         </p>
                         
                         {selectedOrderReturn.imageProof ? (
-                           <div className="space-y-1">
-                            <span className="font-bold text-gray-700">Minh chứng hình ảnh:</span>
+                          <div className="space-y-1">
+                            <span className="font-bold text-brand-text">{language === "vi" ? "Minh chứng hình ảnh:" : "Image Proof:"}</span>
                             <a
                               href={getProofUrl(selectedOrderReturn.imageProof)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] bg-blue-50 text-blue-600 border border-blue-150 px-2 py-0.5 rounded font-bold hover:bg-blue-100 transition block w-fit"
+                              className="inline-flex items-center gap-1 text-[10px] bg-status-info-bg text-status-info-text border border-status-info-border px-2 py-0.5 rounded font-bold hover:bg-brand-primary-light/40 transition block w-fit"
                             >
-                              <FileImage size={10} /> Xem ảnh proof
+                              <FileImage size={10} /> {language === "vi" ? "Xem ảnh proof" : "View proof image"}
                             </a>
-                            <div className="mt-1 w-32 h-20 rounded border overflow-hidden relative bg-gray-50">
+                            <div className="mt-1 w-32 h-20 rounded border border-brand-border/50 overflow-hidden relative bg-brand-bg/50">
                               <img
                                 src={getProofUrl(selectedOrderReturn.imageProof)}
                                 alt="Return proof"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                  // Fail-safe for Base64 or corrupted image path
                                   (e.target as any).src = selectedOrderReturn.imageProof;
                                 }}
                               />
                             </div>
                           </div>
                         ) : (
-                          <p><span className="font-bold text-gray-700">Minh chứng hình ảnh:</span> Không có minh chứng</p>
+                          <p>
+                            <span className="font-bold text-brand-text">{language === "vi" ? "Minh chứng hình ảnh:" : "Image Proof:"}</span>{" "}
+                            {language === "vi" ? "Không có minh chứng" : "No proof provided"}
+                          </p>
                         )}
 
                         {selectedOrderReturn.rejectionReason && (
-                          <div className="mt-2 p-2.5 bg-red-50 border border-red-100 rounded-xl text-red-700">
-                            <span className="font-bold text-red-800">Lý do từ chối:</span> {selectedOrderReturn.rejectionReason}
+                          <div className="mt-2 p-2.5 bg-status-danger-bg border border-status-danger-border rounded-xl text-status-danger-text">
+                            <span className="font-bold text-status-danger-text">{language === "vi" ? "Lý do từ chối:" : "Rejection Reason:"}</span> {selectedOrderReturn.rejectionReason}
                           </div>
                         )}
 
                         {/* Refund Details */}
                         {(selectedOrderReturn.refundMethod || selectedOrderReturn.refundTransactionId) && (
-                          <div className="mt-2 p-2.5 bg-purple-50/50 border border-purple-100 rounded-xl text-purple-700 space-y-1">
-                            <span className="font-bold text-purple-800 block">Thông tin hoàn tiền</span>
-                            <p><span className="font-semibold text-gray-700">Phương thức:</span> {selectedOrderReturn.refundMethod}</p>
-                            <p><span className="font-semibold text-gray-700">Mã giao dịch:</span> <span className="font-mono bg-purple-100/50 px-1 py-0.5 rounded">{selectedOrderReturn.refundTransactionId}</span></p>
+                          <div className="mt-2 p-2.5 bg-status-info-bg border border-status-info-border rounded-xl text-status-info-text space-y-1">
+                            <span className="font-bold text-status-info-text block">{language === "vi" ? "Thông tin hoàn tiền" : "Refund Information"}</span>
+                            <p><span className="font-semibold text-brand-text font-sans">{language === "vi" ? "Phương thức:" : "Method:"}</span> {selectedOrderReturn.refundMethod}</p>
+                            <p><span className="font-semibold text-brand-text font-sans">{language === "vi" ? "Mã giao dịch:" : "Transaction ID:"}</span> <span className="font-mono bg-brand-surface px-1.5 py-0.5 rounded border border-brand-border/50 text-[10px]">{selectedOrderReturn.refundTransactionId}</span></p>
                             {selectedOrderReturn.refundedAt && (
-                              <p><span className="font-semibold text-gray-700">Ngày hoàn tất:</span> {new Date(selectedOrderReturn.refundedAt).toLocaleString("vi-VN")}</p>
+                              <p><span className="font-semibold text-brand-text font-sans">{language === "vi" ? "Ngày hoàn tất:" : "Completed Date:"}</span> {new Date(selectedOrderReturn.refundedAt).toLocaleString(language === "vi" ? "vi-VN" : "en-US")}</p>
                             )}
                           </div>
                         )}
                       </div>
 
                       {/* State Machine Transition Actions */}
-                      <div className="border-t border-gray-100 pt-4 space-y-3">
-                        <h4 className="font-extrabold text-gray-800 text-xs uppercase tracking-wider">Thao tác quy trình đổi trả</h4>
+                      <div className="border-t border-brand-border/40 pt-4 space-y-3">
+                        <h4 className="font-extrabold text-brand-text text-xs uppercase tracking-wider">
+                          {language === "vi" ? "Thao tác quy trình đổi trả" : "Return Process Actions"}
+                        </h4>
                         
                         {!isCompletingRefund ? (
                           <div className="flex flex-wrap gap-2">
@@ -518,17 +550,17 @@ export default function AdminOrdersPage() {
                                   type="button"
                                   disabled={submitting}
                                   onClick={() => handleApproveReturn(selectedOrderReturn.id)}
-                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1"
+                                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 cursor-pointer"
                                 >
-                                  Chấp Nhận Trả Hàng
+                                  {language === "vi" ? "Chấp Nhận Trả Hàng" : "Approve Return"}
                                 </button>
                                 <button
                                   type="button"
                                   disabled={submitting}
                                   onClick={() => handleRejectReturn(selectedOrderReturn.id)}
-                                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1"
+                                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 cursor-pointer"
                                 >
-                                  Từ Chối Trả Hàng
+                                  {language === "vi" ? "Từ Chối Trả Hàng" : "Reject Return"}
                                 </button>
                               </>
                             )}
@@ -538,9 +570,9 @@ export default function AdminOrdersPage() {
                                 type="button"
                                 disabled={submitting}
                                 onClick={() => handleMarkReceived(selectedOrderReturn.id)}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1"
+                                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:bg-sky-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 cursor-pointer"
                               >
-                                Xác Nhận Nhận Được Hàng Kho
+                                {language === "vi" ? "Xác Nhận Nhận Được Hàng Kho" : "Confirm Items Received"}
                               </button>
                             )}
 
@@ -549,9 +581,9 @@ export default function AdminOrdersPage() {
                                 type="button"
                                 disabled={submitting}
                                 onClick={() => handleStartRefund(selectedOrderReturn.id)}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1"
+                                className="px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary/50 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 cursor-pointer"
                               >
-                                Bắt Đầu Xử Lý Hoàn Tiền
+                                {language === "vi" ? "Bắt Đầu Xử Lý Hoàn Tiền" : "Start Refund Processing"}
                               </button>
                             )}
 
@@ -564,48 +596,54 @@ export default function AdminOrdersPage() {
                                   setRefundTxnId("");
                                   setIsCompletingRefund(true);
                                 }}
-                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1"
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 cursor-pointer"
                               >
-                                Tiến Hành Hoàn Tất Hoàn Tiền
+                                {language === "vi" ? "Tiến Hành Hoàn Tất Hoàn Tiền" : "Complete Refund Transaction"}
                               </button>
                             )}
 
                             {["refunded", "return_rejected", "return_cancelled"].includes(selectedOrderReturn.status) && (
-                              <div className="p-3 bg-gray-50 border border-gray-150 rounded-xl text-xs font-medium text-gray-500 w-full text-center">
-                                Quy trình đổi trả đã kết thúc ở trạng thái:{" "}
+                              <div className="p-3 bg-brand-bg/50 border border-brand-border/40 rounded-xl text-xs font-medium text-brand-muted w-full text-center">
+                                {language === "vi" ? "Quy trình đổi trả đã kết thúc ở trạng thái: " : "Return process ended with status: "}{" "}
                                 <span className="font-extrabold uppercase text-brand-primary">{selectedOrderReturn.status}</span>
                               </div>
                             )}
                           </div>
                         ) : (
                           /* Refund Completion Sub-Form */
-                          <form onSubmit={handleCompleteRefundSubmit} className="bg-purple-50/30 border border-purple-100 rounded-2xl p-4 space-y-4 animate-fadeIn">
-                            <h5 className="text-xs font-bold text-purple-800">Nhập thông tin giao dịch hoàn tiền</h5>
+                          <form onSubmit={handleCompleteRefundSubmit} className="bg-brand-primary-light/10 border border-brand-border/40 rounded-2xl p-4 space-y-4 animate-fadeIn">
+                            <h5 className="text-xs font-bold text-brand-primary">
+                              {language === "vi" ? "Nhập thông tin giao dịch hoàn tiền" : "Enter refund transaction info"}
+                            </h5>
                             
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phương thức hoàn tiền *</label>
+                              <label className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">
+                                {language === "vi" ? "Phương thức hoàn tiền *" : "Refund method *"}
+                              </label>
                               <select
                                 value={refundMethod}
                                 onChange={(e) => setRefundMethod(e.target.value)}
-                                className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 font-semibold text-gray-600"
+                                className="w-full bg-brand-surface border border-brand-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-primary font-semibold text-brand-text"
                               >
-                                <option value="Bank Transfer">Chuyển khoản ngân hàng (Bank Transfer)</option>
-                                <option value="Momo">Ví điện tử Momo</option>
-                                <option value="ZaloPay">Ví điện tử ZaloPay</option>
-                                <option value="Cash">Tiền mặt</option>
-                                <option value="Other">Khác</option>
+                                <option value="Bank Transfer">{language === "vi" ? "Chuyển khoản ngân hàng (Bank Transfer)" : "Bank Transfer"}</option>
+                                <option value="Momo">{language === "vi" ? "Ví điện tử Momo" : "Momo Wallet"}</option>
+                                <option value="ZaloPay">{language === "vi" ? "Ví điện tử ZaloPay" : "ZaloPay Wallet"}</option>
+                                <option value="Cash">{language === "vi" ? "Tiền mặt" : "Cash"}</option>
+                                <option value="Other">{language === "vi" ? "Khác" : "Other"}</option>
                               </select>
                             </div>
 
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mã giao dịch hoàn tiền *</label>
+                              <label className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">
+                                {language === "vi" ? "Mã giao dịch hoàn tiền *" : "Refund Transaction ID *"}
+                              </label>
                               <input
                                 type="text"
                                 required
-                                placeholder="Ví dụ: VCB12345678"
+                                placeholder={language === "vi" ? "Ví dụ: VCB12345678" : "Example: VCB12345678"}
                                 value={refundTxnId}
                                 onChange={(e) => setRefundTxnId(e.target.value)}
-                                className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
+                                className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-primary font-mono"
                               />
                             </div>
 
@@ -614,17 +652,17 @@ export default function AdminOrdersPage() {
                                 type="button"
                                 disabled={submitting}
                                 onClick={() => setIsCompletingRefund(false)}
-                                className="flex-1 py-2 text-xs font-bold text-gray-500 bg-white hover:bg-gray-50 border rounded-xl transition"
+                                className="flex-1 py-2 text-xs font-bold text-brand-muted bg-brand-surface hover:bg-brand-primary-light/20 border border-brand-border rounded-xl transition cursor-pointer"
                               >
-                                Quay lại
+                                {language === "vi" ? "Quay lại" : "Back"}
                               </button>
                               <button
                                 type="submit"
                                 disabled={submitting}
-                                className="flex-1 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-purple-100"
+                                className="flex-1 py-2 text-xs font-bold text-white bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary/50 rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-brand-primary/20 cursor-pointer"
                               >
                                 {submitting && <Loader2 size={12} className="animate-spin" />}
-                                Xác nhận hoàn tất
+                                {language === "vi" ? "Xác nhận hoàn tất" : "Confirm completion"}
                               </button>
                             </div>
                           </form>
@@ -632,49 +670,53 @@ export default function AdminOrdersPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 text-xs bg-red-50 text-red-600 border border-red-100 rounded-xl text-center">
-                      Không tìm thấy chi tiết yêu cầu trả hàng tương ứng.
+                    <div className="p-4 text-xs bg-status-danger-bg text-status-danger-text border border-status-danger-border rounded-xl text-center">
+                      {language === "vi" ? "Không tìm thấy chi tiết yêu cầu trả hàng tương ứng." : "No corresponding return details found."}
                     </div>
                   )}
 
                   {/* Audit Timeline */}
-                  <div className="border-t border-gray-100 pt-4 space-y-3">
-                    <h4 className="font-extrabold text-gray-800 text-xs uppercase tracking-wider">Lịch sử trạng thái đơn hàng</h4>
-                    <div className="relative border-l border-gray-205 pl-4 space-y-4 text-xs py-1">
+                  <div className="border-t border-brand-border/40 pt-4 space-y-3">
+                    <h4 className="font-extrabold text-brand-text text-xs uppercase tracking-wider">
+                      {language === "vi" ? "Lịch sử trạng thái đơn hàng" : "Order Status Logs"}
+                    </h4>
+                    <div className="relative border-l border-brand-border pl-4 space-y-4 text-xs py-1">
                       {selectedOrder.statusLogs && selectedOrder.statusLogs.length > 0 ? (
                         [...selectedOrder.statusLogs]
                           .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                           .map((log: any, idx: number) => (
                             <div key={log.id || idx} className="relative">
                               {/* Dot */}
-                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-primary border border-white" />
+                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-primary border border-brand-surface" />
                               <div className="flex justify-between items-start gap-4">
                                 <div>
-                                  <p className="font-bold text-gray-800">
-                                    {log.oldStatus} <span className="font-normal text-gray-400 font-mono">→</span> {log.newStatus}
+                                  <p className="font-bold text-brand-text">
+                                    {log.oldStatus} <span className="font-normal text-brand-muted font-mono">→</span> {log.newStatus}
                                   </p>
-                                  {log.note && <p className="text-gray-500 italic mt-0.5">"{log.note}"</p>}
+                                  {log.note && <p className="text-brand-muted italic mt-0.5">"{log.note}"</p>}
                                 </div>
-                                <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                                  {new Date(log.createdAt).toLocaleString("vi-VN")}
+                                <span className="text-[10px] text-brand-muted whitespace-nowrap">
+                                  {new Date(log.createdAt).toLocaleString(language === "vi" ? "vi-VN" : "en-US")}
                                 </span>
                               </div>
                             </div>
                           ))
                       ) : (
-                        <p className="text-gray-400 italic">Chưa ghi nhận nhật ký trạng thái.</p>
+                        <p className="text-brand-muted italic">
+                          {language === "vi" ? "Chưa ghi nhận nhật ký trạng thái." : "No status logs recorded yet."}
+                        </p>
                       )}
                     </div>
                   </div>
 
                   {/* Close button at footer */}
-                  <div className="flex justify-end pt-3 border-t border-gray-100">
+                  <div className="flex justify-end pt-3 border-t border-brand-border/40">
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
-                      className="px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-600 transition"
+                      className="px-5 py-2.5 rounded-xl border border-brand-border hover:bg-brand-primary-light/20 text-sm font-semibold text-brand-muted transition cursor-pointer"
                     >
-                      Đóng
+                      {language === "vi" ? "Đóng" : "Close"}
                     </button>
                   </div>
                 </div>
@@ -685,17 +727,19 @@ export default function AdminOrdersPage() {
                 <form onSubmit={handleUpdateStatusSubmit} className="p-6 space-y-4">
                   {/* Status Selector */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái mới *</label>
+                    <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                      {language === "vi" ? "Trạng thái mới *" : "New Status *"}
+                    </label>
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
+                      className="w-full rounded-xl border border-brand-border bg-brand-surface px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition text-brand-text font-semibold"
                     >
-                      <option value="pending">Chờ Thanh Toán (Pending)</option>
-                      <option value="confirmed">Đã Xác Nhận (Confirmed)</option>
-                      <option value="shipping">Đang Giao Hàng (Shipping)</option>
-                      <option value="delivered">Đã Giao Thành Công (Delivered)</option>
-                      <option value="cancelled">Hủy Đơn Hàng (Cancelled)</option>
+                      <option value="pending">{language === "vi" ? "Chờ Thanh Toán (Pending)" : "Pending Payment (Pending)"}</option>
+                      <option value="confirmed">{language === "vi" ? "Đã Xác Nhận (Confirmed)" : "Confirmed (Confirmed)"}</option>
+                      <option value="shipping">{language === "vi" ? "Đang Giao Hàng (Shipping)" : "Shipping (Shipping)"}</option>
+                      <option value="delivered">{language === "vi" ? "Đã Giao Thành Công (Delivered)" : "Delivered (Delivered)"}</option>
+                      <option value="cancelled">{language === "vi" ? "Hủy Đơn Hàng (Cancelled)" : "Cancelled (Cancelled)"}</option>
                     </select>
                   </div>
 
@@ -704,28 +748,28 @@ export default function AdminOrdersPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
                       {/* Tracking Number */}
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                          <Truck size={12} /> Mã vận đơn
+                        <label className="text-xs font-bold text-brand-muted uppercase tracking-wider flex items-center gap-1">
+                          <Truck size={12} /> {language === "vi" ? "Mã vận đơn" : "Tracking Number"}
                         </label>
                         <input
                           type="text"
-                          placeholder="Nhập mã vận đơn (GHTK, GHN...)"
+                          placeholder={language === "vi" ? "Nhập mã vận đơn (GHTK, GHN...)" : "Enter tracking number (DHL, FedEx...)"}
                           value={trackingNumber}
                           onChange={(e) => setTrackingNumber(e.target.value)}
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition"
+                          className="w-full rounded-xl border border-brand-border bg-brand-surface px-3 py-2.5 text-sm outline-none focus:border-brand-primary text-brand-text transition"
                         />
                       </div>
 
                       {/* Estimated Delivery Date */}
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                          <Calendar size={12} /> Ngày giao dự kiến
+                        <label className="text-xs font-bold text-brand-muted uppercase tracking-wider flex items-center gap-1">
+                          <Calendar size={12} /> {language === "vi" ? "Ngày giao dự kiến" : "Estimated Delivery Date"}
                         </label>
                         <input
                           type="date"
                           value={estimatedDeliveryDate}
                           onChange={(e) => setEstimatedDeliveryDate(e.target.value)}
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition text-gray-600 font-semibold"
+                          className="w-full rounded-xl border border-brand-border bg-brand-surface px-3 py-2.5 text-sm outline-none focus:border-brand-primary text-brand-text font-semibold transition"
                         />
                       </div>
                     </div>
@@ -733,62 +777,68 @@ export default function AdminOrdersPage() {
 
                   {/* Status change Note */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ghi chú lý do / Nhật ký thay đổi</label>
+                    <label className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                      {language === "vi" ? "Ghi chú lý do / Nhật ký thay đổi" : "Status Change Note / Log"}
+                    </label>
                     <textarea
                       rows={3}
-                      placeholder="Ghi nhận nhật ký trạng thái (ví dụ: 'Admin đã nhận được thanh toán', 'Hàng bắt đầu xuất kho'...)"
+                      placeholder={language === "vi" ? "Ghi nhận nhật ký trạng thái..." : "Record status change details..."}
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-primary transition resize-none"
+                      className="w-full rounded-xl border border-brand-border bg-brand-surface px-3 py-2.5 text-sm outline-none focus:border-brand-primary text-brand-text transition resize-none"
                     />
                   </div>
 
                   {/* Audit Timeline */}
-                  <div className="border-t border-gray-100 pt-4 space-y-3">
-                    <h4 className="font-extrabold text-gray-800 text-xs uppercase tracking-wider">Lịch sử trạng thái đơn hàng</h4>
-                    <div className="relative border-l border-gray-200 pl-4 space-y-4 text-xs py-1">
+                  <div className="border-t border-brand-border/40 pt-4 space-y-3">
+                    <h4 className="font-extrabold text-brand-text text-xs uppercase tracking-wider">
+                      {language === "vi" ? "Lịch sử trạng thái đơn hàng" : "Order Status Logs"}
+                    </h4>
+                    <div className="relative border-l border-brand-border pl-4 space-y-4 text-xs py-1">
                       {selectedOrder.statusLogs && selectedOrder.statusLogs.length > 0 ? (
                         [...selectedOrder.statusLogs]
                           .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                           .map((log: any, idx: number) => (
-                            <div key={log.id || idx} className="relative">
-                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-primary border border-white" />
+                            <div key={log.id || idx} className="relative animate-fadeIn">
+                              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-primary border border-brand-surface" />
                               <div className="flex justify-between items-start gap-4">
                                 <div>
-                                  <p className="font-bold text-gray-800">
-                                    {log.oldStatus} <span className="font-normal text-gray-400 font-mono">→</span> {log.newStatus}
+                                  <p className="font-bold text-brand-text">
+                                    {log.oldStatus} <span className="font-normal text-brand-muted font-mono">→</span> {log.newStatus}
                                   </p>
-                                  {log.note && <p className="text-gray-500 italic mt-0.5">"{log.note}"</p>}
+                                  {log.note && <p className="text-brand-muted italic mt-0.5">"{log.note}"</p>}
                                 </div>
-                                <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                                  {new Date(log.createdAt).toLocaleString("vi-VN")}
+                                <span className="text-[10px] text-brand-muted whitespace-nowrap">
+                                  {new Date(log.createdAt).toLocaleString(language === "vi" ? "vi-VN" : "en-US")}
                                 </span>
                               </div>
                             </div>
                           ))
                       ) : (
-                        <p className="text-gray-400 italic">Chưa ghi nhận nhật ký trạng thái.</p>
+                        <p className="text-brand-muted italic">
+                          {language === "vi" ? "Chưa ghi nhận nhật ký trạng thái." : "No status logs recorded yet."}
+                        </p>
                       )}
                     </div>
                   </div>
 
                   {/* Modal Actions */}
-                  <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                  <div className="flex justify-end gap-3 pt-3 border-t border-brand-border/40">
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
                       disabled={submitting}
-                      className="px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-600 transition"
+                      className="px-5 py-2.5 rounded-xl border border-brand-border hover:bg-brand-primary-light/20 text-sm font-semibold text-brand-muted transition cursor-pointer"
                     >
-                      Hủy bỏ
+                      {language === "vi" ? "Hủy bỏ" : "Cancel"}
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-6 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary/50 text-white text-sm font-semibold transition flex items-center gap-1.5"
+                      className="px-6 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-primary/50 text-white text-sm font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-brand-primary/25"
                     >
                       {submitting && <Loader2 size={16} className="animate-spin" />}
-                      Lưu thay đổi
+                      {language === "vi" ? "Lưu thay đổi" : "Save Changes"}
                     </button>
                   </div>
                 </form>
