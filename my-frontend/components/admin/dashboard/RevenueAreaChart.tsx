@@ -108,8 +108,8 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
         <defs>
           {/* Fill Gradient */}
           <linearGradient id="chartAreaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f97316" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#f97316" stopOpacity="0.0" />
+            <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="var(--brand-primary)" stopOpacity="0.0" />
           </linearGradient>
         </defs>
 
@@ -122,15 +122,16 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
               y1={line.y}
               x2={paddingLeft + chartWidth}
               y2={line.y}
-              stroke="#f1f5f9"
-              strokeWidth={1.5}
+              stroke="var(--brand-border)"
+              strokeWidth={1}
+              strokeOpacity={0.5}
             />
             {/* Y-Axis Label */}
             <text
               x={paddingLeft - 12}
               y={line.y + 4}
               textAnchor="end"
-              className="fill-slate-400 font-bold text-[10px]"
+              className="fill-brand-muted font-bold text-[10px]"
             >
               {formatPrice(Math.round(line.val))}
             </text>
@@ -139,7 +140,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
 
         {/* X-Axis Labels (Start, Mid, End) */}
         {length > 0 && (
-          <g className="fill-slate-400 font-bold text-[10px]">
+          <g className="fill-brand-muted font-bold text-[10px]">
             {/* Start */}
             <text x={paddingLeft} y={paddingTop + chartHeight + 22} textAnchor="start">
               {new Date(revenues[0].date).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}
@@ -171,7 +172,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
           <path
             d={linePath}
             fill="none"
-            stroke="#f97316"
+            stroke="var(--brand-primary)"
             strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -188,7 +189,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
               y1={paddingTop}
               x2={points[hoveredIndex][0]}
               y2={paddingTop + chartHeight}
-              stroke="#f97316"
+              stroke="var(--brand-primary)"
               strokeWidth={1.5}
               strokeDasharray="4 4"
               strokeOpacity={0.6}
@@ -199,7 +200,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
               cx={points[hoveredIndex][0]}
               cy={points[hoveredIndex][1]}
               r={12}
-              fill="#f97316"
+              fill="var(--brand-primary)"
               fillOpacity={0.15}
             />
 
@@ -208,8 +209,8 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
               cx={points[hoveredIndex][0]}
               cy={points[hoveredIndex][1]}
               r={6}
-              fill="#f97316"
-              stroke="#ffffff"
+              fill="var(--brand-primary)"
+              stroke="var(--brand-surface)"
               strokeWidth={2.5}
               className="drop-shadow-md"
             />
@@ -239,7 +240,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
       {/* 5. Styled Floating Tooltip using formatPrice */}
       {hoveredIndex !== null && points[hoveredIndex] && (
         <div
-          className="absolute pointer-events-none z-30 transition-all duration-150 ease-out bg-slate-900/95 text-white backdrop-blur-md px-3.5 py-2.5 rounded-2xl shadow-xl border border-slate-700/50 text-left shrink-0 whitespace-nowrap min-w-[130px]"
+          className="absolute pointer-events-none z-30 transition-all duration-150 ease-out bg-brand-surface text-brand-text border border-brand-border/80 px-3.5 py-2.5 rounded-2xl shadow-xl text-left shrink-0 whitespace-nowrap min-w-[130px]"
           style={{
             left: `${(points[hoveredIndex][0] / 1000) * 100}%`,
             top: `${(points[hoveredIndex][1] / 300) * 100}%`,
@@ -247,7 +248,7 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
           }}
         >
           {/* Tooltip header: Date */}
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <p className="text-[10px] text-brand-muted font-bold uppercase tracking-wider">
             {new Date(revenues[hoveredIndex].date).toLocaleDateString("vi-VN", {
               weekday: "long",
               year: "numeric",
@@ -258,16 +259,16 @@ export default function RevenueAreaChart({ data }: RevenueAreaChartProps) {
           
           {/* Tooltip Content: Revenue & Orders count */}
           <div className="mt-1 flex flex-col gap-0.5">
-            <span className="text-sm font-extrabold text-orange-400">
+            <span className="text-sm font-extrabold text-brand-primary">
               {formatPrice(revenues[hoveredIndex].revenue)}
             </span>
-            <span className="text-[10px] font-semibold text-sky-400">
+            <span className="text-[10px] font-semibold text-brand-secondary">
               {revenues[hoveredIndex].ordersCount} đơn hàng
             </span>
           </div>
 
           {/* Tiny pointing arrow */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900/95" />
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-brand-surface" />
         </div>
       )}
     </div>

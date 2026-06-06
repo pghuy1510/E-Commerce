@@ -36,6 +36,15 @@ export default function OrdersPage() {
   const { t, formatPrice } = usePreferences();
   const router = useRouter();
 
+  const getProductImageUrl = (path?: string) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL 
+      ? process.env.NEXT_PUBLIC_API_URL.replace("/api", "") 
+      : "http://localhost:3001";
+    return baseUrl + path;
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -53,21 +62,21 @@ export default function OrdersPage() {
   };
 
   const handleCancelOrder = async (orderId: number) => {
-    const reason = prompt("Vui lòng nhập lý do hủy đơn hàng:");
+    const reason = prompt(t("trackOrder.promptCancelReason"));
     if (reason === null) return;
     if (!reason.trim()) {
-      alert("Lý do hủy không được để trống.");
+      alert(t("trackOrder.promptCancelEmpty"));
       return;
     }
 
     try {
       setCancellingId(orderId);
       await orderAPI.cancel(orderId, reason.trim());
-      alert("Đơn hàng đã được hủy thành công!");
+      alert(t("trackOrder.alertCancelSuccess"));
       fetchOrders();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || "Không thể hủy đơn hàng lúc này.");
+      alert(err?.response?.data?.message || t("trackOrder.alertCancelFail"));
     } finally {
       setCancellingId(null);
     }
@@ -93,7 +102,7 @@ export default function OrdersPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-10 h-10 text-yellow-600 animate-spin" />
-          <p className="text-gray-500 font-medium">Loading your orders...</p>
+          <p className="text-gray-500 font-medium">{t("label.loading") || "Loading your orders..."}</p>
         </div>
       </div>
     );
@@ -104,15 +113,15 @@ export default function OrdersPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* HEADER */}
         <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-gray-900">Lịch sử đơn hàng</h1>
-          <p className="text-gray-500 mt-2">Theo dõi trạng thái và chi tiết các đơn hàng của bạn.</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("orders.title")}</h1>
+          <p className="text-gray-500 mt-2">{t("orders.subtitle")}</p>
 
           {/* SEARCH */}
           <div className="mt-6 relative max-w-xl">
             <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo mã đơn hoặc tên sản phẩm..."
+              placeholder={t("orders.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-12 pl-12 pr-4 rounded-2xl border border-gray-300 bg-gray-50 outline-none focus:ring-2 focus:ring-gray-300 text-sm"
@@ -149,8 +158,12 @@ export default function OrdersPage() {
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm whitespace-nowrap">{tab.label}</p>
-                    <p className="text-xs text-gray-500">{count} orders</p>
+                    <p className="font-semibold text-gray-900 text-sm whitespace-nowrap">
+                      {t(`status.${tab.id}`) || tab.label}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {t("orders.countSuffix").replace("{count}", count.toString())}
+                    </p>
                   </div>
                 </div>
               </button>
@@ -175,18 +188,21 @@ export default function OrdersPage() {
                       </span>
                       <span className="text-xs text-gray-400">|</span>
                       <span className="text-xs text-gray-500">
-                        {new Date(order.created_at).toLocaleDateString("vi-VN", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {new Date(order.created_at).toLocaleDateString(
+                          t("language.english") === "English" ? "en-US" : "vi-VN",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
                       </span>
                     </div>
                     {order.paymentMethod && (
                       <p className="text-xs text-gray-500 mt-1 uppercase">
-                        Phương thức: {order.paymentMethod}
+                        {t("trackOrder.paymentMethodLabel")} {order.paymentMethod}
                       </p>
                     )}
                   </div>
@@ -197,8 +213,16 @@ export default function OrdersPage() {
                 <div className="p-6 divide-y divide-gray-100">
                   {order.items?.map((item: any) => (
                     <div key={item.id} className="py-4 flex gap-5 first:pt-0 last:pb-0">
-                      <div className="w-16 h-20 bg-amber-50 rounded-xl border flex items-center justify-center text-yellow-700 shrink-0 font-bold text-xs shadow-inner">
-                        BOOK
+                      <div className="w-16 h-20 rounded-xl border flex items-center justify-center shrink-0 overflow-hidden shadow-inner bg-gray-50">
+                        {item.productImage ? (
+                          <img
+                            src={getProductImageUrl(item.productImage)}
+                            alt={item.productName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="w-6 h-6 text-gray-400" />
+                        )}
                       </div>
                       <div className="flex-1 space-y-1">
                         <h3 className="text-md font-semibold text-gray-900 line-clamp-1">
@@ -215,18 +239,17 @@ export default function OrdersPage() {
                 {/* FOOTER METRICS AND ACTIONS */}
                 <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <span className="text-xs text-gray-400">Tổng cộng</span>
+                    <span className="text-xs text-gray-400">{t("label.total")}</span>
                     <p className="text-2xl font-bold text-yellow-600">
                       {formatPrice(order.totalAmount)}
                     </p>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/orders/${order.id}`}
                       className="px-5 py-2.5 rounded-xl border border-gray-300 hover:border-gray-500 transition font-medium text-sm flex items-center gap-1.5 bg-white text-gray-700"
                     >
-                      Chi tiết đơn <ChevronRight size={16} />
+                      {t("orders.buttonDetails")} <ChevronRight size={16} />
                     </Link>
 
                     {order.status === "pending" && (
@@ -235,7 +258,7 @@ export default function OrdersPage() {
                         disabled={cancellingId === order.id}
                         className="px-5 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition font-semibold text-sm disabled:opacity-50"
                       >
-                        Hủy đơn hàng
+                        {t("trackOrder.cancelOrder")}
                       </button>
                     )}
 
@@ -255,7 +278,7 @@ export default function OrdersPage() {
                             href={`/orders/${order.id}/return`}
                             className="px-5 py-2.5 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 transition font-semibold text-sm"
                           >
-                            Trả hàng / Hoàn tiền
+                            {t("orders.buttonReturn")}
                           </Link>
                         ) : null;
                       })()
@@ -268,10 +291,10 @@ export default function OrdersPage() {
             <div className="bg-white rounded-3xl border border-gray-200 p-16 text-center shadow-sm">
               <Package className="w-14 h-14 text-gray-300 mx-auto mb-5" />
               <h3 className="text-2xl font-semibold text-gray-800">
-                Không tìm thấy đơn hàng nào
+                {t("orders.noOrdersTitle")}
               </h3>
               <p className="text-gray-500 mt-2">
-                Bạn chưa có đơn hàng nào thuộc bộ lọc này.
+                {t("orders.noOrdersDesc")}
               </p>
             </div>
           )}
@@ -297,20 +320,7 @@ function StatusBadge({ status }: { status: string }) {
     return_cancelled: "bg-slate-100 text-slate-700 border-slate-200",
   };
 
-  const labels: Record<string, string> = {
-    pending: "Chờ thanh toán",
-    confirmed: "Đã xác nhận",
-    shipping: "Đang vận chuyển",
-    delivered: "Đã giao hàng",
-    cancelled: "Đã hủy",
-    refunded: "Đã hoàn tiền",
-    return_requested: "Yêu cầu trả hàng",
-    return_approved: "Đã duyệt trả hàng",
-    product_received: "Đã nhận sản phẩm",
-    refund_processing: "Đang hoàn tiền",
-    return_rejected: "Từ chối trả hàng",
-    return_cancelled: "Đã hủy trả hàng",
-  };
+  const { t } = usePreferences();
 
   return (
     <div
@@ -318,7 +328,7 @@ function StatusBadge({ status }: { status: string }) {
         map[status] || "bg-gray-100 text-gray-700 border-gray-200"
       }`}
     >
-      {labels[status] || status}
+      {t(`status.${status}`) || status}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { DataSource, Repository, LessThanOrEqual, MoreThanOrEqual, In } from 'typeorm';
 import { randomUUID, createHash } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -577,16 +577,45 @@ export class OrderService {
     if (!order) {
       throw new BadRequestException('Không tìm thấy đơn hàng hoặc email không chính xác.');
     }
+
+    const productIds = order.items.map((i) => i.productId);
+    const uniqueProductIds = [...new Set(productIds)];
+    if (uniqueProductIds.length > 0) {
+      const products = await this.dataSource.getRepository(Product).find({
+        where: { id: In(uniqueProductIds) },
+      });
+      const imageMap = new Map(products.map((p) => [p.id, p.image]));
+      for (const item of order.items) {
+        (item as any).productImage = imageMap.get(item.productId) || null;
+      }
+    }
+
     return order;
   }
 
   // 📜 Lịch sử đơn
   async getMyOrders(userId: string) {
-    return this.orderRepo.find({
+    const orders = await this.orderRepo.find({
       where: { user: { id: Number(userId) } },
       relations: ['items'],
       order: { id: 'DESC' },
     });
+
+    const productIds = orders.flatMap((o) => o.items.map((i) => i.productId));
+    const uniqueProductIds = [...new Set(productIds)];
+    if (uniqueProductIds.length > 0) {
+      const products = await this.dataSource.getRepository(Product).find({
+        where: { id: In(uniqueProductIds) },
+      });
+      const imageMap = new Map(products.map((p) => [p.id, p.image]));
+      for (const order of orders) {
+        for (const item of order.items) {
+          (item as any).productImage = imageMap.get(item.productId) || null;
+        }
+      }
+    }
+
+    return orders;
   }
 
   // 🔍 Chi tiết đơn
@@ -597,6 +626,18 @@ export class OrderService {
     });
 
     if (!order) throw new BadRequestException('Order not found');
+
+    const productIds = order.items.map((i) => i.productId);
+    const uniqueProductIds = [...new Set(productIds)];
+    if (uniqueProductIds.length > 0) {
+      const products = await this.dataSource.getRepository(Product).find({
+        where: { id: In(uniqueProductIds) },
+      });
+      const imageMap = new Map(products.map((p) => [p.id, p.image]));
+      for (const item of order.items) {
+        (item as any).productImage = imageMap.get(item.productId) || null;
+      }
+    }
 
     const shippingAddress = await this.dataSource
       .getRepository(OrderShippingAddress)

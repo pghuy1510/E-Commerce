@@ -4,6 +4,54 @@
 :root {
   --background: #f7f3ec;
   --foreground: #3b2f23;
+  --brand-primary: #a7794a;
+  --brand-primary-hover: #8b6338;
+  --brand-secondary: #f0a044;
+  --brand-primary-light: #eadfcc;
+  --brand-bg: #f7f3ec;
+  --brand-surface: #ffffff;
+  --brand-border: #eadfcc;
+  --brand-text: #3b2f23;
+  --brand-muted: #7b6a58;
+  --warning-bg: #fdf8ee;
+  --warning-border: #f5e6cf;
+  --warning-text: #8a5c2e;
+}
+
+.dark {
+  --background: #0d0b09;
+  --foreground: #f7f3ec;
+  --brand-primary: #a7794a;
+  --brand-primary-hover: #c49a6c;
+  --brand-secondary: #f0a044;
+  --brand-primary-light: #241c16;
+  --brand-bg: #0d0b09;
+  --brand-surface: #171310;
+  --brand-border: #2c221a;
+  --brand-text: #f7f3ec;
+  --brand-muted: #a49382;
+  --warning-bg: #2a1e15;
+  --warning-border: rgba(167, 121, 74, 0.3);
+  --warning-text: #f5d0a9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #0d0b09;
+    --foreground: #f7f3ec;
+    --brand-primary: #a7794a;
+    --brand-primary-hover: #c49a6c;
+    --brand-secondary: #f0a044;
+    --brand-primary-light: #241c16;
+    --brand-bg: #0d0b09;
+    --brand-surface: #171310;
+    --brand-border: #2c221a;
+    --brand-text: #f7f3ec;
+    --brand-muted: #a49382;
+    --warning-bg: #2a1e15;
+    --warning-border: rgba(167, 121, 74, 0.3);
+    --warning-text: #f5d0a9;
+  }
 }
 
 @theme inline {
@@ -13,24 +61,17 @@
   --font-mono: var(--font-geist-mono);
   --font-serif: 'Playfair Display', serif;
   --font-montserrat: 'Montserrat', sans-serif;
-  --color-brand-primary: #a7794a;
-  --color-brand-primary-hover: #8b6338;
-  --color-brand-secondary: #f0a044;
-  --color-brand-primary-light: #eadfcc;
-  --color-brand-bg: #f7f3ec;
-  --color-brand-surface: #ffffff;
-  --color-brand-border: #eadfcc;
-  --color-brand-text: #3b2f23;
-  --color-brand-muted: #7b6a58;
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-primary-light: var(--brand-primary-light);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-border: var(--brand-border);
+  --color-brand-text: var(--brand-text);
+  --color-brand-muted: var(--brand-muted);
   --color-brand-stars: #f0a044;
   --color-sale: #d97706;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -144,4 +185,148 @@ body {
 
 .animate-scale-in {
   animation: scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ==========================================================================
+   GLOBAL DARK MODE OVERRIDES (For Admin and other pages with hardcoded colors)
+   ========================================================================== */
+.dark,
+.dark body,
+.dark .bg-brand-bg,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-\[\#f7f3ec\],
+.dark .bg-\[\#f8f9fa\],
+.dark .bg-\[\#efefef\] {
+  background-color: var(--brand-bg) !important;
+  color: var(--brand-text) !important;
+}
+
+.dark .bg-white,
+.dark .bg-brand-surface {
+  background-color: var(--brand-surface) !important;
+}
+
+/* Light dark panels (like tabs, sidebar, headers that are gray-100/50 in light mode) */
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-gray-100\/50,
+.dark .bg-gray-50\/50,
+.dark .bg-brand-primary-light\/20,
+.dark .bg-brand-primary-light\/40,
+.dark .bg-\[\#efe1c8\] {
+  background-color: var(--brand-primary-light) !important;
+}
+
+/* Text overrides */
+.dark .text-gray-950,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-brand-text,
+.dark .text-gray-900.line-clamp-1,
+.dark .font-semibold.text-gray-900 {
+  color: var(--brand-text) !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-gray-400,
+.dark .text-brand-muted {
+  color: var(--brand-muted) !important;
+}
+
+/* Border overrides */
+.dark .border-gray-100,
+.dark .border-gray-150,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-brand-border,
+.dark .border-\[\#eadfcc\],
+.dark .divide-\[\#eadfcc\] > * + *,
+.dark .border-transparent {
+  border-color: var(--brand-border) !important;
+}
+
+.dark hr,
+.dark .h-\[1px\],
+.dark .h-px {
+  background-color: var(--brand-border) !important;
+  border-color: var(--brand-border) !important;
+}
+
+/* Inputs, Selects, Buttons */
+.dark input,
+.dark select,
+.dark textarea,
+.dark button.border {
+  background-color: var(--brand-surface) !important;
+  color: var(--brand-text) !important;
+  border-color: var(--brand-border) !important;
+}
+
+.dark select option {
+  background-color: var(--brand-surface) !important;
+  color: var(--brand-text) !important;
+}
+
+/* Hover & Active states */
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--brand-primary-light) !important;
+}
+
+.dark .hover\:text-gray-900:hover {
+  color: var(--brand-text) !important;
+}
+
+.dark .hover\:bg-brand-primary-light\/20:hover {
+  background-color: var(--brand-primary-light) !important;
+}
+
+.dark button.border:hover {
+  background-color: var(--brand-primary-light) !important;
+}
+
+/* Specific details like table rows and modals */
+.dark .divide-gray-100 > * + *,
+.dark .divide-gray-200 > * + * {
+  border-color: var(--brand-border) !important;
+}
+
+/* ==========================================================================
+   THEME MOCKUP PREVIEW OVERRIDES (Enforce light/dark appearance regardless of page mode)
+   ========================================================================== */
+.light-mode-mockup {
+  background-color: #faf6ed !important;
+  border-color: #eadfcc !important;
+}
+.light-mode-mockup-border {
+  border-bottom-color: rgba(234, 223, 204, 0.5) !important;
+}
+.light-mode-mockup-text {
+  background-color: rgba(59, 47, 35, 0.2) !important;
+}
+.light-mode-mockup-text-muted {
+  background-color: rgba(59, 47, 35, 0.1) !important;
+}
+
+.light-mode-mockup-system-border {
+  border-color: #eadfcc !important;
+}
+.light-mode-mockup-system-border-r {
+  border-right-color: rgba(234, 223, 204, 0.5) !important;
+}
+
+.dark-mode-mockup {
+  background-color: #1e150f !important;
+  border-color: #3b2f23 !important;
+}
+.dark-mode-mockup-border {
+  border-bottom-color: rgba(59, 47, 35, 0.55) !important;
+}
+.dark-mode-mockup-text {
+  background-color: rgba(247, 243, 236, 0.2) !important;
+}
+.dark-mode-mockup-text-muted {
+  background-color: rgba(247, 243, 236, 0.1) !important;
 }

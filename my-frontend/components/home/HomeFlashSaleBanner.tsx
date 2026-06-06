@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Sparkles, CalendarClock } from "lucide-react";
 import type { Deal } from "@/lib/api";
+import { usePreferences } from "@/lib/i18n";
 
 interface HomeFlashSaleBannerProps {
   deal: Deal;
@@ -13,6 +14,7 @@ interface HomeFlashSaleBannerProps {
 
 export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleBannerProps) {
   const router = useRouter();
+  const { t } = usePreferences();
 
   // State-based image fallback
   const [imageSrc, setImageSrc] = useState(deal.bannerUrl || "/img/sale.jpg");
@@ -81,9 +83,9 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
   };
 
   const ctaUrl = getSanitizedLink(deal.bannerButtonUrl);
-  const ctaText = deal.bannerButtonText || "SĂN DEAL NGAY";
+  const ctaText = deal.bannerButtonText || t("deals.flashSale.cta");
   const title = deal.bannerTitle || deal.name;
-  const subtitle = deal.bannerSubtitle || deal.description || "Hàng loạt sản phẩm giảm giá cực khủng!";
+  const subtitle = deal.bannerSubtitle || deal.description || t("deals.flashSale.subtitle");
 
   const handleCtaClick = () => {
     if (ctaUrl.startsWith("http://") || ctaUrl.startsWith("https://")) {
@@ -119,7 +121,7 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
           <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left text-white max-w-2xl">
             <span className="inline-flex items-center gap-1.5 text-xs md:text-sm font-black tracking-widest text-[#fbd38d] bg-white/10 backdrop-blur-md px-4 py-2 rounded-full uppercase border border-white/20 mb-4 animate-pulse">
               <Sparkles size={14} className="text-amber-300 animate-spin-slow" />
-              SỰ KIỆN FLASH SALE ĐANG DIỄN RA
+              {t("deals.flashSale.event")}
             </span>
 
             <h2 className="font-serif italic font-extrabold text-3xl md:text-5xl leading-tight drop-shadow-xl text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-100 to-amber-100 mb-4">
@@ -145,7 +147,7 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
           <div className="flex flex-col items-center justify-center bg-stone-950/45 border border-white/10 backdrop-blur-md p-6 md:p-8 rounded-3xl shadow-inner min-w-[280px] md:min-w-[340px] animate-fadeIn">
             <div className="text-xs font-black text-amber-300 uppercase tracking-widest flex items-center gap-1.5 mb-4 select-none">
               <CalendarClock size={15} className="animate-bounce" />
-              Thời gian còn lại
+              {t("deals.flashSale.timeLeft")}
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
@@ -158,7 +160,7 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
                         {String(timeLeft.days).padStart(2, "0")}
                       </span>
                     </div>
-                    <span className="text-[10px] uppercase font-bold text-gray-300 mt-2 select-none">Ngày</span>
+                    <span className="text-[10px] uppercase font-bold text-gray-300 mt-2 select-none">{t("deals.countdown.days")}</span>
                   </div>
                   <span className="text-xl md:text-2xl font-black text-white/50 -mt-6">:</span>
                 </>
@@ -171,7 +173,7 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
                     {String(timeLeft.hours).padStart(2, "0")}
                   </span>
                 </div>
-                <span className="text-[10px] uppercase font-bold text-gray-300 mt-2 select-none">Giờ</span>
+                <span className="text-[10px] uppercase font-bold text-gray-300 mt-2 select-none">{t("deals.countdown.hours")}</span>
               </div>
 
               <span className="text-xl md:text-2xl font-black text-white/50 -mt-6">:</span>
@@ -183,7 +185,7 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
                     {String(timeLeft.minutes).padStart(2, "0")}
                   </span>
                 </div>
-                <span className="text-[10px] uppercase font-bold text-gray-300 mt-2 select-none">Phút</span>
+                <span className="text-[10px] uppercase font-bold text-gray-300 mt-2 select-none">{t("deals.countdown.minutes")}</span>
               </div>
 
               <span className="text-xl md:text-2xl font-black text-white/50 -mt-6">:</span>
@@ -195,7 +197,7 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
                     {String(timeLeft.seconds).padStart(2, "0")}
                   </span>
                 </div>
-                <span className="text-[10px] uppercase font-bold text-amber-300 mt-2 select-none">Giây</span>
+                <span className="text-[10px] uppercase font-bold text-amber-300 mt-2 select-none">{t("deals.countdown.seconds")}</span>
               </div>
             </div>
           </div>

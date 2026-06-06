@@ -1,5 +1,6 @@
 import axios from "axios";
 import { normalizeCartItems } from "./cart";
+import { isTokenExpired } from "./jwt";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api",
@@ -16,6 +17,12 @@ export function getBrowserToken(): string | undefined {
       if (storedToken === "test123") {
         localStorage.removeItem("token");
       } else {
+        if (isTokenExpired(storedToken)) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("username");
+          document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          return undefined;
+        }
         return storedToken;
       }
     }
@@ -26,8 +33,21 @@ export function getBrowserToken(): string | undefined {
   const match = document.cookie.match(/(?:^|; )token=([^;]*)/);
   if (match?.[1]) {
     try {
-      return decodeURIComponent(match[1]);
+      const cookieToken = decodeURIComponent(match[1]);
+      if (isTokenExpired(cookieToken)) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        return undefined;
+      }
+      return cookieToken;
     } catch {
+      if (isTokenExpired(match[1])) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        return undefined;
+      }
       return match[1];
     }
   }
@@ -38,7 +58,14 @@ export function getBrowserToken(): string | undefined {
       default?: { get: (name: string) => string | undefined };
       get?: (name: string) => string | undefined;
     };
-    return Cookies.get?.("token") ?? Cookies.default?.get("token");
+    const jsCookieToken = Cookies.get?.("token") ?? Cookies.default?.get("token");
+    if (jsCookieToken && isTokenExpired(jsCookieToken)) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      return undefined;
+    }
+    return jsCookieToken;
   } catch {
     return undefined;
   }

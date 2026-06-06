@@ -424,7 +424,7 @@ export default function ProfilePage() {
     "User";
 
   return (
-    <div className="bg-[#efefef] min-h-screen py-10 px-4 lg:px-10">
+    <div className="bg-brand-bg min-h-screen py-10 px-4 lg:px-10">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         {/* SIDEBAR */}
         <aside className="bg-white rounded-3xl border border-gray-200 p-6 h-fit shadow-sm">
@@ -450,8 +450,8 @@ export default function ProfilePage() {
                   onClick={() => setActiveTab(menu.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-200 text-left ${
                     activeTab === menu.id
-                      ? "bg-gray-100 border-gray-300 text-gray-900 font-semibold"
-                      : "bg-[#f7f7f7] border-transparent text-gray-600 hover:bg-gray-100 hover:border-gray-300"
+                      ? "bg-brand-primary-light/40 border-brand-border text-brand-primary font-semibold"
+                      : "bg-brand-surface border-transparent text-brand-muted hover:bg-brand-primary-light/20 hover:border-brand-border"
                   }`}>
                   <Icon className="w-5 h-5" />
                   {menu.label}
@@ -756,7 +756,7 @@ export default function ProfilePage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-5 mb-8 gap-4">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                    <MapPin className="w-8 h-8 text-amber-600" />
+                    <MapPin className="w-8 h-8 text-brand-primary" />
                     Sổ địa chỉ
                   </h1>
                   <p className="text-gray-500 mt-2">
@@ -767,7 +767,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={handleAddAddress}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-2xl font-semibold hover:bg-amber-700 transition shadow-sm"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white rounded-2xl font-semibold hover:bg-brand-primary-hover transition shadow-sm"
                   >
                     <Plus className="w-5 h-5" />
                     Thêm địa chỉ mới
@@ -776,7 +776,7 @@ export default function ProfilePage() {
               </div>
 
               {showAddressForm ? (
-                <div className="bg-white rounded-3xl border border-amber-100 p-6 md:p-8 space-y-6 max-w-3xl shadow-sm">
+                <div className="bg-white rounded-3xl border border-brand-border p-6 md:p-8 space-y-6 max-w-3xl shadow-sm">
                   <h2 className="text-xl font-bold text-gray-900">
                     {editingAddressId ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ nhận hàng mới"}
                   </h2>
@@ -847,7 +847,7 @@ export default function ProfilePage() {
                           onClick={() => setAddressForm({ ...addressForm, label: lbl })}
                           className={`px-5 py-2.5 rounded-2xl text-sm font-semibold border transition ${
                             addressForm.label === lbl
-                              ? "border-amber-600 bg-amber-50 text-amber-700 shadow-sm"
+                              ? "border-brand-primary bg-brand-primary-light/40 text-brand-primary font-bold shadow-sm"
                               : "border-gray-200 text-gray-600 hover:bg-gray-50"
                           }`}
                         >
@@ -865,7 +865,7 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         setAddressForm({ ...addressForm, isDefault: e.target.checked })
                       }
-                      className="w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                      className="w-5 h-5 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
                     />
                     <label htmlFor="isDefault" className="text-sm font-medium text-gray-700 cursor-pointer">
                       Đặt làm địa chỉ nhận hàng mặc định
@@ -876,7 +876,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={handleSaveAddressBook}
-                      className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-2xl transition shadow-sm"
+                      className="px-6 py-3 bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold rounded-2xl transition shadow-sm"
                     >
                       Lưu địa chỉ
                     </button>
@@ -898,7 +898,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={handleAddAddress}
-                        className="block mt-4 mx-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl font-semibold transition"
+                        className="block mt-4 mx-auto px-5 py-2.5 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-2xl font-semibold transition"
                       >
                         Thêm địa chỉ ngay
                       </button>
@@ -909,8 +909,8 @@ export default function ProfilePage() {
                         key={addr.id}
                         className={`bg-white rounded-3xl border p-6 flex flex-col justify-between transition duration-200 relative ${
                           addr.isDefault
-                            ? "border-amber-500 bg-amber-50/5 shadow-sm"
-                            : "border-gray-200 hover:border-amber-300"
+                            ? "border-brand-primary bg-brand-primary-light/10 shadow-sm"
+                            : "border-gray-200 hover:border-brand-primary"
                         }`}
                       >
                         <div className="space-y-3">
@@ -924,7 +924,7 @@ export default function ProfilePage() {
                               </p>
                             </div>
                             <div className="flex gap-1.5 flex-wrap">
-                              <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                              <span className="text-[10px] uppercase font-bold text-brand-primary bg-brand-primary-light/40 px-2 py-0.5 rounded border border-brand-border">
                                 {addr.label === "work" ? "Công ty" : addr.label === "home" ? "Nhà riêng" : "Khác"}
                               </span>
                               {addr.isDefault && (
@@ -945,7 +945,7 @@ export default function ProfilePage() {
                             <button
                               type="button"
                               onClick={() => handleEditAddress(addr)}
-                              className="text-sm font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1"
+                              className="text-sm font-semibold text-brand-primary hover:text-brand-primary-hover flex items-center gap-1"
                             >
                               <Edit2 className="w-4 h-4" /> Sửa
                             </button>
@@ -962,7 +962,7 @@ export default function ProfilePage() {
                             <button
                               type="button"
                               onClick={() => handleSetDefaultAddress(addr.id)}
-                              className="text-xs font-bold text-gray-500 hover:text-amber-600 uppercase tracking-wider"
+                              className="text-xs font-bold text-gray-500 hover:text-brand-primary uppercase tracking-wider"
                             >
                               Đặt mặc định
                             </button>
@@ -1092,17 +1092,17 @@ function SelectBox({
       <select
         value={value}
         onChange={onChange}
-        className="w-full h-12 px-4 rounded-2xl border border-amber-100 bg-amber-50/40 text-gray-800 appearance-none outline-none focus:ring-2 focus:ring-amber-300 transition">
+        className="w-full h-12 px-4 rounded-2xl border border-brand-border bg-brand-primary-light/20 text-brand-text appearance-none outline-none focus:ring-2 focus:ring-brand-primary/40 transition">
         {children}
       </select>
 
-      <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-amber-600 pointer-events-none" />
+      <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-brand-primary pointer-events-none" />
     </div>
   );
 }
 
 const inputClass =
-  "w-full h-12 px-4 rounded-2xl border border-amber-100 bg-amber-50/40 text-gray-800 outline-none focus:ring-2 focus:ring-amber-300 transition";
+  "w-full h-12 px-4 rounded-2xl border border-brand-border bg-brand-primary-light/20 text-brand-text outline-none focus:ring-2 focus:ring-brand-primary/40 transition";
 
 const buttonClass =
-  "bg-amber-600 hover:bg-amber-700 transition text-white px-10 py-3 rounded-2xl font-medium shadow-sm disabled:opacity-50";
+  "bg-brand-primary hover:bg-brand-primary-hover transition text-white px-10 py-3 rounded-2xl font-medium shadow-sm disabled:opacity-50";

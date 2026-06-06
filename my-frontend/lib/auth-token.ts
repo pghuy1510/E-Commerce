@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { isTokenExpired } from "./jwt";
 
 const getAuthToken = (): string | null => {
   if (typeof window === "undefined") return null;
@@ -9,13 +10,29 @@ const getAuthToken = (): string | null => {
     if (localToken === "test123") {
       localStorage.removeItem("token");
     } else {
+      if (isTokenExpired(localToken)) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        return null;
+      }
       return localToken;
     }
   }
 
   const match = document.cookie.match(/(?:^|; )token=([^;]*)/);
+  if (match) {
+    const cookieToken = decodeURIComponent(match[1]);
+    if (isTokenExpired(cookieToken)) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      return null;
+    }
+    return cookieToken;
+  }
 
-  return match ? decodeURIComponent(match[1]) : null;
+  return null;
 };
 
 export const getBrowserToken = () => {

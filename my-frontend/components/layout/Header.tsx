@@ -8,6 +8,8 @@ import {
   ChevronDown,
   Phone,
   User,
+  Package,
+  Languages,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -21,7 +23,7 @@ import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
 
 export default function Header() {
-  const { language, currency, setLanguage, setCurrency, t, translateCategory } =
+  const { language, setLanguage, t, translateCategory } =
     usePreferences();
 
   const [localUsername, setLocalUsername] = useState<string | null>(null);
@@ -32,10 +34,8 @@ export default function Header() {
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
 
   const [openLang, setOpenLang] = useState(false);
-  const [openCurrency, setOpenCurrency] = useState(false);
 
   const langRef = useRef<HTMLDivElement>(null);
-  const currencyRef = useRef<HTMLDivElement>(null);
 
   // Fetch categories once on mount
   useEffect(() => {
@@ -61,12 +61,8 @@ export default function Header() {
   ========================= */
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        !langRef.current?.contains(e.target as Node) &&
-        !currencyRef.current?.contains(e.target as Node)
-      ) {
+      if (!langRef.current?.contains(e.target as Node)) {
         setOpenLang(false);
-        setOpenCurrency(false);
       }
     };
 
@@ -140,8 +136,6 @@ export default function Header() {
 
   const languageLabel =
     language === "en" ? t("language.english") : t("language.vietnamese");
-
-  const currencyLabel = currency === "USD" ? "$USD" : "₫VND";
 
   /* =========================
      CART COUNT
@@ -304,10 +298,10 @@ export default function Header() {
                 e.stopPropagation();
 
                 setOpenLang(!openLang);
-                setOpenCurrency(false);
               }}
-              className="flex cursor-pointer items-center gap-1 hover:text-brand-primary">
-              {languageLabel}
+              className="flex cursor-pointer items-center gap-2 hover:text-brand-primary">
+              <Languages size={16} className="text-brand-primary" />
+              <span>{languageLabel}</span>
 
               <ChevronDown
                 size={16}
@@ -348,57 +342,18 @@ export default function Header() {
             )}
           </div>
 
-          {/* CURRENCY */}
-          <div ref={currencyRef} className="relative">
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-
-                setOpenCurrency(!openCurrency);
-
-                setOpenLang(false);
-              }}
-              className="flex cursor-pointer items-center gap-1 hover:text-brand-primary">
-              {currencyLabel}
-
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-300 ${
-                  openCurrency ? "rotate-180" : ""
-                }`}
-              />
-            </div>
-
-            {openCurrency && (
-              <div className="absolute right-0 z-50 mt-2 w-28 rounded bg-white shadow-md">
-                <div
-                  onClick={() => {
-                    setCurrency("USD");
-                    setOpenCurrency(false);
-                  }}
-                  className="group relative cursor-pointer px-4 py-2">
-                  <span className="transition-colors duration-200 group-hover:text-brand-primary">
-                    $USD
-                  </span>
-
-                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
-                </div>
-
-                <div
-                  onClick={() => {
-                    setCurrency("VND");
-                    setOpenCurrency(false);
-                  }}
-                  className="group relative cursor-pointer px-4 py-2">
-                  <span className="transition-colors duration-200 group-hover:text-brand-primary">
-                    ₫VND
-                  </span>
-
-                  <span className="absolute bottom-1 left-4 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-[calc(100%-32px)]"></span>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* TRACK ORDER */}
+          <Link
+            href={displayName ? "/orders" : "/login"}
+            className="group relative hidden md:flex items-center gap-2 font-medium text-gray-600 transition-all duration-200 hover:text-brand-primary"
+          >
+            <Package
+              size={16}
+              className="text-brand-primary transition-transform group-hover:translate-x-0.5"
+            />
+            <span>{t("header.trackOrder")}</span>
+            <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full" />
+          </Link>
 
           {/* USER */}
           {displayName ? (
@@ -415,8 +370,8 @@ export default function Header() {
                 {userRole === "admin" && (
                   <Link
                     href="/admin/dashboard"
-                    className="block px-4 py-2 hover:bg-amber-50 hover:text-amber-700 font-extrabold transition">
-                    Trang Quản Trị
+                    className="block px-4 py-2 hover:text-brand-primary transition">
+                    {t("header.adminPanel")}
                   </Link>
                 )}
 
@@ -427,9 +382,9 @@ export default function Header() {
                 </Link>
 
                 <Link
-                  href="/orders"
+                  href="/profile/settings"
                   className="block px-4 py-2 hover:text-brand-primary">
-                  {t("header.orders")}
+                  {t("header.settings")}
                 </Link>
 
                 <button
