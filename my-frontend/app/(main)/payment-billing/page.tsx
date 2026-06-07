@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { usePreferences } from "@/lib/i18n";
+import PageHero from "@/components/layout/PageHero";
 
 type TransactionStatus = "pending" | "paid" | "failed" | "refunded" | "expired";
 type RefundStatus = "processing" | "completed" | "rejected";
@@ -189,24 +190,13 @@ export default function PaymentBillingPage() {
 
   return (
     <div className="w-full bg-brand-bg min-h-screen">
-      {/* HERO BANNER */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-brand-primary-light/60 via-[#f4ebdd] to-brand-surface py-20 text-center shadow-sm">
-        <div className="absolute inset-0 bg-grid-white/[0.05] pointer-events-none" />
-        <div className="relative z-10 max-w-4xl mx-auto px-6">
-          <div className="flex items-center justify-center gap-3 text-brand-primary mb-4">
-            <ShieldCheck className="w-6 h-6 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-widest bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full backdrop-blur-sm border border-brand-border">
-              {t("payment.heroTag")}
-            </span>
-          </div>
-          <h1 className="text-4xl font-extrabold text-brand-text tracking-tight sm:text-5xl">
-            {t("payment.heroTitle")}
-          </h1>
-          <p className="text-brand-muted mt-4 text-base sm:text-lg max-w-2xl mx-auto font-medium">
-            {t("payment.heroSubtitle")}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        variant="default"
+        title={t("payment.heroTitle")}
+        description={t("payment.heroSubtitle")}
+        breadcrumbs={[{ label: t("payment.heroTitle") }]}
+        centered={true}
+      />
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-8">
         {/* PAYMENT METHODS SECTION */}

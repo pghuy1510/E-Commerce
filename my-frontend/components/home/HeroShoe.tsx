@@ -46,9 +46,7 @@ export default function HeroVideo() {
 
         <p className="max-w-xl text-gray-200 mb-6">{t("heroShoe.subtitle")}</p>
 
-        <button className="bg-white text-black px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
-          {t("action.shop")}
-        </button>
+
       </div>
 
       {/* CONTROL */}

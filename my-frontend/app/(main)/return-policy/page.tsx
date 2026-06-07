@@ -16,6 +16,7 @@ import {
 
 import ReturnTimeline from "@/components/services/ReturnTimeline";
 import { usePreferences } from "@/lib/i18n";
+import PageHero from "@/components/layout/PageHero";
 
 export default function ReturnPolicyPage() {
   const { t } = usePreferences();
@@ -61,21 +62,13 @@ export default function ReturnPolicyPage() {
 
   return (
     <div className="w-full bg-brand-bg">
-      {/* HERO */}
-      <div className="bg-gradient-to-r from-brand-primary-light/60 via-[#f4ebdd] to-brand-surface py-20 text-center">
-        <div className="flex items-center justify-center gap-3 text-brand-primary mb-3">
-          <Truck className="w-7 h-7 text-brand-primary" />
-          <span className="text-sm uppercase tracking-widest font-semibold">
-            {t("returnPolicy.heroTag")}
-          </span>
-        </div>
-        <h1 className="text-4xl font-bold text-brand-text">
-          {t("returnPolicy.heroTitle")}
-        </h1>
-        <p className="text-brand-muted mt-3 max-w-2xl mx-auto">
-          {t("returnPolicy.heroSubtitle")}
-        </p>
-      </div>
+      <PageHero
+        variant="default"
+        title={t("returnPolicy.heroTitle")}
+        description={t("returnPolicy.heroSubtitle")}
+        breadcrumbs={[{ label: t("footer.returnPolicy") }]}
+        centered={true}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-14 space-y-14">
         {/* POLICY CONDITIONS */}

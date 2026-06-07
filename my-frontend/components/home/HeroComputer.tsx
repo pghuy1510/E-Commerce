@@ -31,28 +31,7 @@ export default function HeroComputer() {
 
           {/* DESC */}
           <p className="text-black mb-6">{t("heroComputer.subtitle")}</p>
-          <button
-            className="
-                relative overflow-hidden
-                px-6 py-3 rounded-full
-                bg-white text-black
-                transition-all duration-300
-                group
-            ">
-            <span className="relative z-10 transition-colors duration-300 group-hover:text-white">
-              {t("action.shopNow")}
-            </span>
 
-            <span
-              className="
-                absolute left-0 top-0 h-full w-0
-                bg-blue-300
-                transition-all duration-300
-                group-hover:w-full
-                z-0
-                "
-            />
-          </button>
         </div>
       </div>
     </section>

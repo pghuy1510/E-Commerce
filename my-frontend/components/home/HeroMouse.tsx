@@ -52,29 +52,7 @@ export default function HeroMouse() {
 
         <p className="text-gray-300 mb-6 text-lg">{t("heroMouse.subtitle")}</p>
 
-        {/* BUTTON SHOP */}
-        <button
-          className="
-            relative overflow-hidden
-            px-8 py-3 rounded-full
-            bg-white text-black
-            transition-all duration-300
-            group
-          ">
-          <span className="relative z-10 group-hover:text-white transition-colors duration-300">
-            {t("action.shopNow")}
-          </span>
 
-          <span
-            className="
-              absolute left-0 top-0 h-full w-0
-              bg-purple-400
-              transition-all duration-300
-              group-hover:w-full
-              z-0
-            "
-          />
-        </button>
       </div>
 
       {/* PLAY/PAUSE */}

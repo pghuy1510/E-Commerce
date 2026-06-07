@@ -4,9 +4,10 @@ import { useState } from "react";
 import { contactAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import { Mail, Phone, MapPin } from "lucide-react";
+import PageHero from "@/components/layout/PageHero";
 
 export default function ContactPage() {
-  const { language } = usePreferences();
+  const { t, language } = usePreferences();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -61,25 +62,14 @@ export default function ContactPage() {
 
   return (
     <div className="w-full bg-brand-bg min-h-screen pb-16">
-      {/* HERO BANNER */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-brand-primary-light/60 via-[#f4ebdd] to-brand-surface py-20 text-center shadow-sm mb-12">
-        <div className="absolute inset-0 bg-grid-white/[0.05] pointer-events-none" />
-        <div className="relative z-10 max-w-4xl mx-auto px-6">
-          <div className="flex items-center justify-center gap-3 text-brand-primary mb-4">
-            <span className="text-xs font-bold uppercase tracking-widest bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full backdrop-blur-sm border border-brand-border">
-              {language === "vi" ? "Liên hệ" : "Contact"}
-            </span>
-          </div>
-          <h1 className="text-4xl font-extrabold text-brand-text tracking-tight sm:text-5xl">
-            {language === "vi" ? "Liên hệ với chúng tôi" : "Contact Us"}
-          </h1>
-          <p className="text-brand-muted mt-4 text-base sm:text-lg max-w-2xl mx-auto font-medium">
-            {language === "vi" 
-              ? "Chúng tôi luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ bất cứ lúc nào." 
-              : "We are here to help you. Get in touch with us anytime."}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        variant="default"
+        title={t("nav.contact")}
+        description={language === "vi" ? "Chúng tôi luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ bất cứ lúc nào." : "We are here to help you. Get in touch with us anytime."}
+        breadcrumbs={[{ label: t("nav.contact") }]}
+        centered={true}
+        className="mb-12"
+      />
 
       <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-10">
         {/* INFO */}
