@@ -22,6 +22,7 @@ import PaymentMethods from "@/components/checkout/PaymentMethods";
 import CouponInput from "@/components/checkout/CouponInput";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import { getBrowserToken } from "@/lib/auth-token";
+import PageHero from "@/components/layout/PageHero";
 
 type CartItem = {
   id: number;
@@ -233,23 +234,22 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="w-full bg-[#fbf8f3] min-h-screen">
-      <div className="bg-gradient-to-r from-amber-200 via-white to-amber-50 py-16 text-center">
-        <h1 className="text-4xl font-bold text-gray-900">
-          {t("label.checkout")}
-        </h1>
-        <p className="text-gray-500 mt-2">
-          {t("label.home")} &gt; {t("label.checkout")}
-        </p>
-      </div>
+    <div className="w-full bg-brand-bg min-h-screen">
+      <PageHero
+        variant="checkout"
+        currentStep="checkout"
+        title={t("label.checkout")}
+        breadcrumbs={[{ label: t("label.checkout") }]}
+        centered={true}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           {/* EMAIL CONTACT FIELD FOR GUESTS */}
           {!isLoggedIn && (
-            <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 space-y-3">
-              <h2 className="text-lg font-semibold text-gray-900">Email liên hệ</h2>
-              <p className="text-xs text-gray-500">
+            <div className="bg-brand-surface rounded-3xl shadow-sm border border-brand-border p-6 space-y-3">
+              <h2 className="text-lg font-semibold text-brand-text">Email liên hệ</h2>
+              <p className="text-xs text-brand-muted">
                 Nhập email của bạn để nhận hóa đơn điện tử và thông tin cập nhật đơn hàng.
               </p>
               <input
@@ -258,7 +258,7 @@ export default function CheckoutPage() {
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
                 placeholder="email@example.com"
-                className="w-full rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300 text-gray-800"
+                className="w-full rounded-2xl border border-brand-border bg-brand-bg/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-text"
               />
             </div>
           )}
@@ -289,13 +289,13 @@ export default function CheckoutPage() {
             cartItems={cartItems}
           />
           
-          <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Ghi chú đơn hàng</h2>
+          <div className="bg-brand-surface rounded-3xl shadow-sm border border-brand-border p-6">
+            <h2 className="text-lg font-semibold text-brand-text">Ghi chú đơn hàng</h2>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Ghi chú thêm cho người vận chuyển (tùy chọn)"
-              className="mt-3 w-full rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber-300 text-gray-800"
+              className="mt-3 w-full rounded-2xl border border-brand-border bg-brand-bg/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-primary/50 text-brand-text"
             />
           </div>
         </div>
@@ -330,7 +330,7 @@ export default function CheckoutPage() {
           <button
             onClick={handleSubmit}
             disabled={loading || !isAddressValid(address)}
-            className="w-full rounded-3xl bg-amber-500 hover:bg-amber-600 px-6 py-4 text-white font-semibold shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
+            className="w-full rounded-3xl bg-brand-primary hover:bg-brand-primary-hover px-6 py-4 text-white font-semibold shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
             {loading ? "Đang xử lý..." : t("action.placeOrder")}
           </button>
         </div>

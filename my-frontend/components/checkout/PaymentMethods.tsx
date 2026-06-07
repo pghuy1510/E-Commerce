@@ -34,10 +34,10 @@ export default function PaymentMethods({
   ];
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 space-y-4">
+    <div className="bg-brand-surface rounded-3xl shadow-sm border border-brand-border p-6 space-y-4">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Payment method</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-xl font-semibold text-brand-text">Payment method</h2>
+        <p className="text-sm text-brand-muted mt-1">
           Choose your preferred payment option.
         </p>
       </div>
@@ -53,21 +53,21 @@ export default function PaymentMethods({
               onClick={() => onChange(method.id)}
               className={`rounded-3xl border px-5 py-4 text-left transition shadow-sm ${
                 active
-                  ? "border-amber-400 bg-amber-50"
-                  : "border-amber-100 bg-white hover:border-amber-300"
+                  ? "border-brand-primary bg-brand-primary-light/30"
+                  : "border-brand-border bg-brand-surface hover:border-brand-primary/50"
               }`}>
               <div className="flex items-center gap-3">
                 <span
                   className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
                     active
-                      ? "bg-amber-500 text-white"
-                      : "bg-amber-100 text-amber-600"
+                      ? "bg-brand-primary text-white"
+                      : "bg-brand-primary-light text-brand-primary"
                   }`}>
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="font-semibold text-gray-900">{method.title}</p>
-                  <p className="text-sm text-gray-500">{method.subtitle}</p>
+                  <p className="font-semibold text-brand-text">{method.title}</p>
+                  <p className="text-sm text-brand-muted">{method.subtitle}</p>
                 </div>
               </div>
             </button>

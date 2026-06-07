@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { productAPI, categoryAPI, type Product } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import ProductCard from "@/components/ProductCard";
+import PageHero from "@/components/layout/PageHero";
 import { Star } from "lucide-react";
 
 const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
@@ -28,6 +29,7 @@ function ShopContent() {
   const [priceInitialized, setPriceInitialized] = useState(false);
   const [sort, setSort] = useState("default");
   const [rating, setRating] = useState<number | undefined>(undefined);
+  const [collection, setCollection] = useState<string | null>(null);
   
   const [dbCategories, setDbCategories] = useState<any[]>([]);
 
@@ -78,7 +80,23 @@ function ShopContent() {
           sortBy: sort !== "default" ? sort : undefined,
           rating: rating || undefined,
         };
-        const data = await productAPI.getAll(params);
+        let data = await productAPI.getAll(params);
+
+        // Apply frontend collection filtering/sorting
+        if (collection) {
+          if (collection === "editors-picks") {
+            data = data.slice().sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0));
+          } else if (collection === "favorites") {
+            data = data.slice().sort((a: any, b: any) => (b.sold || 0) - (a.sold || 0));
+          } else if (collection === "premium") {
+            data = data.slice().sort((a: any, b: any) => (b.price || 0) - (a.price || 0));
+          } else if (collection === "gifts") {
+            data = data.filter((p: any) => (p.rating || 0) >= 4.0);
+          } else if (collection === "seasonal") {
+            data = data.filter((p: any) => (p.rating || 0) >= 4.0).sort((a: any, b: any) => (b.sold || 0) - (a.sold || 0));
+          }
+        }
+
         setProducts(data);
         setError(null);
       } catch (err) {
@@ -98,14 +116,19 @@ function ShopContent() {
     inStock,
     sort,
     rating,
+    collection,
     t,
   ]);
 
   useEffect(() => {
     const query = searchParams.get("search") ?? "";
     const category = searchParams.get("category");
+    const sortParam = searchParams.get("sort") ?? "default";
+    const collectionParam = searchParams.get("collection");
     setSearch(query);
     setCategories(category ? [category] : []);
+    setSort(sortParam);
+    setCollection(collectionParam);
   }, [searchParams]);
 
   const priceBounds = useMemo<[number, number]>(() => {
@@ -141,7 +164,8 @@ function ShopContent() {
     inStock ||
     sort !== "default" ||
     rating !== undefined ||
-    priceInitialized;
+    priceInitialized ||
+    !!collection;
 
   const clearFilters = () => {
     setSearch("");
@@ -151,23 +175,18 @@ function ShopContent() {
     setRating(undefined);
     setPriceRange([0, 2000000]);
     setPriceInitialized(false);
+    setCollection(null);
   };
 
   return (
     <div className="w-full">
-      <div className="bg-gradient-to-r from-brand-primary/95 via-brand-primary-light/35 to-brand-surface py-16">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">
-            {t("label.shop")}
-          </p>
-          <h1 className="text-4xl font-bold text-brand-text">
-            {t("nav.shop")}
-          </h1>
-          <p className="text-sm text-brand-muted">
-            {t("label.home")} / {t("label.shop")}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        variant="catalog"
+        title={t("nav.shop")}
+        eyebrow={t("label.shop")}
+        breadcrumbs={[{ label: t("label.shop") }]}
+        centered={false}
+      />
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-16 lg:grid-cols-4">
         <aside className="h-fit space-y-6 rounded-2xl border border-brand-primary-light bg-brand-surface p-6 shadow-sm lg:sticky lg:top-10">
@@ -354,11 +373,13 @@ function ShopContent() {
                     onChange={(e) => setSort(e.target.value)}
                     className="rounded-full border border-brand-primary-light px-4 py-2 text-sm outline-none focus:border-brand-primary font-medium bg-white text-brand-text">
                     <option value="default">{t("label.sortDefault")}</option>
-                    <option value="newest">Mới nhất</option>
+                    <option value="newest">{t("nav.newArrivals")}</option>
                     <option value="price-asc">{t("label.sortPriceAsc")}</option>
                     <option value="price-desc">{t("label.sortPriceDesc")}</option>
-                    <option value="best-selling">Bán chạy nhất</option>
-                    <option value="top-rated">Đánh giá tốt nhất</option>
+                    <option value="best-selling">{t("nav.bestSellers")}</option>
+                    <option value="top-rated">{t("nav.topRated")}</option>
+                    <option value="trending">{t("nav.trending")}</option>
+                    <option value="limited-edition">{t("nav.limitedEdition")}</option>
                   </select>
                 </div>
               </div>

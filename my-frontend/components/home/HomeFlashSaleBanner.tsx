@@ -14,7 +14,7 @@ interface HomeFlashSaleBannerProps {
 
 export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleBannerProps) {
   const router = useRouter();
-  const { t } = usePreferences();
+  const { t, translateDbText } = usePreferences();
 
   // State-based image fallback
   const [imageSrc, setImageSrc] = useState(deal.bannerUrl || "/img/sale.jpg");
@@ -83,9 +83,9 @@ export default function HomeFlashSaleBanner({ deal, serverTime }: HomeFlashSaleB
   };
 
   const ctaUrl = getSanitizedLink(deal.bannerButtonUrl);
-  const ctaText = deal.bannerButtonText || t("deals.flashSale.cta");
-  const title = deal.bannerTitle || deal.name;
-  const subtitle = deal.bannerSubtitle || deal.description || t("deals.flashSale.subtitle");
+  const ctaText = translateDbText(deal.bannerButtonText) || t("deals.flashSale.cta");
+  const title = translateDbText(deal.bannerTitle || deal.name);
+  const subtitle = translateDbText(deal.bannerSubtitle || deal.description) || t("deals.flashSale.subtitle");
 
   const handleCtaClick = () => {
     if (ctaUrl.startsWith("http://") || ctaUrl.startsWith("https://")) {

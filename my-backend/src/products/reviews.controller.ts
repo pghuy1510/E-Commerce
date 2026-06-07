@@ -19,7 +19,7 @@ export class ReviewsController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: {
       productId: number;
-      orderId: number;
+      orderId?: number;
       rating: number;
       comment: string;
       images?: string[];

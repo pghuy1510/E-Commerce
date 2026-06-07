@@ -6,10 +6,16 @@ import {
   ShoppingCart,
   ShoppingBag,
   ChevronDown,
+  ChevronRight,
   Phone,
   User,
   Package,
   Languages,
+  Sparkles,
+  Flame,
+  TrendingUp,
+  Star,
+  Gem,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -17,14 +23,14 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { FaFacebook } from "react-icons/fa";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { cartAPI, wishlistAPI, userProfileAPI, categoryAPI, type Category } from "@/lib/api";
+import { cartAPI, wishlistAPI, userProfileAPI, categoryAPI, productAPI, type Category } from "@/lib/api";
 import { getBrowserToken, setAuthToken, logoutExpiredSession } from "@/lib/auth-token";
 import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
 import { isTokenExpired } from "@/lib/jwt";
 
 export default function Header() {
-  const { language, setLanguage, t, translateCategory } =
+  const { language, setLanguage, t, translateCategory, formatPrice } =
     usePreferences();
 
   const [localUsername, setLocalUsername] = useState<string | null>(null);
@@ -37,6 +43,171 @@ export default function Header() {
   const [openLang, setOpenLang] = useState(false);
 
   const langRef = useRef<HTMLDivElement>(null);
+
+  const [hoveredFeatured, setHoveredFeatured] = useState<string | null>(null);
+  const [activePreviewTab, setActivePreviewTab] = useState<string>("newest");
+  const [isFading, setIsFading] = useState(false);
+
+  // Key-based cache for preview products (with timestamp for 5 minutes TTL)
+  const [previewProducts, setPreviewProducts] = useState<Record<string, { products: any[]; fetchedAt: number }>>({});
+  const [previewLoading, setPreviewLoading] = useState<Record<string, boolean>>({});
+
+  const activeTabRef = useRef<string>("newest");
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+
+
+
+  const handleFeaturedHover = useCallback(async (type: string) => {
+    setHoveredFeatured(type);
+    activeTabRef.current = type;
+
+    const cached = previewProducts[type];
+    const now = Date.now();
+
+    // If cache is valid (fetched less than 5 minutes ago), use it
+    if (cached && now - cached.fetchedAt < CACHE_TTL) {
+      return;
+    }
+
+    // If already loading this category, don't initiate duplicate request
+    if (previewLoading[type]) {
+      return;
+    }
+
+    setPreviewLoading(prev => ({ ...prev, [type]: true }));
+    try {
+      // Call API with limit = 3
+      const data = await productAPI.getAll({ sortBy: type, limit: 3 } as any);
+      
+      // Prevent race conditions: only save cache if user is still hovering this tab
+      if (activeTabRef.current === type) {
+        setPreviewProducts(prev => ({
+          ...prev,
+          [type]: {
+            products: data.slice(0, 3),
+            fetchedAt: Date.now(),
+          },
+        }));
+      }
+    } catch (err) {
+      console.error(`Error fetching preview for ${type}:`, err);
+      if (activeTabRef.current === type) {
+        setPreviewProducts(prev => ({
+          ...prev,
+          [type]: {
+            products: [],
+            fetchedAt: Date.now(), // Cache empty list to avoid spamming failed calls
+          },
+        }));
+      }
+    } finally {
+      if (activeTabRef.current === type) {
+        setPreviewLoading(prev => ({ ...prev, [type]: false }));
+      } else {
+        setPreviewLoading(prev => ({ ...prev, [type]: false }));
+      }
+    }
+  }, [previewProducts, previewLoading]);
+
+  const handleMenuHover = useCallback(() => {
+    // Lazy-load newest products when the main shop products menu item is hovered
+    const cached = previewProducts.newest;
+    const now = Date.now();
+    if (!cached || now - cached.fetchedAt >= CACHE_TTL) {
+      void handleFeaturedHover("newest");
+    }
+  }, [previewProducts, handleFeaturedHover]);
+
+
+
+  // Tab change with smooth fade transition
+  useEffect(() => {
+    const targetTab = hoveredFeatured || "newest";
+    if (targetTab === activePreviewTab) return;
+
+    setIsFading(true);
+    const timer = setTimeout(() => {
+      setActivePreviewTab(targetTab);
+      setIsFading(false);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [hoveredFeatured, activePreviewTab]);
+
+  const tabMetadata = {
+    newest: {
+      icon: Sparkles,
+      iconColor: "text-emerald-500 bg-emerald-50 border-emerald-100",
+      title: language === "vi" ? "Hàng Mới Về" : "New Arrivals",
+      desc: language === "vi" ? "Cập nhật những xu hướng thời trang mới nhất vừa ra mắt." : "Discover the latest products recently added to our collection.",
+      subtitle: language === "vi" ? "Sản phẩm mới cập nhật gần đây" : "Latest products added recently",
+      badge: language === "vi" ? "Mới" : "New",
+      badgeColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      bannerImage: "/img/banner-left.jpg",
+      bannerTitle: language === "vi" ? "Bộ Sưu Tập Mới" : "New Arrivals Collection",
+      bannerDesc: language === "vi" ? "Nâng tầm phong cách với các thiết kế độc đáo vừa lên kệ" : "Elevate your style with our latest unique arrivals",
+      fallback: language === "vi" ? "Chưa có sản phẩm mới nào." : "No new products available yet.",
+      ctaText: language === "vi" ? "→ SHOP NEW ARRIVALS" : "→ SHOP NEW ARRIVALS",
+    },
+    "best-selling": {
+      icon: Flame,
+      iconColor: "text-red-500 bg-red-50 border-red-100",
+      title: language === "vi" ? "Bán Chạy Nhất" : "Best Sellers",
+      desc: language === "vi" ? "Khám phá các sản phẩm được yêu thích nhất bởi khách hàng." : "Explore the products customers love the most.",
+      subtitle: language === "vi" ? "Khách hàng mua nhiều nhất" : "Most purchased by customers",
+      badge: "Hot",
+      badgeColor: "bg-red-50 text-red-600 border-red-100",
+      bannerImage: "/img/banner-right.jpg",
+      bannerTitle: language === "vi" ? "Bán Chạy Nhất" : "Best Sellers Selection",
+      bannerDesc: language === "vi" ? "Những sản phẩm chất lượng cao được săn đón nhiều nhất" : "The most sought-after products loved by everyone",
+      fallback: language === "vi" ? "Chưa có sản phẩm bán chạy." : "No best selling products available yet.",
+      ctaText: language === "vi" ? "→ VIEW BEST SELLERS" : "→ VIEW BEST SELLERS",
+    },
+    trending: {
+      icon: TrendingUp,
+      iconColor: "text-purple-500 bg-purple-50 border-purple-100",
+      title: language === "vi" ? "Đang Thịnh Hành" : "Trending Now",
+      desc: language === "vi" ? "Các mặt hàng đang thu hút nhiều sự quan tâm nhất lúc này." : "Products gaining the most attention right now.",
+      subtitle: language === "vi" ? "Xu hướng cực hot tuần này" : "Trending this week",
+      badge: language === "vi" ? "Thịnh Hành" : "Trending",
+      badgeColor: "bg-purple-50 text-purple-600 border-purple-100",
+      bannerImage: "/img/sale.jpg",
+      bannerTitle: language === "vi" ? "Cực Hot Tuần Này" : "Trending This Week",
+      bannerDesc: language === "vi" ? "Đón đầu xu hướng thời trang hiện đại cùng E-Commerce" : "Lead the trend with modern lifestyle essentials",
+      fallback: language === "vi" ? "Chưa có sản phẩm thịnh hành." : "No trending products available yet.",
+      ctaText: language === "vi" ? "→ EXPLORE TRENDS" : "→ EXPLORE TRENDS",
+    },
+    "top-rated": {
+      icon: Star,
+      iconColor: "text-amber-500 bg-amber-50 border-amber-100",
+      title: language === "vi" ? "Đánh Giá Cao" : "Top Rated",
+      desc: language === "vi" ? "Các sản phẩm chất lượng năm sao được bình chọn bởi cộng đồng." : "Highest rated products based on customer reviews.",
+      subtitle: language === "vi" ? "Chất lượng năm sao chọn lọc" : "Highest customer satisfaction",
+      badge: "4.8+",
+      badgeColor: "bg-amber-50 text-amber-600 border-amber-100",
+      bannerImage: "/img/book2.jpg",
+      bannerTitle: language === "vi" ? "Được Đánh Giá Cao" : "Top Rated Choices",
+      bannerDesc: language === "vi" ? "Sự lựa chọn hoàn hảo dựa trên trải nghiệm thực tế" : "The perfect choice backed by real user reviews",
+      fallback: language === "vi" ? "Chưa có đánh giá nào." : "No rated products available yet.",
+      ctaText: language === "vi" ? "→ SEE TOP RATED" : "→ SEE TOP RATED",
+    },
+    "limited-edition": {
+      icon: Gem,
+      iconColor: "text-rose-500 bg-rose-50 border-rose-100",
+      title: language === "vi" ? "Phiên Bản Giới Hạn" : "Limited Edition",
+      desc: language === "vi" ? "Bộ sưu tập độc quyền với số lượng phát hành hạn chế." : "Rare products with limited availability.",
+      subtitle: language === "vi" ? "Hàng hiệu khan hiếm sắp hết" : "Only few left in stock",
+      badge: language === "vi" ? "Giới Hạn" : "Limited",
+      badgeColor: "bg-rose-50 text-rose-600 border-rose-100",
+      bannerImage: "/img/mobile2.png",
+      bannerTitle: language === "vi" ? "Săn Ngay Kẻo Hết" : "Limited Edition Stock",
+      bannerDesc: language === "vi" ? "Sở hữu ngay các sản phẩm độc quyền số lượng có hạn" : "Secure exclusive items with strictly limited stock",
+      fallback: language === "vi" ? "Hiện chưa có phiên bản giới hạn nào còn hàng." : "No limited edition products available yet.",
+      ctaText: language === "vi" ? "→ SHOP BEFORE IT'S GONE" : "→ SHOP BEFORE IT'S GONE",
+    },
+  };
+
+
 
   // Fetch categories once on mount
   useEffect(() => {
@@ -450,7 +621,7 @@ export default function Header() {
 
 
           {/* SHOP PRODUCTS */}
-          <div className="group relative">
+          <div className="group relative" onMouseEnter={handleMenuHover}>
             <div className="flex cursor-pointer items-center gap-1 transition hover:text-brand-primary">
               {t("nav.shopProducts")}
 
@@ -458,108 +629,197 @@ export default function Header() {
             </div>
 
             {/* MEGA MENU */}
-            <div className="invisible absolute left-1/2 top-10 z-50 w-[720px] -translate-x-1/2 rounded-2xl border border-gray-100 bg-white opacity-0 shadow-2xl transition-all duration-300 group-hover:visible group-hover:opacity-100">
-              <div className="grid grid-cols-3 gap-8 p-8">
-                {/* CATEGORIES */}
-                <div>
-                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-900">
-                    {t("nav.categories")}
-                  </h3>
+            <div className="invisible absolute left-1/2 top-10 z-50 w-[480px] lg:w-[90vw] lg:max-w-[1100px] -translate-x-1/2 rounded-2xl border border-gray-100 bg-white opacity-0 shadow-2xl transition-all duration-300 group-hover:visible group-hover:opacity-100">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+                
+                {/* LEFT PANEL: 4 columns in lg */}
+                <div className="col-span-12 lg:col-span-4">
+                  {/* FEATURED COLUMN (Cards) */}
+                  <div className="hidden lg:block">
+                    <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+                      {language === "vi" ? "Bộ Sưu Tập Nổi Bật" : "Featured Collections"}
+                    </h3>
 
-                  <div className="space-y-3">
-                    {dbCategories.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        href={`/shop?category=${cat.name}`}
-                        className="block text-sm text-gray-600 transition hover:text-brand-primary">
-                        {translateCategory(cat.name)}
-                      </Link>
-                    ))}
+                    <div className="space-y-3">
+                      {Object.entries(tabMetadata).map(([key, item]) => {
+                        const isActive = activePreviewTab === key;
+                        const IconComponent = item.icon;
+                        return (
+                          <Link
+                            key={key}
+                            href={`/shop?sort=${key}`}
+                            onMouseEnter={() => handleFeaturedHover(key)}
+                            className={`flex items-center gap-3.5 p-3.5 rounded-2xl border transition-all duration-300 ${
+                              isActive
+                                ? "bg-white border-brand-primary/30 shadow-md translate-x-1"
+                                : "bg-gray-50/50 border-transparent hover:bg-white hover:border-gray-200 hover:shadow-md hover:translate-x-1"
+                            }`}
+                          >
+                            <div className={`p-2.5 rounded-xl border transition-colors shrink-0 ${
+                              isActive ? item.iconColor : 'text-gray-500 bg-gray-100 border-gray-200'
+                            }`}>
+                              <IconComponent size={18} className="shrink-0" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className={`text-sm font-bold transition-colors truncate ${
+                                  isActive ? 'text-brand-primary' : 'text-gray-800'
+                                }`}>
+                                  {item.title}
+                                </span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border transition-colors shrink-0 ${item.badgeColor}`}>
+                                  {item.badge}
+                                </span>
+                              </div>
+                              <span className="block text-[11px] text-gray-500 truncate mt-0.5">
+                                {item.subtitle}
+                              </span>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
-                {/* FEATURED */}
-                <div>
-                  <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-900">
-                    {t("nav.featured")}
-                  </h3>
+                {/* PREVIEW PANEL - Hidden on mobile/tablet, shown on desktop lg - 8 columns */}
+                <div className="hidden lg:block lg:col-span-8 lg:w-full">
+                  {(() => {
+                    const activeMeta = tabMetadata[activePreviewTab as keyof typeof tabMetadata] || tabMetadata.newest;
+                    const cacheEntry = previewProducts[activePreviewTab];
+                    const products = cacheEntry?.products || [];
+                    const isLoading = previewLoading[activePreviewTab];
+                    const hasProducts = products.length > 0;
+                    const IconComponent = activeMeta.icon;
 
-                  <div className="space-y-3">
-                    {[
-                      {
-                        name: "New Arrivals",
-                        href: "/new-arrivals",
-                      },
-                      {
-                        name: "Best Sellers",
-                        href: "/best-sellers",
-                      },
-                      {
-                        name: "Trending",
-                        href: "/shop",
-                      },
-                      {
-                        name: "Top Rated",
-                        href: "/shop",
-                      },
-                      {
-                        name: "Limited Edition",
-                        href: "/shop",
-                      },
-                    ].map((item, index) => (
-                      <Link
-                        key={index}
-                        href={item.href}
-                        className="block text-sm text-gray-600 transition hover:text-brand-primary">
-                        {translateCategory(item.name)}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                    return (
+                      <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-gray-50/50 p-6 min-h-[460px] w-full">
+                        <div className={`transition-all duration-150 ${isFading ? 'opacity-0 scale-[0.99]' : 'opacity-100 scale-100'}`}>
+                          {/* Hero Banner (170px height) */}
+                          <div className="relative h-[170px] w-full overflow-hidden rounded-3xl bg-neutral-900 shadow-inner flex items-center px-8">
+                            {/* Background image on the right */}
+                            <div className="absolute inset-0 z-0">
+                              {activeMeta.bannerImage && (
+                                <img
+                                  src={activeMeta.bannerImage}
+                                  alt={activeMeta.bannerTitle}
+                                  className="absolute right-0 top-0 h-full w-2/3 object-cover object-center"
+                                />
+                              )}
+                              {/* Premium gradient overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-900/90 to-transparent" />
+                            </div>
 
-                {/* PROMO */}
-                <div className="flex flex-col justify-between rounded-2xl border border-brand-primary-light bg-brand-primary-light/20 p-5">
-                  <div>
-                    <p className="mb-2 text-xs uppercase tracking-widest text-brand-primary">
-                      {t("nav.specialOffer")}
-                    </p>
+                            {/* Text content */}
+                            <div className="relative z-10 max-w-[55%] text-left">
+                              <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-lg border ${activeMeta.iconColor} shrink-0`}>
+                                  <IconComponent size={12} />
+                                </div>
+                                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#d8b48f]">
+                                  {activeMeta.title}
+                                </span>
+                              </div>
+                              <h4 className="mt-2 text-lg lg:text-xl font-bold text-white leading-tight">
+                                {activeMeta.bannerTitle}
+                              </h4>
+                              <p className="mt-1 text-xs text-neutral-300 leading-relaxed line-clamp-2">
+                                {activeMeta.desc}
+                              </p>
+                            </div>
+                          </div>
 
-                    <h2 className="text-xl font-bold leading-snug text-gray-900">
-                      {t("nav.summerSale")}
-                    </h2>
+                          {/* Product Preview Grid (3 horizontal cards) */}
+                          <div className="mt-5">
+                            {isLoading ? (
+                              // Loading Skeletons
+                              <div className="grid grid-cols-3 gap-4 animate-pulse">
+                                {[1, 2, 3].map((i) => (
+                                  <div key={i} className="flex flex-col items-center p-3 rounded-2xl bg-white border border-gray-100">
+                                    <div className="h-20 w-20 rounded-xl bg-gray-200" />
+                                    <div className="mt-3 h-4 w-3/4 rounded bg-gray-200" />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : hasProducts ? (
+                              <div className="grid grid-cols-3 gap-4">
+                                {products.map((prod) => (
+                                  <Link
+                                    key={prod.id}
+                                    href={`/product/${prod.id}`}
+                                    className="flex flex-col items-center p-3 rounded-2xl hover:bg-gray-50 hover:-translate-y-1 border border-transparent hover:border-gray-200/40 transition-all duration-300 group/prod text-center"
+                                  >
+                                    {/* Product Image (80x80) */}
+                                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gray-100 border border-gray-200/50 flex items-center justify-center relative">
+                                      {prod.image ? (
+                                        <img
+                                          src={prod.image}
+                                          alt={prod.name}
+                                          className="h-full w-full object-cover transition duration-300 group-hover/prod:scale-105"
+                                        />
+                                      ) : (
+                                        <ShoppingBag size={24} className="text-gray-400" />
+                                      )}
+                                    </div>
 
-                    <p className="mt-2 text-sm text-gray-600">
-                      {t("nav.upTo50Selected")}
-                    </p>
-                  </div>
+                                    {/* Product Name */}
+                                    <h4 className="mt-3 text-sm font-medium text-gray-800 group-hover/prod:text-brand-primary transition duration-150 line-clamp-2 h-10 flex items-center justify-center">
+                                      {prod.name}
+                                    </h4>
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : (
+                              // Empty Fallback
+                              <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <Search size={32} className="text-gray-300 mb-3" />
+                                <p className="text-xs font-semibold text-gray-400 leading-relaxed max-w-[200px]">
+                                  {activeMeta.fallback}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                  <Link
-                    href="/shop"
-                    className="mt-5 inline-flex items-center justify-center rounded-full bg-brand-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-800">
-                    {t("action.shopNowPlain")}
-                  </Link>
+                        {/* Full-width CTA Button (56px height, pill shape) */}
+                        <Link
+                          href={`/shop?sort=${activePreviewTab}`}
+                          className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-primary text-sm font-bold text-white shadow-lg shadow-brand-primary/10 transition-all duration-300 hover:bg-[#8e643a] hover:shadow-xl hover:shadow-brand-primary/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-98"
+                        >
+                          <span>{activeMeta.ctaText}</span>
+                        </Link>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* NEW ARRIVALS */}
-          <Link
-            href="/new-arrivals"
-            className="group relative transition hover:text-brand-primary">
-            {t("nav.newArrivals")}
+          {/* CATEGORIES */}
+          <div className="group relative">
+            <div className="flex cursor-pointer items-center gap-1 transition hover:text-brand-primary">
+              {language === "vi" ? "Danh Mục" : "Categories"}
+              <ChevronDown size={16} />
+            </div>
 
-            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
-          </Link>
+            {/* Dropdown Menu */}
+            <div className="invisible absolute left-0 top-6 z-50 w-48 rounded-2xl border border-gray-100 bg-white p-3 opacity-0 shadow-xl transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:translate-y-2">
+              <div className="space-y-1">
+                {dbCategories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={`/shop?category=${cat.name}`}
+                    className="block rounded-xl px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-primary transition"
+                  >
+                    {translateCategory(cat.name)}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
 
-          {/* BEST SELLERS */}
-          <Link
-            href="/best-sellers"
-            className="group relative transition hover:text-brand-primary">
-            {t("nav.bestSellers")}
 
-            <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-brand-primary transition-all duration-300 group-hover:w-full"></span>
-          </Link>
 
           {/* CONTACT */}
           <Link

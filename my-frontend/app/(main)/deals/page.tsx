@@ -20,7 +20,7 @@ import { dealAPI, cartAPI, emitCartUpdated, type Deal, type DealProduct, type Co
 
 export default function DealsPage() {
   const router = useRouter();
-  const { t, formatPrice } = usePreferences();
+  const { t, formatPrice, language, translateDbText } = usePreferences();
   
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
   const [dealProducts, setDealProducts] = useState<DealProduct[]>([]);
@@ -46,7 +46,7 @@ export default function DealsPage() {
           setDealProducts(productsRes ?? []);
         }
       } catch (err) {
-        console.error("Lỗi khi tải thông tin Deal:", err);
+        console.error(language === "vi" ? "Lỗi khi tải thông tin Deal:" : "Error loading Deal details:", err);
       } finally {
         setLoading(false);
       }
@@ -58,7 +58,7 @@ export default function DealsPage() {
   const handleSaveCoupon = (code: string) => {
     localStorage.setItem("selectedCouponCode", code);
     setCopiedCoupon(code);
-    setToastMsg(`Đã lưu mã giảm giá ${code}! Đang chuyển hướng đến trang thanh toán...`);
+    setToastMsg(language === "vi" ? `Đã lưu mã giảm giá ${code}! Đang chuyển hướng đến trang thanh toán...` : `Saved coupon code ${code}! Redirecting to checkout...`);
     
     setTimeout(() => {
       setCopiedCoupon(null);
@@ -71,10 +71,10 @@ export default function DealsPage() {
   const handleGrabDeal = async (productId: number) => {
     try {
       setAddingProduct(productId);
-      setToastMsg("Đang thêm sản phẩm giảm giá vào giỏ hàng...");
+      setToastMsg(language === "vi" ? "Đang thêm sản phẩm giảm giá vào giỏ hàng..." : "Adding discounted product to cart...");
       await cartAPI.add(productId, 1);
       emitCartUpdated();
-      setToastMsg("Đã thêm vào giỏ hàng thành công! Đang chuyển hướng đến giỏ hàng...");
+      setToastMsg(language === "vi" ? "Đã thêm vào giỏ hàng thành công! Đang chuyển hướng đến giỏ hàng..." : "Added to cart successfully! Redirecting to cart...");
       
       setTimeout(() => {
         setToastMsg(null);
@@ -83,7 +83,7 @@ export default function DealsPage() {
       }, 1000);
     } catch (err: any) {
       console.error(err);
-      setToastMsg(err?.message || "Sản phẩm đã có trong giỏ hàng hoặc hết hàng.");
+      setToastMsg(err?.message || (language === "vi" ? "Sản phẩm đã có trong giỏ hàng hoặc hết hàng." : "Product already in cart or out of stock."));
       setTimeout(() => {
         setToastMsg(null);
         setAddingProduct(null);
@@ -95,7 +95,9 @@ export default function DealsPage() {
     return (
       <div className="w-full min-h-screen bg-brand-bg flex flex-col items-center justify-center py-20">
         <div className="w-12 h-12 border-4 border-sale border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-brand-muted mt-4 font-medium">Đang tải sự kiện Flash Sale...</p>
+        <p className="text-brand-muted mt-4 font-medium">
+          {language === "vi" ? "Đang tải sự kiện Flash Sale..." : "Loading Flash Sale event..."}
+        </p>
       </div>
     );
   }
@@ -106,26 +108,30 @@ export default function DealsPage() {
         <div className="bg-sale/10 p-4 rounded-full mb-4">
           <CalendarClock className="w-12 h-12 text-sale" />
         </div>
-        <h2 className="text-2xl font-bold text-brand-text">Không có sự kiện Flash Sale nào đang diễn ra</h2>
+        <h2 className="text-2xl font-bold text-brand-text">
+          {language === "vi" ? "Không có sự kiện Flash Sale nào đang diễn ra" : "No active Flash Sale events"}
+        </h2>
         <p className="text-brand-muted mt-2 max-w-md">
-          Chương trình ưu đãi Flash Sale hiện đã kết thúc. Vui lòng quay lại sau để đón chờ các đợt giảm giá siêu khủng tiếp theo nhé!
+          {language === "vi" 
+            ? "Chương trình ưu đãi Flash Sale hiện đã kết thúc. Vui lòng quay lại sau để đón chờ các đợt giảm giá siêu khủng tiếp theo nhé!" 
+            : "The Flash Sale promotional event has ended. Please check back later to catch our next massive discount offers!"}
         </p>
         <button
           onClick={() => router.push("/shop")}
           className="mt-6 px-6 py-3 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-full font-semibold transition shadow-sm"
         >
-          Khám phá cửa hàng
+          {language === "vi" ? "Khám phá cửa hàng" : "Explore shop"}
         </button>
       </div>
     );
   }
 
   const dealCategories = [
-    "Hot Deals",
-    "Best Seller",
-    "New Arrival",
-    "Limited Offer",
-    "Weekend Sale",
+    t("deals.categories.hotDeals"),
+    t("deals.categories.bestSeller"),
+    t("deals.categories.newArrival"),
+    t("deals.categories.limitedOffer"),
+    t("deals.categories.weekendSale"),
   ];
 
   return (
@@ -145,14 +151,14 @@ export default function DealsPage() {
           <div className="flex items-center justify-center gap-3 text-sale mb-3">
             <Tag className="w-6 h-6 text-sale animate-pulse" />
             <span className="text-sm uppercase tracking-widest font-black">
-              SỰ KIỆN KHUYẾN MÃI NỔI BẬT
+              {language === "vi" ? "SỰ KIỆN KHUYẾN MÃI NỔI BẬT" : "FEATURED PROMOTION EVENT"}
             </span>
           </div>
           <h1 className="text-4xl font-extrabold text-brand-text tracking-tight md:text-5xl">
-            {activeDeal.name}
+            {translateDbText(activeDeal.name)}
           </h1>
           <p className="text-brand-muted font-medium mt-3 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-            {activeDeal.description || "Hàng loạt sản phẩm đang giảm giá sập sàn, nhanh tay số lượng có hạn!"}
+            {translateDbText(activeDeal.description) || (language === "vi" ? "Hàng loạt sản phẩm đang giảm giá sập sàn, nhanh tay số lượng có hạn!" : "Massive discounts on selected products, get them while stocks last!")}
           </p>
         </div>
       </div>
@@ -174,7 +180,7 @@ export default function DealsPage() {
           <div className="flex items-center gap-4 shrink-0 bg-sale/10 px-5 py-3 rounded-2xl border border-sale/20">
             <div className="text-xs font-bold text-sale flex items-center gap-1.5 uppercase">
               <BadgePercent className="w-4 h-4 text-sale animate-spin-slow" />
-              Kết thúc sau:
+              {language === "vi" ? "Kết thúc sau:" : "Ends in:"}
             </div>
             <DealCountdown target={activeDeal.expiresAt} />
           </div>
@@ -185,7 +191,9 @@ export default function DealsPage() {
           <section className="space-y-6">
             <div className="flex items-center gap-2">
               <Ticket className="w-6 h-6 text-sale" />
-              <h2 className="text-2xl font-bold text-brand-text">Mã giảm giá đơn hàng nổi bật</h2>
+              <h2 className="text-2xl font-bold text-brand-text">
+                {language === "vi" ? "Mã giảm giá đơn hàng nổi bật" : "Featured Order Coupons"}
+              </h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -194,8 +202,8 @@ export default function DealsPage() {
                   ? `${coupon.discountValue}%`
                   : formatPrice(coupon.discountValue);
                 const minOrderText = coupon.minOrder
-                  ? `Đơn tối thiểu ${formatPrice(coupon.minOrder)}`
-                  : "Không giới hạn đơn tối thiểu";
+                  ? (language === "vi" ? `Đơn tối thiểu ${formatPrice(coupon.minOrder)}` : `Min order ${formatPrice(coupon.minOrder)}`)
+                  : (language === "vi" ? "Không giới hạn đơn tối thiểu" : "No minimum spend limit");
                 const isSaved = copiedCoupon === coupon.code;
                 const isShipping = coupon.type === "shipping";
 
@@ -216,13 +224,15 @@ export default function DealsPage() {
                           {coupon.code}
                         </span>
                         <span className="text-[10px] font-bold text-sale uppercase tracking-wider">
-                          {isShipping ? "Freeship" : "Giảm giá"}
+                          {isShipping ? (language === "vi" ? "Freeship" : "Free Ship") : (language === "vi" ? "Giảm giá" : "Discount")}
                         </span>
                       </div>
                       
                       <div className="space-y-1">
                         <h3 className="text-3xl font-extrabold text-brand-text">
-                          {isShipping ? "Freeship" : `Giảm ${discountText}`}
+                          {isShipping 
+                            ? (language === "vi" ? "Freeship" : "Free Shipping") 
+                            : (language === "vi" ? `Giảm ${discountText}` : `${discountText} Off`)}
                         </h3>
                         <p className="text-xs text-brand-muted font-medium">{minOrderText}</p>
                       </div>
@@ -231,8 +241,8 @@ export default function DealsPage() {
                     <div className="mt-6 pt-4 border-t border-dashed border-brand-border flex items-center justify-between pl-2">
                       <span className="text-[11px] font-semibold text-brand-muted">
                         {coupon.expiresAt
-                          ? `Hạn: ${new Date(coupon.expiresAt).toLocaleDateString("vi-VN")}`
-                          : "Không giới hạn HSD"}
+                          ? `${language === "vi" ? "Hạn:" : "Expires:"} ${new Date(coupon.expiresAt).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US")}`
+                          : (language === "vi" ? "Không giới hạn HSD" : "No expiration")}
                       </span>
                       <button
                         onClick={() => handleSaveCoupon(coupon.code)}
@@ -245,12 +255,12 @@ export default function DealsPage() {
                         {isSaved ? (
                           <>
                             <Check className="w-3.5 h-3.5" />
-                            Đã Lưu
+                            {language === "vi" ? "Đã Lưu" : "Saved"}
                           </>
                         ) : (
                           <>
                             <Copy className="w-3.5 h-3.5" />
-                            Lưu Mã
+                            {language === "vi" ? "Lưu Mã" : "Save Code"}
                           </>
                         )}
                       </button>
@@ -266,12 +276,14 @@ export default function DealsPage() {
         <section className="space-y-6">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-sale" />
-            <h2 className="text-2xl font-bold text-brand-text">Danh sách sản phẩm Flash Sale</h2>
+            <h2 className="text-2xl font-bold text-brand-text">
+              {language === "vi" ? "Danh sách sản phẩm Flash Sale" : "Flash Sale Product List"}
+            </h2>
           </div>
 
           {dealProducts.length === 0 ? (
             <div className="bg-brand-surface border border-brand-border rounded-3xl p-12 text-center text-brand-muted font-medium shadow-sm">
-              Không có sản phẩm nào thuộc chương trình Flash Sale này.
+              {language === "vi" ? "Không có sản phẩm nào thuộc chương trình Flash Sale này." : "No products belong to this Flash Sale event."}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -303,7 +315,7 @@ export default function DealsPage() {
                         className="w-full h-56 object-cover"
                       />
                       <span className="absolute top-4 left-4 bg-sale text-white text-xs font-black px-3.5 py-1.5 rounded-2xl shadow-md">
-                        -{discountPercent}% OFF
+                        -{discountPercent}% {language === "vi" ? "GIẢM" : "OFF"}
                       </span>
                     </div>
 
@@ -324,7 +336,7 @@ export default function DealsPage() {
                         {/* Progress bar */}
                         <div className="space-y-1.5 pt-2">
                           <div className="flex items-center justify-between text-xs font-semibold text-brand-muted">
-                            <span>Đã bán {dp.soldCount}/{dp.dealStock}</span>
+                            <span>{language === "vi" ? "Đã bán" : "Sold"} {dp.soldCount}/{dp.dealStock}</span>
                             <span>{soldPercent}%</span>
                           </div>
                           <div className="w-full h-2 rounded-full bg-brand-primary-light/40 overflow-hidden">
@@ -346,11 +358,11 @@ export default function DealsPage() {
                         }`}
                       >
                         {isOutOfStock ? (
-                          "HẾT LƯỢT GIẢM GIÁ"
+                          (language === "vi" ? "HẾT LƯỢT GIẢM GIÁ" : "OUT OF FLASH SALE SLOTS")
                         ) : (
                           <>
                             <ShoppingCart className="w-4 h-4" />
-                            MUA NGAY DEAL
+                            {language === "vi" ? "MUA NGAY DEAL" : "BUY DEAL NOW"}
                           </>
                         )}
                       </button>

@@ -24,6 +24,7 @@ export class ProductsService {
     rating?: number;
     inStock?: boolean;
     sortBy?: string;
+    limit?: number;
   }) {
     const qb = this.productRepo
       .createQueryBuilder('product')
@@ -73,17 +74,30 @@ export class ProductsService {
     }
 
     // Sort order:
-    // newest, price-asc, price-desc, best-selling, top-rated
+    // newest, price-asc, price-desc, best-selling, top-rated, trending, limited-edition
     if (query?.sortBy === 'price-asc') {
       qb.orderBy('product.price', 'ASC');
     } else if (query?.sortBy === 'price-desc') {
       qb.orderBy('product.price', 'DESC');
     } else if (query?.sortBy === 'best-selling') {
-      qb.orderBy('sold', 'DESC');
+      qb.orderBy('"sold"', 'DESC');
     } else if (query?.sortBy === 'top-rated') {
-      qb.orderBy('avgRating', 'DESC');
+      qb.orderBy('"avgRating"', 'DESC');
+    } else if (query?.sortBy === 'trending') {
+      qb.orderBy('"sold"', 'DESC')
+        .addOrderBy('"avgRating"', 'DESC')
+        .addOrderBy('product.id', 'DESC');
+    } else if (query?.sortBy === 'limited-edition') {
+      qb.andWhere('product.stock > 0')
+        .andWhere('product.stock <= 20') // Low stock threshold for Limited Edition
+        .orderBy('product.stock', 'ASC')
+        .addOrderBy('product.id', 'DESC');
     } else {
       qb.orderBy('product.id', 'DESC');
+    }
+
+    if (query?.limit !== undefined) {
+      qb.limit(query.limit);
     }
 
     const { raw, entities } = await qb.getRawAndEntities();

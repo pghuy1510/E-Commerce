@@ -13,27 +13,27 @@ export default function PaymentStatus({ status }: PaymentStatusProps) {
     pending: {
       label: "Pending payment",
       icon: Clock,
-      className: "text-amber-600 bg-amber-50 border-amber-100",
+      className: "text-status-warning-text bg-status-warning-bg border-status-warning-border",
     },
     paid: {
       label: "Payment successful",
       icon: CheckCircle2,
-      className: "text-emerald-600 bg-emerald-50 border-emerald-100",
+      className: "text-status-success-text bg-status-success-bg border-status-success-border",
     },
     failed: {
       label: "Payment failed",
       icon: XCircle,
-      className: "text-rose-600 bg-rose-50 border-rose-100",
+      className: "text-status-danger-text bg-status-danger-bg border-status-danger-border",
     },
     expired: {
       label: "Payment expired",
       icon: XCircle,
-      className: "text-rose-600 bg-rose-50 border-rose-100",
+      className: "text-status-danger-text bg-status-danger-bg border-status-danger-border",
     },
     refunded: {
       label: "Payment refunded",
       icon: XCircle,
-      className: "text-slate-600 bg-slate-50 border-slate-100",
+      className: "text-status-info-text bg-status-info-bg border-status-info-border",
     },
   }[status];
 

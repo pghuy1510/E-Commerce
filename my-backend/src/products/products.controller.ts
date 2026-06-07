@@ -31,6 +31,7 @@ export class ProductsController {
     @Query('rating') rating?: string,
     @Query('inStock') inStock?: string,
     @Query('sortBy') sortBy?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.productService.findAll({
       search,
@@ -40,6 +41,7 @@ export class ProductsController {
       rating: rating ? Number(rating) : undefined,
       inStock: inStock === 'true',
       sortBy,
+      limit: limit ? Number(limit) : undefined,
     });
   }
 

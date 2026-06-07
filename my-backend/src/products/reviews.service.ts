@@ -19,7 +19,7 @@ export class ReviewsService {
     userId: number,
     dto: {
       productId: number;
-      orderId: number;
+      orderId?: number;
       rating: number;
       comment: string;
       images?: string[];
@@ -29,38 +29,44 @@ export class ReviewsService {
       throw new BadRequestException('Rating must be between 1 and 5');
     }
 
-    // Verify if order exists and is owned by the user and is delivered
-    const orderRepo = this.dataSource.getRepository(Order);
-    const order = await orderRepo.findOne({
-      where: { id: dto.orderId, user: { id: userId } },
-      relations: ['items'],
-    });
+    let order: Order | null = null;
+    let isVerifiedPurchase = false;
 
-    if (!order) {
-      throw new NotFoundException('Order not found or not owned by you');
-    }
+    if (dto.orderId) {
+      // Verify if order exists and is owned by the user and is delivered
+      const orderRepo = this.dataSource.getRepository(Order);
+      order = await orderRepo.findOne({
+        where: { id: dto.orderId, user: { id: userId } },
+        relations: ['items'],
+      });
 
-    if (order.status !== 'delivered') {
-      throw new BadRequestException('You can only review products from delivered orders');
-    }
+      if (!order) {
+        throw new NotFoundException('Order not found or not owned by you');
+      }
 
-    // Verify product was in this order
-    const hasProduct = order.items.some((item) => item.productId === dto.productId);
-    if (!hasProduct) {
-      throw new BadRequestException('This product was not part of the specified order');
-    }
+      if (order.status !== 'delivered') {
+        throw new BadRequestException('You can only review products from delivered orders');
+      }
 
-    // Verify user hasn't already reviewed this product for this order
-    const existing = await this.reviewRepo.findOne({
-      where: {
-        product: { id: dto.productId },
-        user: { id: userId },
-        order: { id: dto.orderId },
-      },
-    });
+      // Verify product was in this order
+      const hasProduct = order.items.some((item) => item.productId === dto.productId);
+      if (!hasProduct) {
+        throw new BadRequestException('This product was not part of the specified order');
+      }
 
-    if (existing) {
-      throw new BadRequestException('You have already left a review for this product in this order');
+      // Verify user hasn't already reviewed this product for this order
+      const existing = await this.reviewRepo.findOne({
+        where: {
+          product: { id: dto.productId },
+          user: { id: userId },
+          order: { id: dto.orderId },
+        },
+      });
+
+      if (existing) {
+        throw new BadRequestException('You have already left a review for this product in this order');
+      }
+      isVerifiedPurchase = true;
     }
 
     // Create the review
@@ -68,10 +74,10 @@ export class ReviewsService {
       rating: dto.rating,
       comment: dto.comment,
       images: dto.images ?? [],
-      isVerifiedPurchase: true,
+      isVerifiedPurchase,
       user: { id: userId } as any,
       product: { id: dto.productId } as Product,
-      order: { id: dto.orderId } as Order,
+      order: order,
     });
 
     return this.reviewRepo.save(review);

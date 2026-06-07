@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cartAPI, wishlistAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import PageHero from "@/components/layout/PageHero";
 
 interface WishlistItem {
   id: number;
@@ -88,12 +89,12 @@ export default function WishlistPage() {
 
   return (
     <div className="w-full bg-white">
-      {/* BANNER */}
-      <div className="bg-gradient-to-r from-brand-primary/95 via-brand-primary-light/35 to-brand-surface py-20 text-center">
-        <h1 className="text-4xl font-bold text-brand-text">
-          {t("label.wishlist")}
-        </h1>
-      </div>
+      <PageHero
+        variant="default"
+        title={t("label.wishlist")}
+        breadcrumbs={[{ label: t("label.wishlist") }]}
+        centered={true}
+      />
 
       <div className="max-w-6xl mx-auto px-6 py-16">
         <div className="grid grid-cols-5 text-brand-text font-semibold border-b border-brand-primary-light pb-4">

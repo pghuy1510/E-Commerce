@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import { contactAPI, orderAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import PageHero from "@/components/layout/PageHero";
 
 type TicketPriority = "low" | "medium" | "high";
 type TicketStatus = "open" | "pending" | "in_progress" | "waiting_customer" | "resolved" | "closed";
@@ -393,24 +394,13 @@ export default function SupportPage() {
 
   return (
     <div className="w-full bg-brand-bg min-h-screen">
-      {/* HERO BANNER */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-brand-primary-light/60 via-[#f4ebdd] to-brand-surface py-20 text-center shadow-sm">
-        <div className="absolute inset-0 bg-grid-white/[0.05] pointer-events-none" />
-        <div className="relative z-10 max-w-4xl mx-auto px-6">
-          <div className="flex items-center justify-center gap-3 text-brand-primary mb-4">
-            <Headphones className="w-6 h-6 text-brand-primary animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-widest bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full backdrop-blur-sm border border-brand-border">
-              {t("support.heroTag")}
-            </span>
-          </div>
-          <h1 className="text-4xl font-extrabold text-brand-text tracking-tight sm:text-5xl">
-            {t("support.heroTitle")}
-          </h1>
-          <p className="text-brand-muted mt-4 text-base sm:text-lg max-w-2xl mx-auto font-medium">
-            {t("support.heroSubtitle")}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        variant="default"
+        title={t("support.heroTitle")}
+        description={t("support.heroSubtitle")}
+        breadcrumbs={[{ label: t("nav.customer") }]}
+        centered={true}
+      />
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-10">
         

@@ -7,7 +7,8 @@ import Link from "next/link";
 
 import { Star, Heart, Minus, Plus, ShoppingCart, Eye, CheckCircle } from "lucide-react";
 
-import { productAPI, type Product, wishlistAPI, cartAPI, reviewsAPI } from "@/lib/api";
+import { productAPI, type Product, wishlistAPI, cartAPI, reviewsAPI, orderAPI } from "@/lib/api";
+import { getBrowserToken } from "@/lib/auth-token";
 import { usePreferences } from "@/lib/i18n";
 import ProductCard from "@/components/ProductCard";
 
@@ -26,6 +27,13 @@ export default function ProductDetailPage() {
     count: 0,
     distribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 },
   });
+  const [eligibleOrders, setEligibleOrders] = useState<any[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [userRating, setUserRating] = useState<number>(5);
+  const [userComment, setUserComment] = useState<string>("");
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
   const { t, formatPrice, translateCategory } = usePreferences();
 
   const userId = 1;
@@ -41,6 +49,8 @@ export default function ProductDetailPage() {
         setLoading(true);
         setProduct(null);
         setRelatedProducts([]);
+        setEligibleOrders([]);
+        setSelectedOrderId(null);
 
         const prodId = Number(idParam);
         const data = await productAPI.getById(prodId);
@@ -67,6 +77,27 @@ export default function ProductDetailPage() {
         setRelatedProducts(related);
         setSummary(sumData);
         setReviews(listData);
+
+        const token = getBrowserToken();
+        if (token) {
+          setIsLoggedIn(true);
+          try {
+            const ordersList = await orderAPI.list();
+            const filtered = (ordersList || []).filter((order: any) => {
+              const isDelivered = order.status === "delivered";
+              const hasProduct = order.items?.some((item: any) => Number(item.productId) === prodId);
+              return isDelivered && hasProduct;
+            });
+            setEligibleOrders(filtered);
+            if (filtered.length > 0) {
+              setSelectedOrderId(filtered[0].id);
+            }
+          } catch (err) {
+            console.error("Failed to load orders for eligibility:", err);
+          }
+        } else {
+          setIsLoggedIn(false);
+        }
       } catch (err) {
         console.error("Fetch product error:", err);
       } finally {
@@ -76,6 +107,47 @@ export default function ProductDetailPage() {
 
     fetchProduct();
   }, [idParam]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userComment.trim()) {
+      alert("Vui lòng nhập nội dung nhận xét.");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      const prodId = Number(idParam);
+      await reviewsAPI.create({
+        productId: prodId,
+        orderId: selectedOrderId || undefined,
+        rating: userRating,
+        comment: userComment.trim(),
+      });
+
+      alert("Gửi đánh giá thành công! Xin cảm ơn nhận xét của bạn.");
+      setUserComment("");
+      setUserRating(5);
+
+      const [sumData, listData] = await Promise.all([
+        reviewsAPI.getSummary(prodId).catch(() => summary),
+        reviewsAPI.getByProduct(prodId).catch(() => reviews),
+      ]);
+      setSummary(sumData);
+      setReviews(listData);
+
+      if (selectedOrderId) {
+        const remaining = eligibleOrders.filter((order) => order.id !== selectedOrderId);
+        setEligibleOrders(remaining);
+        setSelectedOrderId(remaining.length > 0 ? remaining[0].id : null);
+      }
+    } catch (err: any) {
+      console.error("Submit review error:", err);
+      alert(err?.response?.data?.message || "Gửi đánh giá thất bại. Vui lòng thử lại sau.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const handleAddToCartById = async (productId: number, qty = 1) => {
     try {
@@ -263,42 +335,145 @@ export default function ProductDetailPage() {
       <div className="max-w-7xl mx-auto px-6 py-16 border-t border-gray-200">
         <h2 className="text-3xl font-bold text-gray-900 mb-8">Đánh giá từ khách hàng</h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Summary Breakdown */}
-          <div className="bg-brand-surface border border-brand-primary-light rounded-3xl p-8 space-y-6 self-start">
-            <div className="text-center space-y-2">
-              <p className="text-5xl font-black text-brand-primary">{summary.average}</p>
-              <div className="flex justify-center gap-1 text-brand-secondary">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    size={22}
-                    fill={star <= Math.round(summary.average) ? "currentColor" : "none"}
-                    className={star <= Math.round(summary.average) ? "text-brand-secondary" : "text-brand-primary-light"}
-                  />
-                ))}
+          {/* Summary Breakdown & Review Form */}
+          <div className="space-y-8 self-start">
+            {/* Summary Breakdown */}
+            <div className="bg-brand-surface border border-brand-primary-light rounded-3xl p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <p className="text-5xl font-black text-brand-primary">{summary.average}</p>
+                <div className="flex justify-center gap-1 text-brand-secondary">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={22}
+                      fill={star <= Math.round(summary.average) ? "currentColor" : "none"}
+                      className={star <= Math.round(summary.average) ? "text-brand-secondary" : "text-brand-primary-light"}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm font-semibold text-brand-muted">{summary.count} nhận xét từ người mua</p>
               </div>
-              <p className="text-sm font-semibold text-brand-muted">{summary.count} nhận xét từ người mua</p>
+
+              {/* Distribution bars */}
+              <div className="space-y-3">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const count = summary.distribution[star.toString()] || 0;
+                  const percent = summary.count > 0 ? (count / summary.count) * 100 : 0;
+                  return (
+                    <div key={star} className="flex items-center gap-3 text-sm">
+                      <span className="w-3 font-semibold text-brand-muted">{star}</span>
+                      <Star size={14} className="text-brand-secondary fill-brand-secondary shrink-0" />
+                      <div className="flex-1 h-2 bg-brand-primary-light rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-secondary rounded-full transition-all duration-500"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right font-medium text-brand-muted">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Distribution bars */}
-            <div className="space-y-3">
-              {[5, 4, 3, 2, 1].map((star) => {
-                const count = summary.distribution[star.toString()] || 0;
-                const percent = summary.count > 0 ? (count / summary.count) * 100 : 0;
-                return (
-                  <div key={star} className="flex items-center gap-3 text-sm">
-                    <span className="w-3 font-semibold text-brand-muted">{star}</span>
-                    <Star size={14} className="text-brand-secondary fill-brand-secondary shrink-0" />
-                    <div className="flex-1 h-2 bg-brand-primary-light rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-secondary rounded-full transition-all duration-500"
-                        style={{ width: `${percent}%` }}
-                      />
+            {/* Write a Review Card */}
+            <div className="bg-white border border-gray-200 rounded-3xl p-8 space-y-6 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900">Viết đánh giá của bạn</h3>
+              
+              {!isLoggedIn ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-500">Vui lòng đăng nhập để đánh giá sản phẩm này.</p>
+                  <Link
+                    href="/login"
+                    className="mt-4 inline-flex items-center justify-center bg-brand-primary hover:bg-[#8d6338] text-white text-xs font-bold px-6 py-2.5 rounded-xl transition cursor-pointer"
+                  >
+                    Đăng nhập ngay
+                  </Link>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="space-y-4 text-left">
+                  {/* Order Selection */}
+                  {eligibleOrders.length > 0 ? (
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                        Chọn đơn hàng liên kết (Nhận nhãn "Đã mua hàng")
+                      </label>
+                      <select
+                        value={selectedOrderId || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedOrderId(val ? Number(val) : null);
+                        }}
+                        className="w-full h-11 px-4 rounded-xl border border-gray-300 bg-gray-50 outline-none text-sm font-medium focus:border-brand-primary transition"
+                      >
+                        <option value="">-- Đánh giá tự do (Không liên kết đơn hàng) --</option>
+                        {eligibleOrders.map((order) => (
+                          <option key={order.id} value={order.id}>
+                            Mã đơn: #ORD-{order.id} ({new Date(order.created_at).toLocaleDateString("vi-VN")})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <span className="w-8 text-right font-medium text-brand-muted">{count}</span>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-800 text-xs leading-relaxed mb-2">
+                      <p className="font-semibold">Bạn đang đánh giá tự do (Chưa mua sản phẩm hoặc đơn hàng chưa được giao).</p>
+                      <p className="mt-1 text-gray-500">
+                        Đánh giá của bạn sẽ không có nhãn <span className="font-semibold">Đã mua hàng</span>.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Star Rating Selector */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                      Đánh giá chất lượng
+                    </label>
+                    <div className="flex items-center gap-1.5 text-brand-secondary">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setUserRating(star)}
+                          className="p-1 hover:scale-110 transition focus:outline-none cursor-pointer"
+                        >
+                          <Star
+                            size={28}
+                            fill={star <= userRating ? "currentColor" : "none"}
+                            className={star <= userRating ? "text-brand-secondary" : "text-gray-300"}
+                          />
+                        </button>
+                      ))}
+                      <span className="text-sm font-bold text-gray-700 ml-2">
+                        {userRating === 5 ? "Rất tốt" : userRating === 4 ? "Tốt" : userRating === 3 ? "Bình thường" : userRating === 2 ? "Tệ" : "Rất tệ"}
+                      </span>
+                    </div>
                   </div>
-                );
-              })}
+
+                  {/* Comment Box */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                      Nhận xét chi tiết
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={userComment}
+                      onChange={(e) => setUserComment(e.target.value)}
+                      placeholder="Hãy chia sẻ trải nghiệm thực tế của bạn về sản phẩm này..."
+                      className="w-full p-4 rounded-xl border border-gray-300 bg-gray-50 outline-none text-sm leading-relaxed resize-none focus:border-brand-primary transition"
+                      required
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="w-full flex items-center justify-center bg-brand-primary hover:bg-[#8d6338] transition text-white h-11 rounded-xl text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed border-none shadow-md cursor-pointer"
+                  >
+                    {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
 
@@ -310,9 +485,9 @@ export default function ProductDetailPage() {
                 <p className="text-xs text-gray-400 mt-1">Hãy mua sản phẩm để trở thành người đầu tiên đánh giá!</p>
               </div>
             ) : (
-              <div className="space-y-6 divide-y divide-gray-100">
-                {reviews.map((rev, idx) => (
-                  <div key={rev.id} className={`pt-6 ${idx === 0 ? "pt-0" : ""}`}>
+              <div className="space-y-4">
+                {reviews.map((rev) => (
+                  <div key={rev.id} className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition duration-300">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">

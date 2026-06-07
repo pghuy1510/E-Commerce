@@ -8,6 +8,7 @@ import QRPaymentBox from "@/components/checkout/QRPaymentBox";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import PaymentStatus from "@/components/checkout/PaymentStatus";
 import { Loader2 } from "lucide-react";
+import PageHero from "@/components/layout/PageHero";
 
 function CheckoutPaymentContent() {
   const searchParams = useSearchParams();
@@ -144,28 +145,30 @@ function CheckoutPaymentContent() {
   const qr = status?.qr ?? null;
 
   return (
-    <div className="w-full min-h-screen bg-[#fbf8f3]">
+    <div className="w-full min-h-screen bg-brand-bg">
+      <PageHero
+        variant="checkout"
+        currentStep="checkout"
+        title={t("payment.secureQrTitle")}
+        breadcrumbs={[
+          { label: t("label.checkout"), href: "/checkout" },
+          { label: t("payment.paymentLabel") }
+        ]}
+        centered={true}
+      />
       <div className="max-w-5xl mx-auto px-6 py-14 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold text-gray-900">
-              Secure QR payment
-            </h1>
-            <p className="text-sm text-gray-500 mt-2">
-              Your order is reserved while we wait for payment.
-            </p>
-          </div>
+        <div className="flex justify-end">
           {status && <PaymentStatus status={status.paymentStatus} />}
         </div>
 
         {loading && (
-          <div className="rounded-3xl bg-white border border-amber-100 p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Loading payment details...</p>
+          <div className="rounded-3xl bg-brand-surface border border-brand-border p-6 shadow-sm">
+            <p className="text-sm text-brand-muted">Loading payment details...</p>
           </div>
         )}
 
         {!loading && error && (
-          <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-medium">
             {error}
           </div>
         )}
@@ -174,9 +177,9 @@ function CheckoutPaymentContent() {
           <>
             <div className="flex flex-wrap items-center gap-3">
               <CountdownTimer expiresAt={qr.expiredAt} />
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-brand-muted">
                 Transfer amount:{" "}
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-brand-text">
                   {formatPrice(status.amount)}
                 </span>
               </div>
@@ -194,18 +197,18 @@ function CheckoutPaymentContent() {
 
             {/* PAYMENT RECOVERY OPTION */}
             {["pending", "expired", "failed"].includes(status.paymentStatus) && (
-              <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="bg-brand-surface rounded-3xl border border-brand-border p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <h4 className="font-bold text-gray-900 text-sm">
+                  <h4 className="font-bold text-brand-text text-sm">
                     Gặp khó khăn khi quét mã QR?
                   </h4>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-brand-muted mt-1">
                     Bạn có thể chuyển đổi sang hình thức thanh toán khi nhận hàng (COD) bất kỳ lúc nào.
                   </p>
                 </div>
                 <button
                   onClick={handleChangeToCod}
-                  className="px-5 py-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-600 font-bold text-xs shrink-0 transition"
+                  className="px-5 py-3 rounded-2xl bg-brand-primary-light hover:bg-brand-border text-brand-primary font-bold text-xs shrink-0 transition"
                 >
                   Đổi sang COD
                 </button>
@@ -215,22 +218,22 @@ function CheckoutPaymentContent() {
         )}
 
         {!loading && status && !qr && (
-          <div className="rounded-3xl bg-white border border-amber-100 p-6 shadow-sm">
-            <p className="text-sm text-gray-600">
+          <div className="rounded-3xl bg-brand-surface border border-brand-border p-6 shadow-sm">
+            <p className="text-sm text-brand-muted">
               No QR payment data available for this transaction.
             </p>
           </div>
         )}
 
         {!loading && status?.paymentStatus === "expired" && (
-          <div className="rounded-3xl bg-white border border-amber-100 p-6 shadow-sm space-y-3">
-            <p className="text-sm text-gray-600">
+          <div className="rounded-3xl bg-brand-surface border border-brand-border p-6 shadow-sm space-y-3">
+            <p className="text-sm text-brand-muted">
               This QR has expired. Generate a new QR to continue.
             </p>
             <button
               onClick={handleRegenerate}
               disabled={loadingRegen}
-              className="rounded-2xl bg-amber-500 disabled:opacity-60 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition flex items-center gap-2">
+              className="rounded-2xl bg-brand-primary disabled:opacity-60 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-primary-hover transition flex items-center gap-2">
               {loadingRegen && <Loader2 className="w-4 h-4 animate-spin" />}
               {language === "vi" ? "Tạo lại mã QR" : "Regenerate QR"}
             </button>
@@ -245,10 +248,10 @@ export default function CheckoutPaymentPage() {
   return (
     <Suspense
       fallback={
-        <div className="w-full min-h-screen bg-[#fbf8f3]">
+        <div className="w-full min-h-screen bg-brand-bg">
           <div className="max-w-5xl mx-auto px-6 py-14">
-            <div className="rounded-3xl bg-white border border-amber-100 p-6 shadow-sm">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-3xl bg-brand-surface border border-brand-border p-6 shadow-sm">
+              <p className="text-sm text-brand-muted">
                 Loading payment details...
               </p>
             </div>

@@ -12,6 +12,7 @@ import { normalizeCartItems } from "@/lib/cart";
 import { usePreferences } from "@/lib/i18n";
 import { isTokenExpired } from "@/lib/jwt";
 import { calculateCartSubtotal } from "@/lib/money";
+import PageHero from "@/components/layout/PageHero";
 
 interface CartItem {
   id: number;
@@ -108,9 +109,13 @@ export default function CartPage() {
   return (
     <div className="w-full bg-white">
       {/* BANNER */}
-      <div className="bg-gradient-to-r from-brand-primary/95 via-brand-primary-light/35 to-brand-surface py-20 text-center">
-        <h1 className="text-4xl font-bold text-brand-text">{t("nav.cart")}</h1>
-      </div>
+      <PageHero
+        variant="checkout"
+        currentStep="cart"
+        title={t("nav.cart")}
+        breadcrumbs={[{ label: t("nav.cart") }]}
+        centered={true}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* LEFT */}

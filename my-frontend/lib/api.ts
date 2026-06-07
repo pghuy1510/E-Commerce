@@ -661,7 +661,7 @@ export const paymentAPI = {
 export const reviewsAPI = {
   create: async (payload: {
     productId: number;
-    orderId: number;
+    orderId?: number;
     rating: number;
     comment: string;
     images?: string[];

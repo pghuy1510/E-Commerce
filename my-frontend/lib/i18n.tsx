@@ -178,6 +178,7 @@ const translations: Record<Language, Record<string, string>> = {
     "action.showLess": "Show Less",
     "action.viewMoreProducts": "View More Products →",
     "action.explore": "Explore →",
+    "action.addShort": "+ Cart",
     "action.addToCart": "Add To Cart",
     "action.placeOrder": "Place Order",
     "action.proceedToCheckout": "Proceed To Checkout",
@@ -671,6 +672,9 @@ const translations: Record<Language, Record<string, string>> = {
     "deals.countdown.seconds": "Seconds",
     "label.hot": "Hot",
     "label.unknown": "Unknown",
+    "payment.secureQrTitle": "Secure QR Payment",
+    "payment.paymentLabel": "Payment",
+    "order.successTitle": "Order Successful",
   },
   vi: {
     "language.english": "English",
@@ -833,6 +837,7 @@ const translations: Record<Language, Record<string, string>> = {
     "action.showLess": "Thu gọn",
     "action.viewMoreProducts": "Xem thêm sản phẩm →",
     "action.explore": "Khám phá →",
+    "action.addShort": "+ Giỏ",
     "action.addToCart": "Thêm vào giỏ",
     "action.placeOrder": "Đặt hàng",
     "action.proceedToCheckout": "Tiến hành thanh toán",
@@ -1321,6 +1326,9 @@ const translations: Record<Language, Record<string, string>> = {
     "deals.countdown.seconds": "Giây",
     "label.hot": "Hot",
     "label.unknown": "Không rõ",
+    "payment.secureQrTitle": "Thanh toán QR bảo mật",
+    "payment.paymentLabel": "Thanh toán",
+    "order.successTitle": "Đặt hàng thành công",
   },
 };
 
@@ -1382,6 +1390,32 @@ export function translateCategory(name: string, language: Language): string {
   return language === "vi" ? entry.vi : entry.en;
 }
 
+export function translateDbText(text: string | undefined | null, language: Language): string {
+  if (!text) return "";
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+  
+  const mapping: Record<string, { en: string; vi: string }> = {
+    "siêu sale": { en: "Super Sale", vi: "Siêu sale" },
+    "giảm sâu": { en: "Deep Discounts", vi: "Giảm sâu" },
+    "săn deal ngay": { en: "Shop Deal Now", vi: "Săn deal ngay" },
+    "siêu sale hè": { en: "Summer Super Sale", vi: "Siêu sale hè" },
+    "giám giá tới 50%": { en: "Up to 50% Off", vi: "Giảm giá tới 50%" },
+    "siêu sale giữa năm 6.6 - edit test": { en: "Mid-Year Super Sale 6.6 - Edit Test", vi: "Siêu Sale Giữa Năm 6.6 - Edit Test" },
+    "mô tả mới": { en: "New description", vi: "Mô tả mới" },
+    "hàng loạt sản phẩm đang giảm giá sập sàn, nhanh tay số lượng có hạn!": {
+      en: "Massive discounts on selected products, get them while stocks last!",
+      vi: "Hàng loạt sản phẩm đang giảm giá sập sàn, nhanh tay số lượng có hạn!"
+    }
+  };
+
+  const match = mapping[lower];
+  if (match) {
+    return language === "vi" ? match.vi : match.en;
+  }
+  return trimmed;
+}
+
 type PreferencesContextValue = {
   language: Language;
   currency: Currency;
@@ -1391,6 +1425,7 @@ type PreferencesContextValue = {
   formatPrice: (amountUsd: number) => string;
   convertPrice: (amountUsd: number) => number;
   translateCategory: (name: string) => string;
+  translateDbText: (text: string | undefined | null) => string;
 };
 
 const PreferencesContext = createContext<PreferencesContextValue | undefined>(
@@ -1456,6 +1491,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       formatPrice: (amountUsd) => formatPrice(amountUsd),
       convertPrice: (amountUsd) => convertPrice(amountUsd),
       translateCategory: (name) => translateCategory(name, language),
+      translateDbText: (text) => translateDbText(text, language),
     };
   }, [language, currency]);
 

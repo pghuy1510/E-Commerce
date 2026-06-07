@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { productAPI, type Product } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import ProductCard from "@/components/ProductCard";
+import PageHero from "@/components/layout/PageHero";
 
 const SidebarTitle = ({ children }: { children: React.ReactNode }) => (
   <div className="mb-4">
@@ -150,19 +151,13 @@ export default function NewArrivalsPage() {
 
   return (
     <div className="w-full">
-      <div className="bg-gradient-to-r from-brand-primary/95 via-brand-primary-light/35 to-brand-surface py-16">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-primary">
-            {t("nav.newArrivals")}
-          </p>
-          <h1 className="text-4xl font-bold text-brand-text">
-            {t("nav.newArrivals")}
-          </h1>
-          <p className="text-sm text-brand-muted">
-            {t("label.home")} / {t("nav.newArrivals")}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        variant="catalog"
+        title={t("nav.newArrivals")}
+        eyebrow={t("nav.newArrivals")}
+        breadcrumbs={[{ label: t("nav.newArrivals") }]}
+        centered={false}
+      />
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-16 lg:grid-cols-4">
         <aside className="h-fit space-y-6 rounded-2xl border border-brand-primary-light bg-brand-surface p-6 shadow-sm lg:sticky lg:top-10">

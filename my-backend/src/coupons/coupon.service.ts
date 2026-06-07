@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -41,7 +41,79 @@ const FREE_SHIPPING_THRESHOLD = 500000;
 const CLEARANCE_STOCK_THRESHOLD = 100;
 
 @Injectable()
-export class CouponService {
+export class CouponService implements OnModuleInit {
+  async onModuleInit() {
+    const couponsToSeed = [
+      {
+        code: 'SUMMER50',
+        name: 'Summer Sale Discount',
+        type: 'platform' as const,
+        discountType: 'percentage' as const,
+        discountValue: 50,
+        minOrder: 200000,
+        maxDiscount: 100000,
+        isActive: true,
+      },
+      {
+        code: 'NEW10',
+        name: 'New Arrivals Extra Discount',
+        type: 'platform' as const,
+        discountType: 'percentage' as const,
+        discountValue: 10,
+        minOrder: 150000,
+        maxDiscount: 50000,
+        isActive: true,
+      },
+      {
+        code: 'BEST15',
+        name: 'Best Sellers Cash Discount',
+        type: 'platform' as const,
+        discountType: 'fixed' as const,
+        discountValue: 15000,
+        minOrder: 100000,
+        maxDiscount: 15000,
+        isActive: true,
+      },
+      {
+        code: 'TREND12',
+        name: 'Trending Items Discount',
+        type: 'platform' as const,
+        discountType: 'percentage' as const,
+        discountValue: 12,
+        minOrder: 120000,
+        maxDiscount: 60000,
+        isActive: true,
+      },
+      {
+        code: 'RATED20',
+        name: 'Top Rated Five Star Discount',
+        type: 'platform' as const,
+        discountType: 'fixed' as const,
+        discountValue: 20000,
+        minOrder: 180000,
+        maxDiscount: 20000,
+        isActive: true,
+      },
+      {
+        code: 'LIMITED15',
+        name: 'Limited Edition Rare Finds Discount',
+        type: 'platform' as const,
+        discountType: 'percentage' as const,
+        discountValue: 15,
+        minOrder: 250000,
+        maxDiscount: 75000,
+        isActive: true,
+      },
+    ];
+
+    for (const c of couponsToSeed) {
+      try {
+        await this.ensureCouponTemplate(c, true);
+      } catch (err) {
+        console.error(`Error seeding coupon template ${c.code}:`, err);
+      }
+    }
+  }
   private readonly couponPriority: Record<CouponType, number> = {
     shipping: 3,
     shop: 2,
