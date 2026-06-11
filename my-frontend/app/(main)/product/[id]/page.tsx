@@ -34,7 +34,11 @@ export default function ProductDetailPage() {
   const [submittingReview, setSubmittingReview] = useState<boolean>(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  const { t, formatPrice, translateCategory } = usePreferences();
+  // Variant States
+  const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+
+  const { t, formatPrice, translateCategory, language } = usePreferences();
 
   const userId = 1;
 
@@ -48,6 +52,8 @@ export default function ProductDetailPage() {
       try {
         setLoading(true);
         setProduct(null);
+        setSelectedVariant(null);
+        setSelectedOptions({});
         setRelatedProducts([]);
         setEligibleOrders([]);
         setSelectedOrderId(null);
@@ -55,6 +61,14 @@ export default function ProductDetailPage() {
         const prodId = Number(idParam);
         const data = await productAPI.getById(prodId);
         setProduct(data);
+
+        if (data.type === "variable" && data.variants && data.variants.length > 0) {
+          const defaultVar = data.defaultVariant || data.variants.find((v: any) => v.isActive) || data.variants[0];
+          if (defaultVar) {
+            setSelectedVariant(defaultVar);
+            setSelectedOptions(defaultVar.options || {});
+          }
+        }
 
         // Fetch related products and reviews in parallel
         const [allProducts, sumData, listData] = await Promise.all([
@@ -149,9 +163,9 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleAddToCartById = async (productId: number, qty = 1) => {
+  const handleAddToCartById = async (productId: number, qty = 1, variantId?: number) => {
     try {
-      await cartAPI.add(productId, qty);
+      await cartAPI.add(productId, qty, variantId);
       alert(t("alert.addedToCartShort"));
     } catch (err: any) {
       const status = err?.response?.status as number | undefined;
@@ -168,6 +182,19 @@ export default function ProductDetailPage() {
       }
 
       console.error("Add cart error:", err);
+      alert(err?.response?.data?.message || err?.message || "Không thể thêm vào giỏ hàng.");
+    }
+  };
+
+  const handleSelectOption = (optionName: string, optionValue: string) => {
+    const nextOptions = { ...selectedOptions, [optionName]: optionValue };
+    setSelectedOptions(nextOptions);
+
+    if (product?.variants) {
+      const match = product.variants.find((v) => {
+        return Object.keys(nextOptions).every((key) => v.options[key] === nextOptions[key]);
+      });
+      setSelectedVariant(match || null);
     }
   };
 
@@ -221,7 +248,7 @@ export default function ProductDetailPage() {
         <div>
           <div className="bg-brand-primary-light/40 rounded-3xl p-10 flex justify-center">
             <Image
-              src={product.image || "/placeholder.png"}
+              src={(selectedVariant && selectedVariant.image) || product.image || "/placeholder.png"}
               alt={product.name}
               width={380}
               height={480}
@@ -266,11 +293,36 @@ export default function ProductDetailPage() {
 
           {/* PRICE */}
           <p className="text-4xl font-bold text-brand-primary mt-6">
-            {formatPrice(product.price)}
+            {formatPrice(selectedVariant ? selectedVariant.price : product.price)}
           </p>
 
           {/* DESCRIPTION */}
           <p className="text-gray-600 mt-6 leading-8">{product.description}</p>
+
+          {/* OPTION SELECTORS */}
+          {product.type === "variable" && product.options && product.options.map((opt) => (
+            <div key={opt.id} className="mt-6">
+              <p className="font-semibold mb-2">{opt.name}:</p>
+              <div className="flex flex-wrap gap-2.5">
+                {opt.values.map((val) => {
+                  const isSelected = selectedOptions[opt.name] === val;
+                  return (
+                    <button
+                      key={val}
+                      onClick={() => handleSelectOption(opt.name, val)}
+                      className={`px-4 py-2 text-sm font-semibold rounded-xl border transition-all duration-200 cursor-pointer ${
+                        isSelected
+                          ? "bg-brand-primary border-brand-primary text-white shadow-sm"
+                          : "bg-white border-brand-primary-light text-brand-primary hover:border-brand-primary"
+                      }`}
+                    >
+                      {val}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
 
           {/* STOCK */}
           <div className="mt-6 flex items-center gap-2">
@@ -278,14 +330,32 @@ export default function ProductDetailPage() {
               {t("label.availability")}
             </span>
 
-            {product.stock > 0 ? (
-              <span className="text-green-600 font-medium">
-                {t("label.inStockWithCount", { count: product.stock })}
-              </span>
+            {product.type === "variable" ? (
+              selectedVariant ? (
+                selectedVariant.stock > 0 ? (
+                  <span className="text-green-600 font-medium">
+                    {t("label.inStockWithCount", { count: selectedVariant.stock })}
+                  </span>
+                ) : (
+                  <span className="text-red-500 font-medium">
+                    {t("label.outOfStock")}
+                  </span>
+                )
+              ) : (
+                <span className="text-red-500 font-medium">
+                  {language === "vi" ? "Mẫu sản phẩm tạm thời hết hàng" : "Combination temporarily unavailable"}
+                </span>
+              )
             ) : (
-              <span className="text-red-500 font-medium">
-                {t("label.outOfStock")}
-              </span>
+              product.stock > 0 ? (
+                <span className="text-green-600 font-medium">
+                  {t("label.inStockWithCount", { count: product.stock })}
+                </span>
+              ) : (
+                <span className="text-red-500 font-medium">
+                  {t("label.outOfStock")}
+                </span>
+              )
             )}
           </div>
 
@@ -302,7 +372,7 @@ export default function ProductDetailPage() {
               <span className="font-semibold">{quantity}</span>
 
               <button
-                onClick={() => setQuantity((prev) => Math.min(product.stock, prev + 1))}>
+                onClick={() => setQuantity((prev) => Math.min(selectedVariant ? selectedVariant.stock : product.stock, prev + 1))}>
                 <Plus size={16} />
               </button>
             </div>
@@ -313,9 +383,9 @@ export default function ProductDetailPage() {
             {/* ADD CART */}
             <button
               onClick={() =>
-                product && handleAddToCartById(product.id, quantity)
+                product && handleAddToCartById(product.id, quantity, selectedVariant?.id)
               }
-              disabled={product.stock <= 0}
+              disabled={product.type === "variable" ? !selectedVariant || selectedVariant.stock <= 0 : product.stock <= 0}
               className="flex items-center gap-2 bg-brand-primary hover:bg-[#8d6338] transition-all duration-300 text-white h-11 px-8 rounded-[12px] text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 border-none shadow-md cursor-pointer">
               <ShoppingCart size={18} />
               {t("action.addToCart")}

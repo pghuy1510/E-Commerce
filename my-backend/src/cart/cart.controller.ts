@@ -21,11 +21,13 @@ type AuthenticatedRequest = Request & {
 
 interface AddToCartBody {
   productId: number;
+  variantId?: number;
   quantity?: number;
 }
 
 interface RemoveFromCartBody {
   productId: number;
+  variantId?: number;
 }
 
 @Controller('cart')
@@ -48,13 +50,13 @@ export class CartController {
   @Post('add')
   addToCart(@Req() req: AuthenticatedRequest, @Body() body: AddToCartBody) {
     const userId = Number(req.user.id);
-    const { productId, quantity = 1 } = body;
+    const { productId, variantId, quantity = 1 } = body;
 
     if (!productId) {
       throw new BadRequestException('productId is required');
     }
 
-    return this.service.addToCart(userId, productId, quantity);
+    return this.service.addToCart(userId, productId, variantId, quantity);
   }
 
   // 🔄 UPDATE
@@ -62,13 +64,13 @@ export class CartController {
   @Patch('update')
   update(@Req() req: AuthenticatedRequest, @Body() body: AddToCartBody) {
     const userId = Number(req.user.id);
-    const { productId, quantity } = body;
+    const { productId, variantId, quantity } = body;
 
-    if (!productId || !quantity) {
+    if (!productId || quantity === undefined) {
       throw new BadRequestException('productId & quantity required');
     }
 
-    return this.service.updateQuantity(userId, productId, quantity);
+    return this.service.updateQuantity(userId, productId, variantId, quantity);
   }
 
   // ❌ REMOVE
@@ -76,12 +78,13 @@ export class CartController {
   @Delete('remove')
   remove(@Req() req: AuthenticatedRequest, @Body() body: RemoveFromCartBody) {
     const userId = Number(req.user.id);
-    const { productId } = body;
+    const { productId, variantId } = body;
 
     if (!productId) {
       throw new BadRequestException('productId is required');
     }
 
-    return this.service.removeItem(userId, productId);
+    return this.service.removeItem(userId, productId, variantId);
   }
 }
+

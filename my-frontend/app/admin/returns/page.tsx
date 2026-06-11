@@ -20,6 +20,8 @@ import {
 import { adminAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import AdminPromptModal from "@/components/admin/AdminPromptModal";
+import AdminConfirmModal from "@/components/admin/AdminConfirmModal";
 
 export default function AdminReturnsPage() {
   const [returns, setReturns] = useState<any[]>([]);
@@ -32,6 +34,23 @@ export default function AdminReturnsPage() {
   const [refundTxnId, setRefundTxnId] = useState("");
   
   const [expandedReturnId, setExpandedReturnId] = useState<number | null>(null);
+
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [promptConfig, setPromptConfig] = useState<{
+    id: number;
+    action: "approve" | "reject";
+    title: string;
+    placeholder: string;
+    required: boolean;
+  } | null>(null);
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string;
+    message: string;
+    type?: "primary" | "danger" | "warning";
+    onConfirm: () => void;
+  } | null>(null);
 
   const { formatPrice, language } = usePreferences();
 
@@ -60,18 +79,35 @@ export default function AdminReturnsPage() {
     return baseUrl + path;
   };
 
-  const handleAction = async (id: number, action: "approve" | "reject") => {
-    const actionText = action === "approve" 
-      ? (language === "vi" ? "chấp nhận yêu cầu trả hàng" : "approved return request") 
+  const handleAction = (id: number, action: "approve" | "reject") => {
+    setPromptConfig({
+      id,
+      action,
+      title: action === "approve"
+        ? (language === "vi" ? "Chấp Nhận Yêu Cầu Trả Hàng" : "Approve Return Request")
+        : (language === "vi" ? "Từ Chiếu Yêu Cầu Trả Hàng" : "Reject Return Request"),
+      placeholder: action === "approve"
+        ? (language === "vi" ? "Nhập lý do/ghi chú phản hồi cho khách hàng (Tùy chọn)..." : "Enter feedback reason/note for customer (Optional)...")
+        : (language === "vi" ? "Vui lòng nhập lý do từ chối đổi trả (Bắt buộc)..." : "Please enter rejection reason (Required)..."),
+      required: action === "reject",
+    });
+    setIsPromptOpen(true);
+  };
+
+  const handlePromptSubmit = async (value: string) => {
+    if (!promptConfig) return;
+    const { id, action } = promptConfig;
+    setIsPromptOpen(false);
+
+    const actionText = action === "approve"
+      ? (language === "vi" ? "chấp nhận yêu cầu trả hàng" : "approved return request")
       : (language === "vi" ? "từ chối yêu cầu đổi trả" : "rejected return request");
-    const note = prompt(language === "vi" ? "Nhập lý do/ghi chú phản hồi cho khách hàng (Tùy chọn):" : "Enter feedback reason/note for customer (Optional):");
-    if (note === null) return; // user cancelled prompt
 
     try {
       setSubmittingId(id);
       await adminAPI.handleReturn(id, {
         action,
-        note: note.trim() || undefined,
+        note: value.trim() || undefined,
       });
       alert(language === "vi" ? `Đã ${actionText} thành công!` : `Successfully ${actionText}!`);
       fetchReturnRequests();
@@ -83,34 +119,49 @@ export default function AdminReturnsPage() {
     }
   };
 
-  const handleMarkReceived = async (id: number) => {
-    if (!confirm(language === "vi" ? "Xác nhận đã nhận được sản phẩm hoàn trả từ khách hàng tại kho?" : "Confirm that the returned items have been received at the warehouse?")) return;
-    try {
-      setSubmittingId(id);
-      await adminAPI.markReturnReceived(id);
-      alert(language === "vi" ? "Đã cập nhật trạng thái nhận sản phẩm thành công!" : "Successfully updated receipt status!");
-      fetchReturnRequests();
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.response?.data?.message || (language === "vi" ? "Không thể thực hiện thao tác lúc này." : "Cannot perform operation at this time."));
-    } finally {
-      setSubmittingId(null);
-    }
+  const triggerConfirm = (title: string, message: string, onConfirm: () => void, type: "primary" | "danger" | "warning" = "primary") => {
+    setConfirmConfig({ title, message, onConfirm, type });
+    setIsConfirmOpen(true);
   };
 
-  const handleStartRefund = async (id: number) => {
-    if (!confirm(language === "vi" ? "Bắt đầu thực hiện quy trình hoàn tiền cho khách hàng?" : "Start refund processing for the customer?")) return;
-    try {
-      setSubmittingId(id);
-      await adminAPI.startReturnRefund(id);
-      alert(language === "vi" ? "Đã chuyển trạng thái sang Đang xử lý hoàn tiền!" : "Status updated to Refund Processing!");
-      fetchReturnRequests();
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.response?.data?.message || (language === "vi" ? "Không thể thực hiện thao tác lúc này." : "Cannot perform operation at this time."));
-    } finally {
-      setSubmittingId(null);
-    }
+  const handleMarkReceived = (id: number) => {
+    triggerConfirm(
+      language === "vi" ? "Xác Nhận Nhận Hàng" : "Confirm Receipt",
+      language === "vi" ? "Xác nhận đã nhận được sản phẩm hoàn trả từ khách hàng tại kho?" : "Confirm that the returned items have been received at the warehouse?",
+      async () => {
+        try {
+          setSubmittingId(id);
+          await adminAPI.markReturnReceived(id);
+          alert(language === "vi" ? "Đã cập nhật trạng thái nhận sản phẩm thành công!" : "Successfully updated receipt status!");
+          fetchReturnRequests();
+        } catch (err: any) {
+          console.error(err);
+          alert(err?.response?.data?.message || (language === "vi" ? "Không thể thực hiện thao tác lúc này." : "Cannot perform operation at this time."));
+        } finally {
+          setSubmittingId(null);
+        }
+      }
+    );
+  };
+
+  const handleStartRefund = (id: number) => {
+    triggerConfirm(
+      language === "vi" ? "Bắt Đầu Hoàn Tiền" : "Start Refund Processing",
+      language === "vi" ? "Bắt đầu thực hiện quy trình hoàn tiền cho khách hàng?" : "Start refund processing for the customer?",
+      async () => {
+        try {
+          setSubmittingId(id);
+          await adminAPI.startReturnRefund(id);
+          alert(language === "vi" ? "Đã chuyển trạng thái sang Đang xử lý hoàn tiền!" : "Status updated to Refund Processing!");
+          fetchReturnRequests();
+        } catch (err: any) {
+          console.error(err);
+          alert(err?.response?.data?.message || (language === "vi" ? "Không thể thực hiện thao tác lúc này." : "Cannot perform operation at this time."));
+        } finally {
+          setSubmittingId(null);
+        }
+      }
+    );
   };
 
   const handleCompleteRefundSubmit = async (e: React.FormEvent) => {
@@ -144,6 +195,7 @@ export default function AdminReturnsPage() {
   const pendingCount = returns.filter((r) => r.status === "return_requested").length;
   const processingCount = returns.filter((r) => ["return_approved", "product_received", "refund_processing"].includes(r.status)).length;
   const completedCount = returns.filter((r) => r.status === "refunded").length;
+  const rejectedCount = returns.filter((r) => ["return_rejected", "return_cancelled"].includes(r.status)).length;
 
   return (
     <div className="space-y-6">
@@ -160,7 +212,7 @@ export default function AdminReturnsPage() {
       </div>
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         <div className="rounded-3xl border border-brand-border/40 bg-brand-surface p-6 shadow-sm flex items-center gap-4 group hover:border-brand-primary/30 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
           <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary border border-brand-border/20">
             <History size={20} />
@@ -206,6 +258,18 @@ export default function AdminReturnsPage() {
               {language === "vi" ? "Đã hoàn tiền" : "Refunded"}
             </span>
             <span className="text-2xl font-black text-status-success-text">{completedCount}</span>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-brand-border/40 bg-brand-surface p-6 shadow-sm flex items-center gap-4 group hover:border-brand-primary/30 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <div className="w-12 h-12 bg-status-danger-bg text-status-danger-text rounded-2xl flex items-center justify-center border border-status-danger-border">
+            <X size={20} />
+          </div>
+          <div>
+            <span className="text-xs text-brand-muted block font-bold uppercase tracking-wider">
+              {language === "vi" ? "Đã từ chối/Hủy" : "Rejected/Cancelled"}
+            </span>
+            <span className="text-2xl font-black text-status-danger-text">{rejectedCount}</span>
           </div>
         </div>
       </div>
@@ -597,6 +661,26 @@ export default function AdminReturnsPage() {
           </div>
         </div>
       )}
+
+      <AdminPromptModal
+        isOpen={isPromptOpen}
+        onClose={() => setIsPromptOpen(false)}
+        onSubmit={handlePromptSubmit}
+        title={promptConfig?.title || ""}
+        placeholder={promptConfig?.placeholder || ""}
+        required={promptConfig?.required || false}
+        isSubmitting={submittingId !== null}
+        inputLabel={language === "vi" ? "Lý do / Phản hồi" : "Reason / Feedback"}
+      />
+
+      <AdminConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmConfig?.onConfirm || (() => {})}
+        title={confirmConfig?.title || ""}
+        message={confirmConfig?.message || ""}
+        type={confirmConfig?.type}
+      />
     </div>
   );
 }

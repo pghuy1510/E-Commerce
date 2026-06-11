@@ -17,6 +17,7 @@ import {
 import { adminAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import AdminConfirmModal from "@/components/admin/AdminConfirmModal";
 
 type AdminUser = {
   id: number;
@@ -78,6 +79,19 @@ export default function AdminUsersPage() {
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string;
+    message: string;
+    type?: "primary" | "danger" | "warning";
+    onConfirm: () => void;
+  } | null>(null);
+
+  const triggerConfirm = (title: string, message: string, onConfirm: () => void, type: "primary" | "danger" | "warning" = "primary") => {
+    setConfirmConfig({ title, message, onConfirm, type });
+    setIsConfirmOpen(true);
+  };
+
   const handleOpenEditModal = (user: AdminUser) => {
     setEditingUser(user);
     setEditUsername(user.username || "");
@@ -122,27 +136,32 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm(language === "vi" 
-      ? "Bạn có chắc chắn muốn xóa tài khoản này? Hành động này sẽ gỡ bỏ tài khoản và dọn dẹp các dữ liệu giỏ hàng liên quan, giữ lại lịch sử đơn hàng ở trạng thái vô danh. Không thể hoàn tác."
-      : "Are you sure you want to delete this account? This will remove the account and clear associated cart items, leaving order history anonymous. This action cannot be undone."
-    )) return;
-    try {
-      setActionUserId(userId);
-      await adminAPI.deleteUser(userId);
-      alert(language === "vi" ? "Xóa tài khoản người dùng thành công!" : "User account deleted successfully!");
-      fetchUsers();
-    } catch (err: unknown) {
-      const apiError = err as ApiError;
-      console.error(err);
-      alert(
-        apiError?.response?.data?.message ||
-          apiError?.message ||
-          (language === "vi" ? "Không thể xóa tài khoản người dùng." : "Cannot delete user account.")
-      );
-    } finally {
-      setActionUserId(null);
-    }
+  const handleDeleteUser = (userId: number) => {
+    triggerConfirm(
+      language === "vi" ? "Xóa Tài Khoản" : "Delete User Account",
+      language === "vi" 
+        ? "Bạn có chắc chắn muốn xóa tài khoản này? Hành động này sẽ gỡ bỏ tài khoản và dọn dẹp các dữ liệu giỏ hàng liên quan, giữ lại lịch sử đơn hàng ở trạng thái vô danh. Không thể hoàn tác."
+        : "Are you sure you want to delete this account? This will remove the account and clear associated cart items, leaving order history anonymous. This action cannot be undone.",
+      async () => {
+        try {
+          setActionUserId(userId);
+          await adminAPI.deleteUser(userId);
+          alert(language === "vi" ? "Xóa tài khoản người dùng thành công!" : "User account deleted successfully!");
+          fetchUsers();
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          console.error(err);
+          alert(
+            apiError?.response?.data?.message ||
+              apiError?.message ||
+              (language === "vi" ? "Không thể xóa tài khoản người dùng." : "Cannot delete user account.")
+          );
+        } finally {
+          setActionUserId(null);
+        }
+      },
+      "danger"
+    );
   };
 
   const fetchUsers = async () => {
@@ -189,63 +208,71 @@ export default function AdminUsersPage() {
     });
   }, [roleFilter, searchTerm, statusFilter, users]);
 
-  const handleRoleChange = async (user: AdminUser, nextRole: string) => {
+  const handleRoleChange = (user: AdminUser, nextRole: string) => {
     if (user.role === nextRole) return;
 
     const targetRoleText = nextRole === "admin" 
       ? (language === "vi" ? "Admin" : "Admin") 
       : (language === "vi" ? "User" : "User");
-    const confirmed = confirm(
+    
+    triggerConfirm(
+      language === "vi" ? "Cập Nhật Phân Quyền" : "Update User Role",
       language === "vi"
         ? `Cập nhật quyền của ${user.username} thành ${targetRoleText}?`
-        : `Update role of ${user.username} to ${targetRoleText}?`
+        : `Update role of ${user.username} to ${targetRoleText}?`,
+      async () => {
+        try {
+          setActionUserId(user.id);
+          await adminAPI.updateUserRole(user.id, nextRole);
+          await fetchUsers();
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          console.error(err);
+          alert(
+            apiError?.response?.data?.message ||
+              apiError?.message ||
+              (language === "vi" ? "Không thể cập nhật phân quyền." : "Cannot update user role.")
+          );
+        } finally {
+          setActionUserId(null);
+        }
+      },
+      "warning"
     );
-    if (!confirmed) return;
-
-    try {
-      setActionUserId(user.id);
-      await adminAPI.updateUserRole(user.id, nextRole);
-      await fetchUsers();
-    } catch (err: unknown) {
-      const apiError = err as ApiError;
-      console.error(err);
-      alert(
-        apiError?.response?.data?.message ||
-          apiError?.message ||
-          (language === "vi" ? "Không thể cập nhật phân quyền." : "Cannot update user role.")
-      );
-    } finally {
-      setActionUserId(null);
-    }
   };
 
-  const handleToggleBan = async (user: AdminUser) => {
+  const handleToggleBan = (user: AdminUser) => {
     const nextIsActive = !user.isActive;
     const actionText = nextIsActive 
       ? (language === "vi" ? "mở khóa" : "unban") 
       : (language === "vi" ? "khóa" : "ban");
-    const confirmed = confirm(
+
+    triggerConfirm(
+      nextIsActive 
+        ? (language === "vi" ? "Mở Khóa Tài Khoản" : "Unban Account")
+        : (language === "vi" ? "Khóa Tài Khoản" : "Ban Account"),
       language === "vi"
         ? `Bạn có chắc chắn muốn ${actionText} tài khoản ${user.username}?`
-        : `Are you sure you want to ${actionText} the account ${user.username}?`
+        : `Are you sure you want to ${actionText} the account ${user.username}?`,
+      async () => {
+        try {
+          setActionUserId(user.id);
+          await adminAPI.banUser(user.id, nextIsActive);
+          await fetchUsers();
+        } catch (err: unknown) {
+          const apiError = err as ApiError;
+          console.error(err);
+          alert(
+            apiError?.response?.data?.message ||
+              apiError?.message ||
+              (language === "vi" ? "Không thể cập nhật trạng thái tài khoản." : "Cannot update account status.")
+          );
+        } finally {
+          setActionUserId(null);
+        }
+      },
+      nextIsActive ? "primary" : "danger"
     );
-    if (!confirmed) return;
-
-    try {
-      setActionUserId(user.id);
-      await adminAPI.banUser(user.id, nextIsActive);
-      await fetchUsers();
-    } catch (err: unknown) {
-      const apiError = err as ApiError;
-      console.error(err);
-      alert(
-        apiError?.response?.data?.message ||
-          apiError?.message ||
-          (language === "vi" ? "Không thể cập nhật trạng thái tài khoản." : "Cannot update account status.")
-      );
-    } finally {
-      setActionUserId(null);
-    }
   };
 
   const openOrdersDrawer = async (user: AdminUser) => {
@@ -743,6 +770,15 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      <AdminConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmConfig?.onConfirm || (() => {})}
+        title={confirmConfig?.title || ""}
+        message={confirmConfig?.message || ""}
+        type={confirmConfig?.type}
+      />
     </div>
   );
 }

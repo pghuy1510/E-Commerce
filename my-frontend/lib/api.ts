@@ -169,10 +169,29 @@ export interface Product {
   price: number;
   stock: number;
   image?: string;
+  type?: 'simple' | 'variable';
+  defaultVariant?: any | null;
+  maxPrice?: number | null;
+  variantCount?: number | null;
   category: {
     id: number;
     name: string;
   };
+  options?: Array<{
+    id: number;
+    name: string;
+    values: string[];
+  }>;
+  variants?: Array<{
+    id: number;
+    sku?: string;
+    name: string;
+    price: number;
+    stock: number;
+    image?: string;
+    options: Record<string, string>;
+    isActive: boolean;
+  }>;
 }
 
 export interface BestSellerProduct extends Product {
@@ -354,14 +373,17 @@ export const wishlistAPI = {
 };
 
 export const cartAPI = {
-  add: async (productId: number, quantity = 1) => {
+  add: async (productId: number, quantity = 1, variantId?: number) => {
     const token = getBrowserToken();
     if (!token) {
       const localCartStr = localStorage.getItem("guest-cart");
       const localCart = localCartStr ? JSON.parse(localCartStr) : [];
-      const exists = localCart.some((item: any) =>
-        item.product?.id === productId || item.productId === productId
-      );
+      const exists = localCart.some((item: any) => {
+        if (variantId) {
+          return (item.product?.id === productId || item.productId === productId) && item.variantId === variantId;
+        }
+        return (item.product?.id === productId || item.productId === productId) && !item.variantId;
+      });
       if (exists) {
         throw createDuplicateError(
           "Sản phẩm đã có trong giỏ hàng.",
@@ -370,15 +392,22 @@ export const cartAPI = {
       }
 
       const product = await productAPI.getById(productId);
-      if (product.stock < quantity) {
-        throw new Error(`Sản phẩm này chỉ còn ${product.stock} sản phẩm trong kho.`);
+      let variant: any = null;
+      if (variantId) {
+        variant = product.variants?.find(v => v.id === variantId);
+      }
+      
+      const targetStock = variant ? variant.stock : product.stock;
+      if (targetStock < quantity) {
+        throw new Error(`Sản phẩm này chỉ còn ${targetStock} sản phẩm trong kho.`);
       }
 
       localCart.push({
-        id: productId,
+        id: variantId ? `${productId}-${variantId}` : productId,
         productId,
+        variantId,
         quantity,
-        price: product.price,
+        price: variant ? variant.price : product.price,
         product: {
           id: product.id,
           name: product.name,
@@ -386,6 +415,7 @@ export const cartAPI = {
           image: product.image,
           stock: product.stock,
         },
+        variant,
       });
 
       localStorage.setItem("guest-cart", JSON.stringify(localCart));
@@ -395,9 +425,12 @@ export const cartAPI = {
 
     const current = await api.get("/cart");
     const items = normalizeCartItems(current.data);
-    const exists = items.some((item: any) =>
-      hasProductIdMatch(item, productId),
-    );
+    const exists = items.some((item: any) => {
+      if (variantId) {
+        return (item.product?.id === productId || item.productId === productId) && item.variant?.id === variantId;
+      }
+      return (item.product?.id === productId || item.productId === productId) && !item.variant;
+    });
     if (exists) {
       throw createDuplicateError(
         "Sản phẩm đã có trong giỏ hàng.",
@@ -408,6 +441,7 @@ export const cartAPI = {
     const res = await api.post("/cart/add", {
       productId,
       quantity,
+      variantId,
     });
     emitCartUpdated();
     return res;
@@ -423,36 +457,42 @@ export const cartAPI = {
     return api.get("/cart");
   },
 
-  remove: async (productId: number) => {
+  remove: async (productId: number, variantId?: number) => {
     const token = getBrowserToken();
     if (!token) {
       const localCartStr = localStorage.getItem("guest-cart");
       let localCart = localCartStr ? JSON.parse(localCartStr) : [];
-      localCart = localCart.filter((item: any) =>
-        item.product?.id !== productId && item.productId !== productId
-      );
+      localCart = localCart.filter((item: any) => {
+        if (variantId) {
+          return !(item.productId === productId && item.variantId === variantId);
+        }
+        return !(item.productId === productId && !item.variantId);
+      });
       localStorage.setItem("guest-cart", JSON.stringify(localCart));
       emitCartUpdated();
       return { data: { items: localCart } };
     }
     const res = await api.delete("/cart/remove", {
-      data: { productId },
+      data: { productId, variantId },
     });
     emitCartUpdated();
     return res;
   },
 
-  update: async (productId: number, quantity: number) => {
+  update: async (productId: number, quantity: number, variantId?: number) => {
     const token = getBrowserToken();
     if (!token) {
       const localCartStr = localStorage.getItem("guest-cart");
       const localCart = localCartStr ? JSON.parse(localCartStr) : [];
-      const item = localCart.find((item: any) =>
-        item.product?.id === productId || item.productId === productId
-      );
+      const item = localCart.find((item: any) => {
+        if (variantId) {
+          return item.productId === productId && item.variantId === variantId;
+        }
+        return item.productId === productId && !item.variantId;
+      });
       if (!item) throw new Error("Sản phẩm không có trong giỏ hàng.");
       
-      const stock = item.product?.stock ?? 999;
+      const stock = item.variant ? item.variant.stock : (item.product?.stock ?? 999);
       if (stock < quantity) {
         throw new Error(`Sản phẩm này chỉ còn ${stock} sản phẩm trong kho.`);
       }
@@ -465,6 +505,7 @@ export const cartAPI = {
     const res = await api.patch("/cart/update", {
       productId,
       quantity,
+      variantId,
     });
     emitCartUpdated();
     return res;
@@ -751,6 +792,20 @@ export const adminAPI = {
     stock: number;
     image?: string;
     categoryId: number;
+    type?: 'simple' | 'variable';
+    options?: Array<{
+      name: string;
+      values: string[];
+    }>;
+    variants?: Array<{
+      sku?: string;
+      name: string;
+      price: number;
+      stock: number;
+      image?: string;
+      options: Record<string, string>;
+      isActive?: boolean;
+    }>;
   }) => {
     requireAuthToken();
     const res = await api.post("/admin/products", payload);
@@ -763,6 +818,20 @@ export const adminAPI = {
     stock?: number;
     image?: string;
     categoryId?: number;
+    type?: 'simple' | 'variable';
+    options?: Array<{
+      name: string;
+      values: string[];
+    }>;
+    variants?: Array<{
+      sku?: string;
+      name: string;
+      price: number;
+      stock: number;
+      image?: string;
+      options: Record<string, string>;
+      isActive?: boolean;
+    }>;
   }) => {
     requireAuthToken();
     const res = await api.patch(`/admin/products/${id}`, payload);
@@ -901,6 +970,32 @@ export const adminAPI = {
   getPromotionLogs: async (params?: { page?: number; limit?: number; entityType?: string; action?: string }) => {
     requireAuthToken();
     const res = await api.get("/admin/promotion-logs", { params });
+    return res.data;
+  },
+  downloadExcelTemplate: async () => {
+    requireAuthToken();
+    const res = await api.get("/admin/products/excel-template", {
+      responseType: "blob",
+    });
+    return res.data;
+  },
+  exportExcelProducts: async () => {
+    requireAuthToken();
+    const res = await api.get("/admin/products/excel-export", {
+      responseType: "blob",
+    });
+    return res.data;
+  },
+  importExcelProducts: async (file: File, mode = "upsert", dryRun = false) => {
+    requireAuthToken();
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/admin/products/excel-import", formData, {
+      params: { mode, dryRun },
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return res.data;
   },
 };

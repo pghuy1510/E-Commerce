@@ -21,6 +21,7 @@ import { User } from '../users/entities/user.entity';
 import { CouponService } from '../coupons/coupon.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Product } from '../products/products.entity';
+import { ProductVariant } from '../products/entities/product-variant.entity';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
 import { calculateCartSubtotal, calculateOrderTotals, toMoneyNumber } from '../order/order-totals';
 import { MailService } from '../common/mail.service';
@@ -475,12 +476,32 @@ export class PaymentService {
 
           // Release reservation and subtract actual stock since payment is successful
           const productRepo = manager.getRepository(Product);
+          const variantRepo = manager.getRepository(ProductVariant);
           for (const item of currentOrder.items || []) {
             const product = await productRepo.findOne({ where: { id: item.productId } });
             if (product) {
-              product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
-              product.stock -= item.quantity;
-              await productRepo.save(product);
+              if (item.variantId) {
+                const variant = await variantRepo.findOne({ where: { id: item.variantId } });
+                if (variant) {
+                  variant.reservedStock = Math.max(0, (variant.reservedStock || 0) - item.quantity);
+                  variant.stock -= item.quantity;
+                  await variantRepo.save(variant);
+                }
+              } else {
+                product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+                product.stock -= item.quantity;
+                await productRepo.save(product);
+              }
+
+              // Recalculate parent cache
+              if (product.type === 'variable') {
+                const variants = await variantRepo.find({ where: { productId: product.id } });
+                const activeVariants = variants.filter(v => v.isActive);
+                product.price = activeVariants.length > 0 ? Math.min(...activeVariants.map(v => Number(v.price))) : product.price;
+                product.stock = activeVariants.reduce((sum, v) => sum + v.stock, 0);
+                product.reservedStock = activeVariants.reduce((sum, v) => sum + (v.reservedStock || 0), 0);
+                await productRepo.save(product);
+              }
             }
           }
         }
@@ -639,14 +660,36 @@ export class PaymentService {
             });
             // Release reserved stock since payment has expired and was never paid
             if (currentOrder.items) {
+              const variantRepo = manager.getRepository(ProductVariant);
               for (const item of currentOrder.items) {
                 const product = await productRepo.findOne({
                   where: { id: item.productId },
                   lock: { mode: 'pessimistic_write' },
                 });
                 if (product) {
-                  product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
-                  await productRepo.save(product);
+                  if (item.variantId) {
+                    const variant = await variantRepo.findOne({
+                      where: { id: item.variantId },
+                      lock: { mode: 'pessimistic_write' },
+                    });
+                    if (variant) {
+                      variant.reservedStock = Math.max(0, (variant.reservedStock || 0) - item.quantity);
+                      await variantRepo.save(variant);
+                    }
+                  } else {
+                    product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+                    await productRepo.save(product);
+                  }
+
+                  // Recalculate parent cache
+                  if (product.type === 'variable') {
+                    const variants = await variantRepo.find({ where: { productId: product.id } });
+                    const activeVariants = variants.filter(v => v.isActive);
+                    product.price = activeVariants.length > 0 ? Math.min(...activeVariants.map(v => Number(v.price))) : product.price;
+                    product.stock = activeVariants.reduce((sum, v) => sum + v.stock, 0);
+                    product.reservedStock = activeVariants.reduce((sum, v) => sum + (v.reservedStock || 0), 0);
+                    await productRepo.save(product);
+                  }
                 }
               }
             }

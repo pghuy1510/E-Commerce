@@ -31,5 +31,31 @@ export class CreateProductDto {
   categoryId!: number;
 
   @IsString()
+  @IsOptional()
   image?: string;
+
+  @IsString()
+  @IsOptional()
+  type?: 'simple' | 'variable';
+
+  @IsString()
+  @IsOptional()
+  sku?: string;
+
+  @IsOptional()
+  options?: Array<{
+    name: string;
+    values: string[];
+  }>;
+
+  @IsOptional()
+  variants?: Array<{
+    sku?: string;
+    name: string;
+    price: number;
+    stock: number;
+    image?: string;
+    options: Record<string, string>;
+    isActive?: boolean;
+  }>;
 }

@@ -8,10 +8,12 @@ import { OrderReturn } from '../order/order-return.entity';
 import { User } from '../users/entities/user.entity';
 import { Category } from '../categories/categories.entity';
 import { PromotionLog } from '../promotions/entities/promotion-log.entity';
+import { ProductsModule } from '../products/products.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, Order, OrderReturn, User, Category, PromotionLog]),
+    ProductsModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

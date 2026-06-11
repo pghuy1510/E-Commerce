@@ -1,9 +1,9 @@
-"use client";
-
+import { useRef } from "react";
 import Image from "next/image";
 import { Eye, Heart, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePreferences } from "@/lib/i18n";
+import { useQuickView } from "@/components/QuickViewContext";
 import {
   cartAPI,
   wishlistAPI,
@@ -34,7 +34,22 @@ export default function ProductCard({
 }: ProductCardProps) {
   const router = useRouter();
   const { t, formatPrice, translateCategory } = usePreferences();
+  const { openQuickView, prefetchProduct } = useQuickView();
+  const prefetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const userId = 1;
+
+  const handleMouseEnter = () => {
+    prefetchTimeoutRef.current = setTimeout(() => {
+      void prefetchProduct(product.id);
+    }, 200);
+  };
+
+  const handleMouseLeave = () => {
+    if (prefetchTimeoutRef.current) {
+      clearTimeout(prefetchTimeoutRef.current);
+      prefetchTimeoutRef.current = null;
+    }
+  };
 
   const handleWishlist = async () => {
     try {
@@ -77,8 +92,23 @@ export default function ProductCard({
     }
   };
 
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (product.type === "variable") {
+      openQuickView(product.id);
+    } else {
+      void handleAddToCart();
+    }
+  };
+
+  const cardImage = product.defaultVariant?.image || product.image || "/placeholder.png";
+
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-[16px] border border-neutral-100 bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all duration-500 ease-out hover:-translate-y-[6px] hover:border-brand-primary/40 hover:shadow-xl">
+    <div
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="group flex h-full flex-col overflow-hidden rounded-[16px] border border-neutral-100 bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all duration-500 ease-out hover:-translate-y-[6px] hover:border-brand-primary/40 hover:shadow-xl"
+    >
       {/* IMAGE AREA */}
       <div className="relative mb-3 group/image-wrapper">
         <div className="relative w-full aspect-square overflow-hidden rounded-[12px] bg-brand-surface border border-[#eadfcc] flex items-center justify-center">
@@ -89,18 +119,39 @@ export default function ProductCard({
             </span>
           )}
 
+          {product.type === "variable" && product.variantCount && product.variantCount > 1 && (
+            <span className="absolute right-3 top-3 z-10 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase bg-neutral-900/90 text-white backdrop-blur-xs shadow-sm tracking-wider">
+              {t("product.versionsCount", { count: product.variantCount })}
+            </span>
+          )}
+
           <button
             type="button"
             onClick={() => router.push(`/product/${product.id}`)}
             className="relative block w-full h-full">
             <Image
-              src={product.image || "/placeholder.png"}
+              src={cardImage}
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover rounded-[12px] transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             />
           </button>
+
+          {/* HOVER QUICK VIEW OVERLAY */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/10 backdrop-blur-[1px] pointer-events-none rounded-[12px]">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openQuickView(product.id);
+              }}
+              className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-brand-primary text-xs font-bold shadow-md hover:bg-brand-primary hover:text-white transition duration-300 cursor-pointer"
+            >
+              <Eye size={13} />
+              {t("action.quickView")}
+            </button>
+          </div>
         </div>
 
         {/* ACTION ICONS - SLIDES IN ON HOVER */}
@@ -114,7 +165,7 @@ export default function ProductCard({
 
           <button
             type="button"
-            onClick={handleAddToCart}
+            onClick={handleButtonClick}
             disabled={product.stock <= 0}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white border border-[#eadfcc] shadow-sm hover:shadow-md hover:bg-[#a7794a] hover:text-white hover:border-[#a7794a] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer text-brand-muted">
             <ShoppingCart size={15} />
@@ -146,18 +197,38 @@ export default function ProductCard({
           {product.name}
         </button>
 
+        {/* Options Preview */}
+        {product.type === "variable" && product.options && product.options.length > 0 && (
+          <div className="mt-1 flex items-center gap-1 flex-wrap">
+            {(() => {
+              const firstOpt = product.options[0];
+              const values = firstOpt.values || [];
+              if (values.length === 0) return null;
+              const displayed = values.slice(0, 3).join(" • ");
+              const remaining = values.length - 3;
+              return (
+                <span className="text-[11px] font-semibold text-neutral-400">
+                  {displayed}{remaining > 0 ? ` +${remaining}` : ""}
+                </span>
+              );
+            })()}
+          </div>
+        )}
+
         {/* PRICE + ADD TO CART ROW */}
         <div className="flex items-end justify-between mt-3">
           <span className="text-[18px] font-bold text-brand-primary">
-            {formatPrice(product.price)}
+            {product.type === "variable"
+              ? t("product.fromPrice", { price: formatPrice(product.price) })
+              : formatPrice(product.price)}
           </span>
 
           <button
             type="button"
-            onClick={handleAddToCart}
+            onClick={handleButtonClick}
             disabled={product.stock <= 0}
-            className="h-8 min-w-[82px] px-3 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-brand-primary text-white transition-all duration-300 hover:bg-brand-primary-hover hover:shadow-md hover:-translate-y-0.5 flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60 border-none">
-            {t("action.addShort")}
+            className="h-8 min-w-[82px] px-3 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-brand-primary text-white transition-all duration-300 hover:bg-brand-primary-hover hover:shadow-md hover:-translate-y-0.5 flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60 border-none cursor-pointer">
+            {product.type === "variable" ? t("action.chooseVersion") : t("action.addShort")}
           </button>
         </div>
       </div>

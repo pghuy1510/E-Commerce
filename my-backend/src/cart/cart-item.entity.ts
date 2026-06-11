@@ -6,11 +6,15 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Cart } from './cart.entity';
 import { Product } from '../products/products.entity';
+import { ProductVariant } from '../products/entities/product-variant.entity';
 
 @Entity('cart_items')
+@Index('idx_cart_item_simple', ['cart', 'product'], { unique: true, where: 'variant_id IS NULL' })
+@Index('idx_cart_item_variant', ['cart', 'product', 'variant'], { unique: true, where: 'variant_id IS NOT NULL' })
 export class CartItem {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -22,6 +26,10 @@ export class CartItem {
   @ManyToOne(() => Product, { eager: true })
   @JoinColumn({ name: 'product_id' })
   product!: Product;
+
+  @ManyToOne(() => ProductVariant, { eager: true, nullable: true })
+  @JoinColumn({ name: 'variant_id' })
+  variant?: ProductVariant | null;
 
   @Column({ default: 1 })
   quantity!: number;
@@ -42,3 +50,4 @@ export class CartItem {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updated_at!: Date;
 }
+

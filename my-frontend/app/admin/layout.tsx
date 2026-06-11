@@ -22,6 +22,16 @@ import {
 } from "lucide-react";
 import { userProfileAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
+import { useSession } from "next-auth/react";
+
+const getInitials = (name: string) => {
+  if (!name) return "AD";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
 
 export default function AdminLayout({
   children,
@@ -30,11 +40,20 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { language, setLanguage } = usePreferences();
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [adminName, setAdminName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("username") || "Admin Account";
+    }
+    return "Admin Account";
+  });
+
+  const displayName = session?.user?.name || adminName;
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -42,6 +61,9 @@ export default function AdminLayout({
         const profile = await userProfileAPI.get();
         if (profile.role === "admin") {
           setIsAdmin(true);
+          const name = profile.username || profile.email || "Admin Account";
+          localStorage.setItem("username", name);
+          setAdminName(name);
         } else {
           alert("Bạn không có quyền truy cập trang quản trị!");
           router.push("/");
@@ -259,10 +281,10 @@ export default function AdminLayout({
               <span className="text-xs font-semibold text-brand-primary uppercase tracking-wider">
                 {language === "vi" ? "Quản trị viên" : "Administrator"}
               </span>
-              <span className="text-sm font-bold text-brand-text">Admin Account</span>
+              <span className="text-sm font-bold text-brand-text">{displayName}</span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center font-bold text-brand-primary">
-              AD
+            <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center font-bold text-brand-primary" title={displayName}>
+              {getInitials(displayName)}
             </div>
           </div>
         </header>

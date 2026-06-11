@@ -18,6 +18,18 @@ export class OrderItem {
   @Column({ name: 'product_name' })
   productName!: string;
 
+  @Column({ name: 'variant_id', type: 'integer', nullable: true })
+  variantId?: number | null;
+
+  @Column({ name: 'variant_name', type: 'varchar', nullable: true })
+  variantName?: string | null;
+
+  @Column({ name: 'variant_sku', type: 'varchar', nullable: true })
+  variantSku?: string | null;
+
+  @Column({ name: 'variant_options', type: 'jsonb', nullable: true })
+  variantOptions?: Record<string, string> | null;
+
   @Column()
   quantity!: number;
 
@@ -35,3 +47,4 @@ export class OrderItem {
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 }
+

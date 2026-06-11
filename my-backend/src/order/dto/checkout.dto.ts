@@ -82,6 +82,10 @@ export class GuestCartItemDto {
   @IsNumber()
   productId!: number;
 
+  @IsOptional()
+  @IsNumber()
+  variantId?: number;
+
   @IsNumber()
   @Min(1)
   quantity!: number;

@@ -7,6 +7,7 @@ import { SessionProvider } from "next-auth/react";
 import { PreferencesProvider } from "@/lib/i18n";
 import TokenSynchronizer from "@/components/layout/TokenSynchronizer";
 import CustomAlert from "@/components/layout/CustomAlert";
+import { QuickViewProvider } from "@/components/QuickViewContext";
 
 function ThemeInitializer() {
   useEffect(() => {
@@ -70,8 +71,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <TokenSynchronizer />
           <ThemeInitializer />
           <PreferencesProvider>
-            <CustomAlert />
-            {children}
+            <QuickViewProvider>
+              <CustomAlert />
+              {children}
+            </QuickViewProvider>
           </PreferencesProvider>
         </SessionProvider>
       </body>

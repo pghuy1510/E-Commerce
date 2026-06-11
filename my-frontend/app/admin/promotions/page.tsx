@@ -24,6 +24,7 @@ import Image from "next/image";
 import { adminAPI, productAPI, api, type Coupon, type Deal, type DealProduct } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import AdminPromptModal from "@/components/admin/AdminPromptModal";
 
 export default function AdminPromotionsPage() {
   const { formatPrice, translateCategory, language } = usePreferences();
@@ -98,6 +99,14 @@ export default function AdminPromotionsPage() {
 
   // Audit Logs State
   const [logs, setLogs] = useState<any[]>([]);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [promptConfig, setPromptConfig] = useState<{
+    type: "coupon" | "deal";
+    id: number;
+    title: string;
+    placeholder: string;
+    required: boolean;
+  } | null>(null);
   const [logsTotal, setLogsTotal] = useState(0);
   const [logsPage, setLogsPage] = useState(1);
   const [logsLimit] = useState(12);
@@ -254,22 +263,15 @@ export default function AdminPromotionsPage() {
     }
   };
 
-  const handleDeleteCoupon = async (id: number) => {
-    const reason = prompt(language === "vi" ? "Vui lòng cung cấp lý do xóa/tắt coupon này (Bắt buộc):" : "Please provide a reason to delete/deactivate this coupon (Required):");
-    if (reason === null) return;
-    if (!reason.trim()) {
-      alert(language === "vi" ? "Lý do xóa không được bỏ trống." : "Deletion reason cannot be empty.");
-      return;
-    }
-
-    try {
-      await adminAPI.deleteCoupon(id, reason.trim());
-      alert(language === "vi" ? "Đã tắt kích hoạt coupon thành công!" : "Coupon deactivated successfully!");
-      fetchData();
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.response?.data?.message || (language === "vi" ? "Không thể xóa coupon." : "Cannot delete coupon."));
-    }
+  const handleDeleteCoupon = (id: number) => {
+    setPromptConfig({
+      type: "coupon",
+      id,
+      title: language === "vi" ? "Tắt Kích Hoạt Coupon" : "Deactivate Coupon",
+      placeholder: language === "vi" ? "Vui lòng cung cấp lý do tắt/xóa coupon này (Bắt buộc)..." : "Please provide a reason to delete/deactivate this coupon (Required)...",
+      required: true,
+    });
+    setIsPromptOpen(true);
   };
 
   // --- DEAL ACTIONS ---
@@ -482,21 +484,40 @@ export default function AdminPromotionsPage() {
     }
   };
 
-  const handleDeleteDeal = async (id: number) => {
-    const reason = prompt(language === "vi" ? "Vui lòng nhập lý do tắt/hủy sự kiện Flash Sale này (Bắt buộc):" : "Please enter a reason to disable/cancel this Flash Sale event (Required):");
-    if (reason === null) return;
-    if (!reason.trim()) {
-      alert(language === "vi" ? "Lý do xóa không được bỏ trống." : "Deletion reason cannot be empty.");
-      return;
-    }
+  const handleDeleteDeal = (id: number) => {
+    setPromptConfig({
+      type: "deal",
+      id,
+      title: language === "vi" ? "Hủy Sự Kiện Flash Sale" : "Cancel Flash Sale Event",
+      placeholder: language === "vi" ? "Vui lòng nhập lý do tắt/hủy sự kiện Flash Sale này (Bắt buộc)..." : "Please enter a reason to disable/cancel this Flash Sale event (Required)...",
+      required: true,
+    });
+    setIsPromptOpen(true);
+  };
 
-    try {
-      await adminAPI.deleteDeal(id, reason.trim());
-      alert(language === "vi" ? "Đã ngưng sự kiện Flash Sale thành công!" : "Flash Sale event successfully suspended!");
-      fetchData();
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.response?.data?.message || (language === "vi" ? "Không thể xóa Flash Sale." : "Cannot delete Flash Sale."));
+  const handlePromptSubmit = async (value: string) => {
+    if (!promptConfig) return;
+    const { type, id } = promptConfig;
+    setIsPromptOpen(false);
+
+    if (type === "coupon") {
+      try {
+        await adminAPI.deleteCoupon(id, value.trim());
+        alert(language === "vi" ? "Đã tắt kích hoạt coupon thành công!" : "Coupon deactivated successfully!");
+        fetchData();
+      } catch (err: any) {
+        console.error(err);
+        alert(err?.response?.data?.message || (language === "vi" ? "Không thể xóa coupon." : "Cannot delete coupon."));
+      }
+    } else if (type === "deal") {
+      try {
+        await adminAPI.deleteDeal(id, value.trim());
+        alert(language === "vi" ? "Đã ngưng sự kiện Flash Sale thành công!" : "Flash Sale event successfully suspended!");
+        fetchData();
+      } catch (err: any) {
+        console.error(err);
+        alert(err?.response?.data?.message || (language === "vi" ? "Không thể xóa Flash Sale." : "Cannot delete Flash Sale."));
+      }
     }
   };
 
@@ -1544,6 +1565,17 @@ export default function AdminPromotionsPage() {
           </div>
         </div>
       )}
+
+      <AdminPromptModal
+        isOpen={isPromptOpen}
+        onClose={() => setIsPromptOpen(false)}
+        onSubmit={handlePromptSubmit}
+        title={promptConfig?.title || ""}
+        placeholder={promptConfig?.placeholder || ""}
+        required={promptConfig?.required || false}
+        isSubmitting={false}
+        inputLabel={language === "vi" ? "Lý do thay đổi" : "Audit Log Reason"}
+      />
     </div>
   );
 }

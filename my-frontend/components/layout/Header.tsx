@@ -548,7 +548,7 @@ export default function Header() {
           {displayName ? (
             <div className="group relative cursor-pointer">
               <div className="flex items-center gap-2 hover:text-brand-primary">
-                <User className="h-5 w-5" />
+                <User className="h-5 w-5 text-brand-primary transition-transform duration-200 group-hover:scale-110" />
 
                 <span className="font-medium">{displayName}</span>
 

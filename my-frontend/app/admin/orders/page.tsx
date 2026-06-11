@@ -23,6 +23,8 @@ import {
 import { adminAPI, orderAPI } from "@/lib/api";
 import { usePreferences } from "@/lib/i18n";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import AdminPromptModal from "@/components/admin/AdminPromptModal";
+import AdminConfirmModal from "@/components/admin/AdminConfirmModal";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -43,10 +45,31 @@ export default function AdminOrdersPage() {
 
   // Return Workflow States
   const [selectedOrderReturn, setSelectedOrderReturn] = useState<any>(null);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [promptConfig, setPromptConfig] = useState<{
+    type: "reject" | "create_on_behalf";
+    id: number;
+    title: string;
+    placeholder: string;
+    required: boolean;
+  } | null>(null);
   const [loadingReturn, setLoadingReturn] = useState(false);
   const [isCompletingRefund, setIsCompletingRefund] = useState(false);
   const [refundMethod, setRefundMethod] = useState("Bank Transfer");
   const [refundTxnId, setRefundTxnId] = useState("");
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string;
+    message: string;
+    type?: "primary" | "danger" | "warning";
+    onConfirm: () => void;
+  } | null>(null);
+
+  const triggerConfirm = (title: string, message: string, onConfirm: () => void, type: "primary" | "danger" | "warning" = "primary") => {
+    setConfirmConfig({ title, message, onConfirm, type });
+    setIsConfirmOpen(true);
+  };
 
   const returnStatuses = [
     "return_requested",
@@ -137,73 +160,78 @@ export default function AdminOrdersPage() {
     await fetchSingleOrderReturn(orderId);
   };
 
-  const handleApproveReturn = async (returnId: number) => {
-    if (!confirm(language === "vi" ? "Xác nhận duyệt yêu cầu trả hàng này?" : "Are you sure you want to approve this return request?")) return;
-    try {
-      setSubmitting(true);
-      setError(null);
-      await adminAPI.approveReturn(returnId);
-      alert(language === "vi" ? "Đã duyệt trả hàng thành công!" : "Return request approved successfully!");
-      await refreshAfterReturnAction(selectedOrder.id);
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.response?.data?.message || (language === "vi" ? "Không thể duyệt trả hàng." : "Cannot approve return request."));
-    } finally {
-      setSubmitting(false);
-    }
+  const handleApproveReturn = (returnId: number) => {
+    triggerConfirm(
+      language === "vi" ? "Duyệt Yêu Cầu Trả Hàng" : "Approve Return Request",
+      language === "vi" ? "Xác nhận duyệt yêu cầu trả hàng này?" : "Are you sure you want to approve this return request?",
+      async () => {
+        try {
+          setSubmitting(true);
+          setError(null);
+          await adminAPI.approveReturn(returnId);
+          alert(language === "vi" ? "Đã duyệt trả hàng thành công!" : "Return request approved successfully!");
+          await refreshAfterReturnAction(selectedOrder.id);
+        } catch (err: any) {
+          console.error(err);
+          setError(err?.response?.data?.message || (language === "vi" ? "Không thể duyệt trả hàng." : "Cannot approve return request."));
+        } finally {
+          setSubmitting(false);
+        }
+      }
+    );
   };
 
-  const handleRejectReturn = async (returnId: number) => {
-    const reason = prompt(language === "vi" ? "Vui lòng nhập lý do từ chối trả hàng:" : "Please enter a reason for rejecting the return:");
-    if (reason === null) return;
-    if (!reason.trim()) {
-      alert(language === "vi" ? "Lý do từ chối không được để trống." : "Rejection reason cannot be empty.");
-      return;
-    }
-    try {
-      setSubmitting(true);
-      setError(null);
-      await adminAPI.rejectReturn(returnId, reason.trim());
-      alert(language === "vi" ? "Đã từ chối trả hàng thành công!" : "Return request rejected successfully!");
-      await refreshAfterReturnAction(selectedOrder.id);
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.response?.data?.message || (language === "vi" ? "Không thể từ chối trả hàng." : "Cannot reject return request."));
-    } finally {
-      setSubmitting(false);
-    }
+  const handleRejectReturn = (returnId: number) => {
+    setPromptConfig({
+      type: "reject",
+      id: returnId,
+      title: language === "vi" ? "Từ Chối Yêu Cầu Trả Hàng" : "Reject Return Request",
+      placeholder: language === "vi" ? "Vui lòng nhập lý do từ chối trả hàng (Bắt buộc)..." : "Please enter a reason for rejecting the return (Required)...",
+      required: true
+    });
+    setIsPromptOpen(true);
   };
 
-  const handleMarkReceived = async (returnId: number) => {
-    if (!confirm(language === "vi" ? "Xác nhận đã nhận sản phẩm hoàn trả tại kho?" : "Confirm that the returned items have been received at the warehouse?")) return;
-    try {
-      setSubmitting(true);
-      setError(null);
-      await adminAPI.markReturnReceived(returnId);
-      alert(language === "vi" ? "Đã xác nhận nhận hàng tại kho!" : "Successfully confirmed receipt at warehouse!");
-      await refreshAfterReturnAction(selectedOrder.id);
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.response?.data?.message || (language === "vi" ? "Không thể cập nhật trạng thái nhận hàng." : "Failed to update receipt status."));
-    } finally {
-      setSubmitting(false);
-    }
+  const handleMarkReceived = (returnId: number) => {
+    triggerConfirm(
+      language === "vi" ? "Xác Nhận Nhận Hàng" : "Confirm Receipt",
+      language === "vi" ? "Xác nhận đã nhận sản phẩm hoàn trả tại kho?" : "Confirm that the returned items have been received at the warehouse?",
+      async () => {
+        try {
+          setSubmitting(true);
+          setError(null);
+          await adminAPI.markReturnReceived(returnId);
+          alert(language === "vi" ? "Đã xác nhận nhận hàng tại kho!" : "Successfully confirmed receipt at warehouse!");
+          await refreshAfterReturnAction(selectedOrder.id);
+        } catch (err: any) {
+          console.error(err);
+          setError(err?.response?.data?.message || (language === "vi" ? "Không thể cập nhật trạng thái nhận hàng." : "Failed to update receipt status."));
+        } finally {
+          setSubmitting(false);
+        }
+      }
+    );
   };
 
-  const handleStartRefund = async (returnId: number) => {
-    if (!confirm(language === "vi" ? "Bắt đầu xử lý hoàn tiền cho khách hàng?" : "Start refund processing for the customer?")) return;
-    try {
-      setSubmitting(true);
-      setError(null);
-      await adminAPI.startReturnRefund(returnId);
-      alert(language === "vi" ? "Đã chuyển trạng thái sang Đang xử lý hoàn tiền!" : "Status updated to Refund Processing!");
-      await refreshAfterReturnAction(selectedOrder.id);
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.response?.data?.message || (language === "vi" ? "Không thể bắt đầu xử lý hoàn tiền." : "Cannot initiate refund processing."));
-    } finally {
-      setSubmitting(false);
-    }
+  const handleStartRefund = (returnId: number) => {
+    triggerConfirm(
+      language === "vi" ? "Bắt Đầu Hoàn Tiền" : "Start Refund Processing",
+      language === "vi" ? "Bắt đầu xử lý hoàn tiền cho khách hàng?" : "Start refund processing for the customer?",
+      async () => {
+        try {
+          setSubmitting(true);
+          setError(null);
+          await adminAPI.startReturnRefund(returnId);
+          alert(language === "vi" ? "Đã chuyển trạng thái sang Đang xử lý hoàn tiền!" : "Status updated to Refund Processing!");
+          await refreshAfterReturnAction(selectedOrder.id);
+        } catch (err: any) {
+          console.error(err);
+          setError(err?.response?.data?.message || (language === "vi" ? "Không thể bắt đầu xử lý hoàn tiền." : "Cannot initiate refund processing."));
+        } finally {
+          setSubmitting(false);
+        }
+      }
+    );
   };
 
   const handleCompleteRefundSubmit = async (e: React.FormEvent) => {
@@ -252,19 +280,74 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const handleDeleteOrder = async (orderId: number) => {
-    if (!confirm(language === "vi" ? `Xác nhận xóa vĩnh viễn đơn hàng #ORD-${orderId}? Hành động này sẽ loại bỏ đơn hàng khỏi hệ thống và không thể hoàn tác.` : `Confirm permanent deletion of order #ORD-${orderId}? This action removes the order and cannot be undone.`)) return;
-    try {
-      setLoading(true);
-      await adminAPI.deleteOrder(orderId);
-      alert(language === "vi" ? "Xóa đơn hàng thành công!" : "Order deleted successfully!");
-      fetchOrdersList();
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.response?.data?.message || (language === "vi" ? "Không thể xóa đơn hàng." : "Cannot delete order."));
-    } finally {
-      setLoading(false);
+  const handleCreateReturnOnBehalf = () => {
+    if (!selectedOrder) return;
+    setPromptConfig({
+      type: "create_on_behalf",
+      id: selectedOrder.id,
+      title: language === "vi" ? "Yêu Cầu Trả Hàng Hộ Khách" : "Request Return On Behalf",
+      placeholder: language === "vi" ? "Nhập lý do trả hàng hộ khách hàng (Bắt buộc)..." : "Enter return reason on behalf of customer (Required)...",
+      required: true
+    });
+    setIsPromptOpen(true);
+  };
+
+  const handlePromptSubmit = async (value: string) => {
+    if (!promptConfig) return;
+    const { type, id } = promptConfig;
+    setIsPromptOpen(false);
+
+    if (type === "reject") {
+      try {
+        setSubmitting(true);
+        setError(null);
+        await adminAPI.rejectReturn(id, value.trim());
+        alert(language === "vi" ? "Đã từ chối trả hàng thành công!" : "Return request rejected successfully!");
+        await refreshAfterReturnAction(selectedOrder.id);
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.response?.data?.message || (language === "vi" ? "Không thể từ chối trả hàng." : "Cannot reject return request."));
+      } finally {
+        setSubmitting(false);
+      }
+    } else if (type === "create_on_behalf") {
+      try {
+        setSubmitting(true);
+        setError(null);
+        await orderAPI.requestReturn(id, {
+          reason: value.trim() + (language === "vi" ? " (Admin tạo hộ)" : " (Created by Admin)"),
+        });
+        alert(language === "vi" ? "Đã tạo yêu cầu trả hàng thành công!" : "Return request created successfully!");
+        setIsModalOpen(false);
+        fetchOrdersList();
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.response?.data?.message || (language === "vi" ? "Không thể tạo yêu cầu trả hàng." : "Cannot create return request."));
+      } finally {
+        setSubmitting(false);
+      }
     }
+  };
+
+  const handleDeleteOrder = (orderId: number) => {
+    triggerConfirm(
+      language === "vi" ? "Xóa Đơn Hàng Vĩnh Viễn" : "Delete Order Permanently",
+      language === "vi" ? `Xác nhận xóa vĩnh viễn đơn hàng #ORD-${orderId}? Hành động này sẽ loại bỏ đơn hàng khỏi hệ thống và không thể hoàn tác.` : `Confirm permanent deletion of order #ORD-${orderId}? This action removes the order and cannot be undone.`,
+      async () => {
+        try {
+          setLoading(true);
+          await adminAPI.deleteOrder(orderId);
+          alert(language === "vi" ? "Xóa đơn hàng thành công!" : "Order deleted successfully!");
+          fetchOrdersList();
+        } catch (err: any) {
+          console.error(err);
+          alert(err?.response?.data?.message || (language === "vi" ? "Không thể xóa đơn hàng." : "Cannot delete order."));
+        } finally {
+          setLoading(false);
+        }
+      },
+      "danger"
+    );
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -789,6 +872,25 @@ export default function AdminOrdersPage() {
                     />
                   </div>
 
+                  {selectedOrder.status === "delivered" && (
+                    <div className="border-t border-brand-border/40 pt-4 space-y-3">
+                      <h4 className="font-extrabold text-brand-text text-xs uppercase tracking-wider">
+                        {language === "vi" ? "Hỗ trợ khách đổi trả" : "Customer Return Assistance"}
+                      </h4>
+                      <p className="text-xs text-brand-muted">
+                        {language === "vi" ? "Tạo yêu cầu đổi trả và hoàn tiền hộ khách hàng nếu có yêu cầu." : "Create a return/refund request on behalf of the customer."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleCreateReturnOnBehalf}
+                        className="w-full py-2.5 bg-status-warning-bg hover:bg-orange-655 hover:text-white border border-status-warning-border text-status-warning-text text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Undo2 size={13} />
+                        {language === "vi" ? "Yêu Cầu Trả Hàng Hộ Khách" : "Request Return On Behalf"}
+                      </button>
+                    </div>
+                  )}
+
                   {/* Audit Timeline */}
                   <div className="border-t border-brand-border/40 pt-4 space-y-3">
                     <h4 className="font-extrabold text-brand-text text-xs uppercase tracking-wider">
@@ -847,6 +949,26 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+
+      <AdminPromptModal
+        isOpen={isPromptOpen}
+        onClose={() => setIsPromptOpen(false)}
+        onSubmit={handlePromptSubmit}
+        title={promptConfig?.title || ""}
+        placeholder={promptConfig?.placeholder || ""}
+        required={promptConfig?.required || false}
+        isSubmitting={submitting}
+        inputLabel={language === "vi" ? "Lý do / Ghi chú" : "Reason / Note"}
+      />
+
+      <AdminConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmConfig?.onConfirm || (() => {})}
+        title={confirmConfig?.title || ""}
+        message={confirmConfig?.message || ""}
+        type={confirmConfig?.type}
+      />
     </div>
   );
 }

@@ -25,6 +25,14 @@ interface CartItem {
     image: string;
     stock: number;
   };
+  variant?: {
+    id: number;
+    sku: string;
+    name: string;
+    price: number;
+    stock: number;
+    image?: string;
+  } | null;
 }
 
 export default function CartPage() {
@@ -73,6 +81,7 @@ export default function CartPage() {
   // 🔄 update quantity
   const updateQuantity = async (
     productId: number,
+    variantId: number | undefined,
     type: "inc" | "dec",
     currentQty: number,
   ) => {
@@ -81,7 +90,7 @@ export default function CartPage() {
     if (newQty < 1) return;
 
     try {
-      await cartAPI.update(productId, newQty);
+      await cartAPI.update(productId, newQty, variantId);
       void fetchCart();
     } catch (err: any) {
       console.error("Update cart error:", err);
@@ -90,9 +99,9 @@ export default function CartPage() {
   };
 
   // ❌ remove item
-  const removeItem = async (productId: number) => {
+  const removeItem = async (productId: number, variantId?: number) => {
     try {
-      await cartAPI.remove(productId);
+      await cartAPI.remove(productId, variantId);
       void fetchCart();
     } catch (err: any) {
       console.error("Remove error:", err);
@@ -133,13 +142,13 @@ export default function CartPage() {
 
           {cart.map((item) => (
             <div
-              key={item.product?.id || item.id}
+              key={item.id}
               className="grid grid-cols-4 items-center py-6 border-b border-brand-primary-light">
               {/* PRODUCT */}
               <div className="flex items-center gap-4">
                 <button
                   type="button"
-                  onClick={() => item.product && removeItem(item.product.id)}
+                  onClick={() => item.product && removeItem(item.product.id, item.variant?.id)}
                   className="text-brand-muted hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative z-10"
                   aria-label="Xóa sản phẩm">
                   <X size={18} />
@@ -151,7 +160,7 @@ export default function CartPage() {
                     href={`/product/${item.product.id}`}
                     className="flex items-center gap-4 group">
                     <Image
-                      src={item.product.image || "/placeholder.png"}
+                      src={(item.variant && item.variant.image) || item.product.image || "/placeholder.png"}
                       alt={item.product.name}
                       width={60}
                       height={80}
@@ -161,13 +170,28 @@ export default function CartPage() {
                       <span className="font-medium group-hover:text-brand-primary transition text-brand-text">
                         {item.product.name}
                       </span>
-                      {item.product.stock === 0 ? (
-                        <span className="text-xs font-semibold text-red-500 mt-1">Hết hàng</span>
-                      ) : item.quantity > item.product.stock ? (
-                        <span className="text-xs font-semibold text-red-500 mt-1">Không đủ hàng (Tồn: {item.product.stock})</span>
-                      ) : item.product.stock < 5 ? (
-                        <span className="text-xs text-orange-500 mt-1">Chỉ còn {item.product.stock} sản phẩm</span>
-                      ) : null}
+                      {item.variant && (
+                        <span className="text-xs text-brand-muted mt-1 font-semibold">
+                          Format: {item.variant.name}
+                        </span>
+                      )}
+                      {item.variant ? (
+                        item.variant.stock === 0 ? (
+                          <span className="text-xs font-semibold text-red-500 mt-1">Hết hàng</span>
+                        ) : item.quantity > item.variant.stock ? (
+                          <span className="text-xs font-semibold text-red-500 mt-1">Không đủ hàng (Tồn: {item.variant.stock})</span>
+                        ) : item.variant.stock < 5 ? (
+                          <span className="text-xs text-orange-500 mt-1">Chỉ còn {item.variant.stock} sản phẩm</span>
+                        ) : null
+                      ) : (
+                        item.product.stock === 0 ? (
+                          <span className="text-xs font-semibold text-red-500 mt-1">Hết hàng</span>
+                        ) : item.quantity > item.product.stock ? (
+                          <span className="text-xs font-semibold text-red-500 mt-1">Không đủ hàng (Tồn: {item.product.stock})</span>
+                        ) : item.product.stock < 5 ? (
+                          <span className="text-xs text-orange-500 mt-1">Chỉ còn {item.product.stock} sản phẩm</span>
+                        ) : null
+                      )}
                     </div>
                   </Link>
                 ) : (
@@ -198,7 +222,7 @@ export default function CartPage() {
                     disabled={item.quantity <= 1}
                     onClick={() =>
                       item.product &&
-                      updateQuantity(item.product.id, "dec", item.quantity)
+                      updateQuantity(item.product.id, item.variant?.id, "dec", item.quantity)
                     }
                     className="disabled:opacity-30 disabled:cursor-not-allowed text-brand-text hover:text-brand-primary">
                     <Minus size={16} />
@@ -207,10 +231,10 @@ export default function CartPage() {
                   <span className="font-semibold text-brand-text">{item.quantity}</span>
 
                   <button
-                    disabled={item.product ? item.quantity >= item.product.stock : false}
+                    disabled={item.product ? item.quantity >= (item.variant ? item.variant.stock : item.product.stock) : false}
                     onClick={() =>
                       item.product &&
-                      updateQuantity(item.product.id, "inc", item.quantity)
+                      updateQuantity(item.product.id, item.variant?.id, "inc", item.quantity)
                     }
                     className="disabled:opacity-30 disabled:cursor-not-allowed text-brand-text hover:text-brand-primary">
                     <Plus size={16} />

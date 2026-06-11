@@ -9,6 +9,7 @@ import { OrderReturn } from './order-return.entity';
 import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
 import { Product } from '../products/products.entity';
+import { ProductVariant } from '../products/entities/product-variant.entity';
 import { CartModule } from '../cart/cart.module';
 import { CouponModule } from '../coupons/coupon.module';
 import { User } from '../users/entities/user.entity';
@@ -28,6 +29,7 @@ import { DealsModule } from '../deals/deals.module';
       OrderStatusLog,
       OrderReturn,
       Product,
+      ProductVariant,
       User,
       Payment,
       QrPayment,
@@ -42,3 +44,4 @@ import { DealsModule } from '../deals/deals.module';
   controllers: [OrderController],
 })
 export class OrderModule {}
+

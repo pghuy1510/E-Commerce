@@ -13,6 +13,7 @@ import { OrderReturn } from './order-return.entity';
 import { CheckoutDto, GuestCheckoutDto } from './dto/checkout.dto';
 import { CartService } from '../cart/cart.service';
 import { Product } from '../products/products.entity';
+import { ProductVariant } from '../products/entities/product-variant.entity';
 import { CouponService } from '../coupons/coupon.service';
 import { Payment } from '../payment/entities/payment.entity';
 import { QrPayment } from '../payment/entities/qr-payment.entity';
@@ -111,7 +112,7 @@ export class OrderService {
 
       const currentCart = await cartRepo.findOne({
         where: { user: { id: userIdNumber } },
-        relations: ['items', 'items.product', 'items.product.category'],
+        relations: ['items', 'items.product', 'items.product.category', 'items.variant'],
       });
 
       if (!currentCart || !currentCart.items.length) {
@@ -119,6 +120,7 @@ export class OrderService {
       }
 
       const orderItems: OrderItem[] = [];
+      const variantRepo = manager.getRepository(ProductVariant);
 
       for (const item of currentCart.items) {
         const product = await productRepo.findOne({
@@ -128,11 +130,47 @@ export class OrderService {
         if (!product) {
           throw new BadRequestException('Sản phẩm không tồn tại.');
         }
-        const availableStock = product.stock - (product.reservedStock || 0);
-        if (availableStock < item.quantity) {
-          throw new BadRequestException(
-            `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho (hiện chỉ còn ${availableStock} sản phẩm). Vui lòng quay lại giỏ hàng để cập nhật.`,
-          );
+
+        let purchasePrice = 0;
+        let variantObj: ProductVariant | null = null;
+
+        if (item.variant) {
+          variantObj = await variantRepo.findOne({
+            where: { id: item.variant.id },
+          });
+
+          if (!variantObj) {
+            throw new BadRequestException('Biến thể sản phẩm không tồn tại.');
+          }
+
+          const availableStock = variantObj.stock - (variantObj.reservedStock || 0);
+          if (availableStock < item.quantity) {
+            throw new BadRequestException(
+              `Biến thể "${variantObj.name}" của sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho (hiện chỉ còn ${availableStock} sản phẩm).`,
+            );
+          }
+
+          purchasePrice = Number(variantObj.price);
+
+          // Update variant reservedStock
+          variantObj.reservedStock = (variantObj.reservedStock || 0) + item.quantity;
+          await variantRepo.save(variantObj);
+
+          // Synchronize parent product stock cache
+          product.reservedStock = (product.reservedStock || 0) + item.quantity;
+          await productRepo.save(product);
+        } else {
+          const availableStock = product.stock - (product.reservedStock || 0);
+          if (availableStock < item.quantity) {
+            throw new BadRequestException(
+              `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho (hiện chỉ còn ${availableStock} sản phẩm). Vui lòng quay lại giỏ hàng để cập nhật.`,
+            );
+          }
+
+          purchasePrice = Number(product.price);
+
+          product.reservedStock = (product.reservedStock || 0) + item.quantity;
+          await productRepo.save(product);
         }
 
         // Check active deal for this product
@@ -148,7 +186,6 @@ export class OrderService {
           relations: ['deal'],
         });
 
-        let purchasePrice = Number(product.price);
         if (dealProduct) {
           if (dealProduct.dealStock - dealProduct.soldCount < item.quantity) {
             throw new BadRequestException(
@@ -160,12 +197,13 @@ export class OrderService {
           purchasePrice = Number(dealProduct.dealPrice);
         }
 
-        product.reservedStock = (product.reservedStock || 0) + item.quantity;
-        await productRepo.save(product);
-
         const orderItem = orderItemRepo.create({
           productId: product.id,
           productName: product.name,
+          variantId: variantObj ? variantObj.id : null,
+          variantName: variantObj ? variantObj.name : null,
+          variantSku: variantObj ? variantObj.sku : null,
+          variantOptions: variantObj ? variantObj.options : null,
           price: purchasePrice,
           quantity: item.quantity,
         });
@@ -319,8 +357,10 @@ export class OrderService {
   }
 
   async checkoutGuest(dto: GuestCheckoutDto) {
-    const itemsWithProduct: { product: Product; quantity: number; price: number }[] = [];
+    const itemsWithProduct: { product: Product; variant?: ProductVariant; quantity: number; price: number }[] = [];
     let subtotal = 0;
+    const variantRepository = this.dataSource.getRepository(ProductVariant);
+
     for (const item of dto.items) {
       const product = await this.dataSource.getRepository(Product).findOne({
         where: { id: item.productId },
@@ -329,17 +369,38 @@ export class OrderService {
       if (!product) {
         throw new BadRequestException(`Sản phẩm với ID ${item.productId} không tồn tại.`);
       }
-      const availableStock = product.stock - (product.reservedStock || 0);
+
+      let variant: ProductVariant | null = null;
+      if (item.variantId) {
+        variant = await variantRepository.findOne({
+          where: { id: item.variantId, productId: item.productId },
+        });
+        if (!variant) {
+          throw new BadRequestException('Biến thể sản phẩm không tồn tại.');
+        }
+      } else if (product.type === 'variable') {
+        throw new BadRequestException(`Vui lòng chọn biến thể cho sản phẩm "${product.name}".`);
+      }
+
+      const targetStock = variant ? variant.stock : product.stock;
+      const targetReserved = variant ? variant.reservedStock : product.reservedStock;
+      const availableStock = targetStock - (targetReserved || 0);
+
       if (availableStock < item.quantity) {
-        throw new BadRequestException(`Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng (hiện chỉ còn ${availableStock} sản phẩm).`);
+        throw new BadRequestException(
+          variant
+            ? `Biến thể "${variant.name}" của sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng (hiện chỉ còn ${availableStock} sản phẩm).`
+            : `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng (hiện chỉ còn ${availableStock} sản phẩm).`
+        );
       }
       
       const dealPrice = await this.dealsService.getProductDealPrice(product.id);
-      const finalPrice = dealPrice !== null ? dealPrice : Number(product.price);
+      const finalPrice = dealPrice !== null ? dealPrice : Number(variant ? variant.price : product.price);
       
       subtotal += finalPrice * item.quantity;
       itemsWithProduct.push({
         product,
+        variant: variant || undefined,
         quantity: item.quantity,
         price: finalPrice,
       });
@@ -379,6 +440,7 @@ export class OrderService {
 
     const result = await this.dataSource.transaction(async (manager) => {
       const productRepo = manager.getRepository(Product);
+      const variantRepo = manager.getRepository(ProductVariant);
       const orderRepo = manager.getRepository(Order);
       const orderItemRepo = manager.getRepository(OrderItem);
       const orderShippingRepo = manager.getRepository(OrderShippingAddress);
@@ -395,11 +457,37 @@ export class OrderService {
         if (!product) {
           throw new BadRequestException('Sản phẩm không tồn tại.');
         }
-        const availableStock = product.stock - (product.reservedStock || 0);
-        if (availableStock < item.quantity) {
-          throw new BadRequestException(
-            `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho (hiện chỉ còn ${availableStock} sản phẩm).`,
-          );
+
+        let variantObj: ProductVariant | null = null;
+        if (item.variant) {
+          variantObj = await variantRepo.findOne({
+            where: { id: item.variant.id },
+          });
+          if (!variantObj) {
+            throw new BadRequestException('Biến thể sản phẩm không tồn tại.');
+          }
+
+          const availableStock = variantObj.stock - (variantObj.reservedStock || 0);
+          if (availableStock < item.quantity) {
+            throw new BadRequestException(
+              `Biến thể "${variantObj.name}" của sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho.`,
+            );
+          }
+
+          variantObj.reservedStock = (variantObj.reservedStock || 0) + item.quantity;
+          await variantRepo.save(variantObj);
+
+          product.reservedStock = (product.reservedStock || 0) + item.quantity;
+          await productRepo.save(product);
+        } else {
+          const availableStock = product.stock - (product.reservedStock || 0);
+          if (availableStock < item.quantity) {
+            throw new BadRequestException(
+              `Sản phẩm "${product.name}" đã hết hàng hoặc không đủ số lượng trong kho.`,
+            );
+          }
+          product.reservedStock = (product.reservedStock || 0) + item.quantity;
+          await productRepo.save(product);
         }
 
         // Check active deal for this product
@@ -427,12 +515,13 @@ export class OrderService {
           purchasePrice = Number(dealProduct.dealPrice);
         }
 
-        product.reservedStock = (product.reservedStock || 0) + item.quantity;
-        await productRepo.save(product);
-
         const orderItem = orderItemRepo.create({
           productId: product.id,
           productName: product.name,
+          variantId: variantObj ? variantObj.id : null,
+          variantName: variantObj ? variantObj.name : null,
+          variantSku: variantObj ? variantObj.sku : null,
+          variantOptions: variantObj ? variantObj.options : null,
           price: purchasePrice,
           quantity: item.quantity,
         });
@@ -686,15 +775,38 @@ export class OrderService {
       const payment = await paymentRepo.findOne({ where: { order_id: order.id } });
       const wasSubtracted = order.paymentMethod === 'qr' && payment?.status === 'paid';
 
+      const variantRepo = manager.getRepository(ProductVariant);
       for (const item of order.items) {
         const product = await productRepo.findOne({ where: { id: item.productId } });
         if (product) {
-          if (wasSubtracted) {
-            product.stock += item.quantity;
+          if (item.variantId) {
+            const variant = await variantRepo.findOne({ where: { id: item.variantId } });
+            if (variant) {
+              if (wasSubtracted) {
+                variant.stock += item.quantity;
+              } else {
+                variant.reservedStock = Math.max(0, (variant.reservedStock || 0) - item.quantity);
+              }
+              await variantRepo.save(variant);
+            }
           } else {
-            product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+            if (wasSubtracted) {
+              product.stock += item.quantity;
+            } else {
+              product.reservedStock = Math.max(0, (product.reservedStock || 0) - item.quantity);
+            }
+            await productRepo.save(product);
           }
-          await productRepo.save(product);
+
+          // Recalculate parent cache
+          if (product.type === 'variable') {
+            const variants = await variantRepo.find({ where: { productId: product.id } });
+            const activeVariants = variants.filter(v => v.isActive);
+            product.price = activeVariants.length > 0 ? Math.min(...activeVariants.map(v => Number(v.price))) : product.price;
+            product.stock = activeVariants.reduce((sum, v) => sum + v.stock, 0);
+            product.reservedStock = activeVariants.reduce((sum, v) => sum + (v.reservedStock || 0), 0);
+            await productRepo.save(product);
+          }
         }
       }
 
